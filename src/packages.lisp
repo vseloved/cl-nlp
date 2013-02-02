@@ -73,7 +73,7 @@
 ;;            #:parse-deps
 ;;            ))
 
-(cl:defpackage #:nlp.generate
+(cl:defpackage #:nlp.generation
   (:nicknames #:ngen)
   (:use #:common-lisp #:rutil #:nlp.util)
   (:export #:generate-text
@@ -86,7 +86,7 @@
            #:markov-order
            ))
 
-;; (cl:defpackage #:nlp.learn
+;; (cl:defpackage #:nlp.learning
 ;;   (:nicknames #:nlearn)
 ;;   (:use #:common-lisp #:rutil)
 ;;   (:export #:cluster

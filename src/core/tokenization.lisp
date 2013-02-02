@@ -65,11 +65,12 @@
                               spans))))
 
 (define-lazy-singleton word-tokenizer (make 'regex-word-tokenizer)
-  "Basic word tokenizer.")
+  "Basic word tokenizer. Not thread-safe.")
 
 (define-lazy-singleton word-chunker
     (make 'regex-word-tokenizer :regex (re:create-scanner "[^\\s]+"))
-  "Dumb word tokenizer, that will not split punctuation from words.")
+  "Dumb word tokenizer, that will not split punctuation from words.
+   Not thread-safe.")
 
 
 ;;; Sentence splitting
@@ -106,4 +107,4 @@
               (reverse spans)))))
 
 (define-lazy-singleton sentence-splitter (make 'baseline-sentence-tokenizer)
-  "Basic sentence splitter.")
+  "Basic sentence splitter. Not thread-safe.")

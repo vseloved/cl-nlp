@@ -1,5 +1,4 @@
-(in-package :asdf)
-
+(in-package #:asdf)
 
 (defsystem #:cl-nlp
   :version "0.0.1"
@@ -15,15 +14,15 @@
              (:module #:corpora
                       :serial t
                       :components
-                      ((:file "read")))
+                      ((:file "reading")))
              (:file "test-util")
              (:module #:core
                       :serial t
                       :components
-                      ((:file "tokenize")
+                      ((:file "tokenization")
                        #+nil (:file "distance")
                        #+nil (:file "ngram")))
-             (:module #:generate
+             (:module #:generation
                       :serial t
                       :components
-                      ((:file "generate")))))))
+                      ((:file "generation")))))))
