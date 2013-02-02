@@ -6,20 +6,7 @@
   (:documentation
    "Tokenize STRING with TOKENIZER. Outputs 2 values:
     - list of words
-    - list of spans as beg-end cons pairs")
-  (:method :around (tokenizer string)
-    "Pre-split text into lines and tokenize each line separately."
-    (let ((offset 0)
-          words spans)
-      (loop :for line :in (split-sequence #\Newline string) :do
-         (mv-bind (ts ss) (call-next-method tokenizer line)
-           (setf words (nconc words ts)
-                 spans (nconc spans (mapcar #`(cons (+ (car %) offset)
-                                                    (+ (cdr %) offset))
-                                            ss)))
-           (incf offset (1+ (length line)))))
-      (values words
-              spans))))
+    - list of spans as beg-end cons pairs"))
 
 ;; (defgeneric stream-tokenize (tokenizer input output &optional span-output)
 ;;   (:documentation
@@ -39,7 +26,21 @@
 (defclass tokenizer ()
   ((offset :accessor tokenizer-offset :initarg :offset :initform 0))
   (:documentation
-   "Base clas for tokenizers."))
+   "Base class for tokenizers."))
+
+(defmethod tokenize :around ((tokenizer tokenizer) string)
+  "Pre-split text into lines and tokenize each line separately."
+  (let ((offset 0)
+        words spans)
+    (loop :for line :in (split-sequence #\Newline string) :do
+       (mv-bind (ts ss) (call-next-method tokenizer line)
+         (setf words (nconc words ts)
+               spans (nconc spans (mapcar #`(cons (+ (car %) offset)
+                                                  (+ (cdr %) offset))
+                                          ss)))
+         (incf offset (1+ (length line)))))
+    (values words
+            spans)))
 
 
 ;;; Word tokenization

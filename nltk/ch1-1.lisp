@@ -7,7 +7,7 @@
 (defstruct (text (:print-function print-text))
   name
   raw
-  tokens
+  words
   ctxs
   transitions
   dispersion)
@@ -74,9 +74,9 @@
   (take n (sorted-ht-keys (match-contexts word1 word2 text) '>)))
 
 (defun generate (text)
-  "Generate random text of 20 tokens, based on TEXT."
+  "Generate random text of 20 words, based on TEXT."
   (maybe-index-transitions text)
-  (generate-text (mark-v-shaney) (text-transitions text) 20))
+  (generate-text <mark-v-shaney> (text-transitions text) 20))
 
 (defun dispersion-plot (text &rest words)
   "Plot dispersion of WORDS in TEXT."
@@ -109,50 +109,50 @@
     rez))
 
 (defun maybe-tokenize (text &key preserve-newlines)
-  "If TEXT doesn't have TOKENS, build them and store in TEXT."
-  (with-slots (raw tokens) text
-    (unless tokens
+  "If TEXT doesn't have WORDS, build them and store in TEXT."
+  (with-slots (raw words) text
+    (unless words
       (format t "~&Tokenizing text...~%")
-      (setf tokens (cons "¶" (tokenize
-                              <word-tokenizer>
-                              (let ((text (substitute #\¶ #\Newline raw)))
-                                (re:regex-replace-all
-                                 "¶(\\s*¶)*"
-                                 (if preserve-newlines
-                                     text
-                                     (re:regex-replace-all "¶([^¶])" text " \\1"))
-                                 " ¶ ")))))
-      (format t "Number of tokens: ~A~%" (length tokens)))))
+      (setf words (cons "¶" (tokenize
+                             <word-tokenizer>
+                             (let ((text (substitute #\¶ #\Newline raw)))
+                               (re:regex-replace-all
+                                "¶(\\s*¶)*"
+                                (if preserve-newlines
+                                    text
+                                    (re:regex-replace-all "¶([^¶])" text " \\1"))
+                                " ¶ ")))))
+      (format t "Number of words: ~A~%" (length words)))))
 
 (defun maybe-index-contexts (text)
   "If TEXT doesn't have CTXS, build them and store in TEXT."
-  (with-slots (tokens ctxs) text
+  (with-slots (words ctxs) text
     (unless ctxs
       (maybe-tokenize text)
       (format t "~&Building word contexts...~%")
-      (setf ctxs (index-context-freqs tokens))
-      (format t "Number of tokens: ~A~%" (length (ht-keys ctxs))))))
+      (setf ctxs (index-context-freqs words))
+      (format t "Number of words: ~A~%" (length (ht-keys ctxs))))))
 
 (defun maybe-index-transitions (text)
   "If TEXT doesn't have TRANSITIONS, build them and store in TEXT."
-  (with-slots (tokens transitions) text
+  (with-slots (words transitions) text
     (unless transitions
       (maybe-tokenize text)
       (format t "~&Building word transitions index...~%")
-      (setf transitions (index-transition-freqs tokens))
-      (format t "Number of tokens: ~A~%" (length (ht-keys transitions))))))
+      (setf transitions (index-word-transition-freqs words))
+      (format t "Number of words: ~A~%" (length (ht-keys transitions))))))
 
 (defun maybe-index-dispersion (text)
   "If TEXT doesn't have DISPERSION table, build it and store in TEXT."
-  (with-slots (tokens dispersion) text
+  (with-slots (words dispersion) text
     (unless dispersion
       (maybe-tokenize text)
       (format t "~&Building dispersion table...~%")
       (let ((ht (make-hash-table :test 'equal)))
-        (doindex (idx token tokens)
+        (doindex (idx token words)
           (set# token ht (cons idx (get# token ht))))
         (setf dispersion ht))
-      (format t "Number of tokens: ~A~%" (length (ht-keys dispersion))))))
+      (format t "Number of words: ~A~%" (length (ht-keys dispersion))))))
 
 
 (defun dump-data (words dispersion-table)
