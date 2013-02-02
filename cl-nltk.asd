@@ -2,7 +2,7 @@
 
 (defsystem #:cl-nltk
   :version "0.0.1"
-  :description "NLTK implementation"
+  :description "Implementation of the examples from the NLTK book."
   :depends-on (#:rutils #:cl-ppcre #:cl-nlp #:cgn)
   :serial t
   :components
