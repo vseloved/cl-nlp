@@ -64,10 +64,10 @@
      :finally (return (values words
                               spans))))
 
-(define-lazy-singleton <word-tokenizer> (make 'regex-word-tokenizer)
+(define-lazy-singleton word-tokenizer (make 'regex-word-tokenizer)
   "Basic word tokenizer.")
 
-(define-lazy-singleton <word-chunker>
+(define-lazy-singleton word-chunker
     (make 'regex-word-tokenizer :regex (re:create-scanner "[^\\s]+"))
   "Dumb word tokenizer, that will not split punctuation from words.")
 
@@ -105,5 +105,5 @@
       (values (reverse sentences)
               (reverse spans)))))
 
-(define-lazy-singleton <sentence-splitter> (make 'baseline-sentence-tokenizer)
+(define-lazy-singleton sentence-splitter (make 'baseline-sentence-tokenizer)
   "Basic sentence splitter.")

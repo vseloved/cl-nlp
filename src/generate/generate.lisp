@@ -2,10 +2,12 @@
 (named-readtables:in-readtable rutils-readtable)
 
 
-(defgeneric generate-text (generator data length)
+(defgeneric generate-text (generator data length &key skip-paragraphs)
   (:documentation
    "Generate random text of LENGTH words based on some DATA
-    (usually, table of transition probabilities between tokens)."))
+    (usually, table of transition probabilities between tokens).
+    Unless SKIP-PARAGRAPHS is set, the text may include newlines.
+   "))
 
 
 (defclass text-generator ()
@@ -32,7 +34,6 @@
   "Generate text with a markov model of some MARKOV-ORDER described by
    table TRANSITIONS of transition probabilities between reverse prefixes
    of MARKOV-ORDER length and words.
-   Unless SKIP-PARAGRAPHS is set, the text may include newlines.
    May not return period at the end."
   (let* ((initial-prefix (cons "¶" (make-list (1- (markov-order generator)))))
          (prefix initial-prefix)

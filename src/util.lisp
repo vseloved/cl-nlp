@@ -62,10 +62,12 @@
 
 (defmacro define-lazy-singleton (name init &optional docstring)
   "Define a function NAME, that will return a singleton object,
-   initialized lazily with INIT on first call."
+   initialized lazily with INIT on first call.
+   Also define a symbol macro <NAME> that will expand to (NAME)."
   (with-gensyms (singleton)
     `(let (,singleton)
        (defun ,name ()
          ,docstring
          (unless ,singleton
-           (setf ,singleton ,init))))))
+           (setf ,singleton ,init)))
+       (define-symbol-macro ,(mksym name :format "<~A>") (,name)))))
