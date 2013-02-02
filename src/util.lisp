@@ -68,6 +68,6 @@
     `(let (,singleton)
        (defun ,name ()
          ,docstring
-         (unless ,singleton
-           (setf ,singleton ,init)))
+         (or ,singleton
+             (setf ,singleton ,init)))
        (define-symbol-macro ,(mksym name :format "<~A>") (,name)))))
