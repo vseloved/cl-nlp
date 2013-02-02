@@ -24,7 +24,7 @@
 
 
 (defclass tokenizer ()
-  ((offset :accessor tokenizer-offset :initarg :offset :initform 0))
+  ()
   (:documentation
    "Base class for tokenizers."))
 
@@ -65,12 +65,11 @@
                               spans))))
 
 (define-lazy-singleton word-tokenizer (make 'regex-word-tokenizer)
-  "Basic word tokenizer. Not thread-safe.")
+  "Basic word tokenizer.")
 
 (define-lazy-singleton word-chunker
     (make 'regex-word-tokenizer :regex (re:create-scanner "[^\\s]+"))
-  "Dumb word tokenizer, that will not split punctuation from words.
-   Not thread-safe.")
+  "Dumb word tokenizer, that will not split punctuation from words.")
 
 
 ;;; Sentence splitting
@@ -107,4 +106,4 @@
               (reverse spans)))))
 
 (define-lazy-singleton sentence-splitter (make 'baseline-sentence-tokenizer)
-  "Basic sentence splitter. Not thread-safe.")
+  "Basic sentence splitter.")
