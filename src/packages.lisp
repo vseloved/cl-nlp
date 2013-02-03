@@ -1,3 +1,5 @@
+;;; (c) 2013 Vsevolod Dyomkin
+
 (cl:defpackage #:nlp.util
   (:nicknames #:nutil)
   (:use #:common-lisp #:rutil)

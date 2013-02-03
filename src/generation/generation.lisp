@@ -1,3 +1,5 @@
+;;; (c) 2013 Vsevolod Dyomkin
+
 (in-package #:nlp.generate)
 (named-readtables:in-readtable rutils-readtable)
 
