@@ -46,6 +46,7 @@
            #:token-tag
 
            #:+brown-corpus+
+           #:+nps-chat-corpus+
            ))
 
 (cl:defpackage #:nlp.test-util

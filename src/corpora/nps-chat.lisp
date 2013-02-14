@@ -9,7 +9,7 @@
   (cxml:parse-file file (make 'nps-chat-sax)))
 
 #+manually
-(defparameter *nps-chat-corpus*
+(defparameter +nps-chat-corpus+
   (let ((corpus (make-corpus :name "NPS Chat Corpus" :lang :en-us)))
     (fad:walk-directory
      (merge-pathnames "corpora/nps_chat/" +project-root+)
