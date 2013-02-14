@@ -3,7 +3,7 @@
 (in-package #:asdf)
 
 (defsystem #:cl-nlp
-  :version "0.0.1"
+  :version "0.0.2"
   :description "NLP toolkit for Common Lisp"
   :author "Vsevolod Dyomkin <vseloved@gmail.com>"
   :maintainer "Vsevolod Dyomkin <vseloved@gmail.com>"
