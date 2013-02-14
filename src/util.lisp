@@ -30,6 +30,14 @@
   "Test if CHAR is in +PERIOD-CHARS+."
   (member char +period-chars+))
 
+(defparameter +newline-chars+
+  '(#\Newline #\Return #\Linefeed)
+  "Chars considered legitimate paragraph endings.")
+
+(defun newline-char-p (char)
+  "Test if CHAR is in +PERIOD-CHARS+."
+  (member char +newline-chars+))
+
 (declaim (inline filler))
 (defun filler (n &optional (fill-char #\Space))
   "Produce an N-element filler string of FILL-CHAR's."

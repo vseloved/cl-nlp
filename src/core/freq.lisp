@@ -33,16 +33,20 @@
   "Create a table of weighted conditional frequencies
    of next words for each distinct reversed N-word sequence in WORDS."
   (let ((transitions (make-hash-table :test 'equalp))
-        (len (- (length words) n))
+        (limit (length words))
         (count 0))
-    (loop :for tail :on (reverse (cons "¶" words))
-          :while (< count len)
-          :do (let ((cur (car tail))
-                    (prefix (subseq tail 1 (1+ n))))
-                (unless (get# prefix transitions)
-                  (set# prefix transitions (make-hash-table :test 'equal)))
-                (set# cur (get# prefix transitions)
-                      (1+ (get# cur (get# prefix transitions) 0)))))
+    ;; traversing the list of words from end
+    (loop :for tail :on (reverse (append (make-list n) words))
+       :while (< count limit) :do
+       (incf count)
+       (let* ((word (car tail))
+              (prefix (subseq tail 1 (1+ n))))
+         (when (and (> n 1) (string= "¶" (car prefix)))
+           (setf prefix (cons "¶" (make-list (1- n)))))
+         (unless (get# prefix transitions)
+           (set# prefix transitions (make-hash-table :test 'equal)))
+         (set# word (get# prefix transitions)
+               (1+ (get# word (get# prefix transitions) 0)))))
     (normalize-freqs transitions)))
 
 (defun index-word-transition-freqs (words)
@@ -51,13 +55,13 @@
   (let ((transitions (make-hash-table :test 'equalp))
         (word-vec (make-array (1+ (length words))
                               :initial-contents (cons "¶" words))))
-    (dotimes (i (- (length words) n))
-      (let ((prefix (susbeq words i (+ i n)))
-            (cur (elt words (+ i 1))))
-        (unless (get# prefix transitions)
-          (set# prefix transitions (make-hash-table :test 'equal)))
-       (set# cur (get# prefix transitions)
-             (1+ (get# cur (get# prefix transitions) 0)))))
+    (dotimes (i (1- (length words)))
+      (let ((prev (elt word-vec i))
+            (cur (elt word-vec (+ i 1))))
+        (unless (get# prev transitions)
+          (set# prev transitions (make-hash-table :test 'equal)))
+       (set# cur (get# prev transitions)
+             (1+ (get# cur (get# prev transitions) 0)))))
     (normalize-freqs transitions)))
 
 
@@ -66,7 +70,8 @@
 (defun normalize-freqs (ht-of-hts)
   "For each table in HT-OF-HTS normalize all the values.
    Returns the modified HT-OF-HTS."
-  (maphash #`(let ((total (reduce '+ (ht-vals %))))
-               (dotable (k v %)
-                 (set# k % (/ v total))))
-           ht-of-hts))
+  (maphash #`(let ((total (reduce '+ (ht-vals %%))))
+               (dotable (k v %%)
+                 (set# k %% (/ v total))))
+           ht-of-hts)
+  ht-of-hts)

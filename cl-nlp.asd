@@ -5,10 +5,10 @@
 (defsystem #:cl-nlp
   :version "0.0.1"
   :description "NLP toolkit for Common Lisp"
-  :creator "Vsevolod Dyomkin <vseloved@gmail.com>"
+  :author "Vsevolod Dyomkin <vseloved@gmail.com>"
   :maintainer "Vsevolod Dyomkin <vseloved@gmail.com>"
   :license "Apache 2.0"
-  :depends-on (#:rutils #:cl-ppcre)
+  :depends-on (#:rutils #:cl-fad #:cl-ppcre #:cxml)
   :serial t
   :components
   ((:module #:src
@@ -19,15 +19,19 @@
              (:module #:corpora
                       :serial t
                       :components
-                      ((:file "reading")))
+                      ((:file "corpus")
+                       (:file "brown")
+                       (:file "nps-chat")))
              (:file "test-util")
              (:module #:core
                       :serial t
                       :components
                       ((:file "tokenization")
+                       (:file "freq")
                        #+nil (:file "distance")
                        #+nil (:file "ngram")))
              (:module #:generation
                       :serial t
                       :components
-                      ((:file "generation")))))))
+                      ((:file "markov-chain")))
+             (:file "user")))))

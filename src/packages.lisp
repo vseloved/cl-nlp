@@ -4,6 +4,8 @@
   (:nicknames #:nutil)
   (:use #:common-lisp #:rutil)
   (:export #:+newline+
+           #:+newline-chars+
+           #:newline-char-p
            #:+white-chars+
            #:white-char-p
            #:+period-chars+
@@ -26,10 +28,22 @@
   (:nicknames #:ncorp)
   (:use #:common-lisp #:rutil #:nlp.util)
   (:export #:corpus
-           #:token
+           #:make-corpus
+
+           #:corpus-name
+           #:corpus-lang
+           #:corpus-raw-texts
+           #:corpus-clean-texts
+           #:corpus-text-tokens
 
            #:read-corpus
            #:read-corpus-file
+
+           #:token
+           #:token-word
+           #:token-beg
+           #:token-end
+           #:token-tag
 
            #:+brown-corpus+
            ))
@@ -47,7 +61,7 @@
 
            #:index-context-freqs
            #:index-prefix-transition-freqs
-           #:index-token-transition-freqs
+           #:index-word-transition-freqs
            #:normalize-freqs
 
            #:tokenize
@@ -59,6 +73,9 @@
            #:<word-tokenizer>
            #:<word-chnuker>
            #:<sentence-tokenizer>
+
+           #:doublenewline-paragraph-splitter
+           #:<paragraph-splitter>
            ))
 
 ;; (cl:defpackage #:nlp.phonetics
@@ -95,3 +112,51 @@
 ;;            #:classify
 ;;            #:train
 ;;            ))
+
+
+(cl:defpackage #:nlp-user
+  (:use #:common-lisp #:rutil
+        #:nlp.util #:nlp.corpora #:nlp.core #:nlp.generation)
+  (:export #:+newline+
+           #:+newline-chars+
+           #:+white-chars+
+           #:+period-chars+
+           #:white-char-p
+           #:period-char-p
+           #:newline-char-p
+           #:ending-word-p
+           #:filler
+
+           #:corpus-name
+           #:corpus-lang
+           #:corpus-raw-texts
+           #:corpus-clean-texts
+           #:corpus-text-tokens
+           #:token
+           #:token-word
+           #:token-beg
+           #:token-end
+           #:token-tag
+
+           #:index-context-freqs
+           #:index-prefix-transition-freqs
+           #:index-word-transition-freqs
+           #:normalize-freqs
+           #:tokenize
+           #:regex-word-tokenizer
+           #:baseline-sentence-tokenizer
+           #:doublenewline-paragraph-splitter
+           #:<word-tokenizer>
+           #:<word-chnuker>
+           #:<sentence-tokenizer>
+           #:<paragraph-splitter>
+
+           #:generate-text
+           #:text-generator
+           #:markov-chain-generator
+           #:mark-v-shaney-generator
+           #:<mark-v-shaney>
+           #:markov-order
+
+           #:print-word-in-contexts
+           ))

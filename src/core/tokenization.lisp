@@ -53,7 +53,7 @@
   ((regex :accessor tokenizer-regex :initarg :regex
           :initform
           (re:create-scanner
-           "(\\w+|[!\"#$%&'*+,./:;<=>?@^`~…\\(\\)⟨⟩{}\\[\\|\\]‒–—―«»“”‘’¶-]+)")
+           "(\\w+|[!\"#$%&'*+,./:;<=>?@^`~…\\(\\)⟨⟩{}\\[\\|\\]‒–—―«»“”‘’¶-])")
           :documentation
           "A simpler variant would be [^\\s]+
            — it doesn't split punctuation, yet sometimes it's desirable."))
@@ -63,7 +63,7 @@
 (defmethod tokenize ((tokenizer regex-word-tokenizer) string)
   (loop :for (beg end) :on (re:all-matches (tokenizer-regex tokenizer) string)
                        :by #'cddr
-     :collect (subseq string beg end) :into wordss
+     :collect (subseq string beg end) :into words
      :collect (cons beg end) :into spans
      :finally (return (values words
                               spans))))
@@ -92,55 +92,55 @@
     - separate periods that appear at the end of line
    "))
 
-(let ((contractions-regex
-       (re:create-scanner (s+ "("
-                              "([^' ])('[sS]|'[mM]|'[dD]|') "
-                              "|"
-                              "([^' ])('ll|'re|'ve|n't|) "
-                              "|"
-                              "\\b("
-                              "(can)(not)"
-                              "|(d)('ye)"
-                              "|(gim)(me)"
-                              "|(gon)(na)"
-                              "|(got)(ta)"
-                              "|(lem)(me)"
-                              "|(wan)(na)"
-                              "|(mor)('m)"
-                              ")\\b"
-                              "|"
-                              " ('t)(is|was)\\b"
-                              ")"
-                          :case-insensitive-mode t))
-      (contractions3-regex (re:create-scanner
-                                              :case-insensitive-mode t)))
-(defmethod tokenize ((tokenizer treebank-word-tokenizer) string)
-  (re-setf string
-           ;; starting quotes
-           (re:regex-replace-all "^\"" "``")
-           (re:regex-replace-all "(``)" " \\1 ")
-           (re:regex-replace-all "([ (\[{<])\"" "\\1 `` ")
-           (re:regex-replace-all "^\"" "``")
-           (re:regex-replace-all "^\"" "``")
-           ;; punctuation
-           (re:regex-replace-all "([:,])([^\\d])" " \\1 \\2 ")
-           (re:regex-replace-all "\\.\\.\\." " ... ")
-           (re:regex-replace-all "[;@#$%&?!]" " \\0 ")
-           (re:regex-replace-all "([^\\.])(\\.)([\]\)}>\"']*)\\s*$" "\\1 \\2\\3 ")
-           (re:regex-replace-all "--" " \\0 ")
-           (re:regex-replace-all "[\\]\\[\\(\\)\\{\\}\\<\\>]" " \\0 ")
-           (strcat " " " ")
-           ;; quotes
-           (re:regex-replace-all "([^'])(') " "\\1 \\2 ")
-           (re:regex-replace-all "\"" " '' ")
-           (re:regex-replace-all "(\\S)(\\'\\')" "\\1 \\2 ")
+;; (let ((contractions-regex
+;;        (re:create-scanner (s+ "("
+;;                               "([^' ])('[sS]|'[mM]|'[dD]|') "
+;;                               "|"
+;;                               "([^' ])('ll|'re|'ve|n't|) "
+;;                               "|"
+;;                               "\\b("
+;;                               "(can)(not)"
+;;                               "|(d)('ye)"
+;;                               "|(gim)(me)"
+;;                               "|(gon)(na)"
+;;                               "|(got)(ta)"
+;;                               "|(lem)(me)"
+;;                               "|(wan)(na)"
+;;                               "|(mor)('m)"
+;;                               ")\\b"
+;;                               "|"
+;;                               " ('t)(is|was)\\b"
+;;                               ")"
+;;                           :case-insensitive-mode t))
+;;       (contractions3-regex (re:create-scanner
+;;                                               :case-insensitive-mode t)))
+;; (defmethod tokenize ((tokenizer treebank-word-tokenizer) string)
+;;   (re-setf string
+;;            ;; starting quotes
+;;            (re:regex-replace-all "^\"" "``")
+;;            (re:regex-replace-all "(``)" " \\1 ")
+;;            (re:regex-replace-all "([ (\[{<])\"" "\\1 `` ")
+;;            (re:regex-replace-all "^\"" "``")
+;;            (re:regex-replace-all "^\"" "``")
+;;            ;; punctuation
+;;            (re:regex-replace-all "([:,])([^\\d])" " \\1 \\2 ")
+;;            (re:regex-replace-all "\\.\\.\\." " ... ")
+;;            (re:regex-replace-all "[;@#$%&?!]" " \\0 ")
+;;            (re:regex-replace-all "([^\\.])(\\.)([\]\)}>\"']*)\\s*$" "\\1 \\2\\3 ")
+;;            (re:regex-replace-all "--" " \\0 ")
+;;            (re:regex-replace-all "[\\]\\[\\(\\)\\{\\}\\<\\>]" " \\0 ")
+;;            (strcat " " " ")
+;;            ;; quotes
+;;            (re:regex-replace-all "([^'])(') " "\\1 \\2 ")
+;;            (re:regex-replace-all "\"" " '' ")
+;;            (re:regex-replace-all "(\\S)(\\'\\')" "\\1 \\2 ")
 
-           (re:regex-replace-all contractions-regex "\\1 \\2 ")
-           (re:regex-replace-all " +" " ")
-           (string-trim " "))
-  (unless (blankp string)
-    (setf text (strcat string " ")))
-  (tokenize <word-chunker> string))
+;;            (re:regex-replace-all contractions-regex "\\1 \\2 ")
+;;            (re:regex-replace-all " +" " ")
+;;            (string-trim " "))
+;;   (unless (blankp string)
+;;     (setf text (strcat string " ")))
+;;   (tokenize <word-chunker> string))
 
 ;;; Sentence splitting
 
@@ -175,8 +175,29 @@
       (values (reverse sentences)
               (reverse spans)))))
 
-(define-lazy-singleton sentence-splitter (make 'baseline-sentence-tokenizer)
+(define-lazy-singleton sentence-tokenizer (make 'baseline-sentence-tokenizer)
   "Basic sentence splitter.")
+
+
+;;; Paragraph splitting
+
+(defclass doublenewline-paragraph-splitter ()
+  ()
+  (:documentation
+   "Paragraph tokenizer that splits text on double newlines
+    and removes single newlines."))
+
+(defmethod tokenize ((tokenizer doublenewline-paragraph-splitter) string)
+  (let ((newline-regex (re:create-scanner
+                        (fmt "(~C|[~C~C]{1,2})" #\Newline #\Return #\Linefeed))))
+    (mapcar #`(fmt "~{~A ~}" %)
+            (split-sequence-if #'blankp
+                               (re:split newline-regex string)
+                               :remove-empty-subseqs t))))
+
+(define-lazy-singleton paragraph-splitter
+    (make 'doublenewline-paragraph-splitter)
+  "Basic paragraph splitter.")
 
 
 ;;; Helpers
