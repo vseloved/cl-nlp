@@ -3,25 +3,30 @@
 (cl:defpackage #:nlp.util
   (:nicknames #:nutil)
   (:use #:common-lisp #:rutil)
-  (:export #:+newline+
+  (:export #:cl-nlp-error
+           #:not-implemented-error
+
+           #:+newline+
            #:+newline-chars+
            #:newline-char-p
            #:+white-chars+
            #:white-char-p
            #:+period-chars+
            #:period-char-p
+
+           #:*stopwords-en*
            #:ending-word-p
 
            #:filler
 
            #:+project-root+
            #:data-file
-
            #:list-from-file
-           ;; #:alist-from-file
-           ;; #:table-from-file
+
+           #:bin-search
 
            #:define-lazy-singleton
+           #:sorted-ht-keys
            ))
 
 (cl:defpackage #:nlp.corpora
@@ -57,9 +62,39 @@
 (cl:defpackage #:nlp.core
   (:nicknames #:ncore)
   (:use #:common-lisp #:rutil #:nlp.util)
-  (:export ;; #:ngram-freq
-           ;; #:ngram-prob
+  (:export #:ngrams
+           #:ngrams-eq
+           #:ngrams-order
+           #:ngrams-count
+           #:ngrams-total-freq
+           #:ngrams-max-freq
+           #:ngrams-min-freq
+           #:ngrams-pairs
+           #:vocab
+           #:freq
+           #:prob
+           #:logprob
+           #:cond-prob
+           #:cond-logprob
+           #:freqs
+           #:probs
+           #:logprobs
+           #:cond-probs
+           #:cond-logprobs
+           #:top-ngram
+           #:hapaxes
+           #:table-ngrams
+           #:ngrams-table
 
+           #:language-model
+           #:lm-order
+           #:lm-ngrams
+           #:make-lm
+           #:perplexity
+           #:stupid-backoff-lm
+           #:lm-backoff
+
+           #:index-ngrams
            #:index-context-freqs
            #:index-prefix-transition-freqs
            #:index-word-transition-freqs
@@ -67,7 +102,6 @@
 
            #:tokenize
            ;; #:stream-tokenize
-
            #:tokenizer
            #:regex-word-tokenizer
            #:baseline-sentence-tokenizer
@@ -77,6 +111,8 @@
 
            #:doublenewline-paragraph-splitter
            #:<paragraph-splitter>
+
+           #:find-collocations
            ))
 
 ;; (cl:defpackage #:nlp.phonetics
@@ -95,7 +131,7 @@
 
 (cl:defpackage #:nlp.generation
   (:nicknames #:ngen)
-  (:use #:common-lisp #:rutil #:nlp.util)
+  (:use #:common-lisp #:rutil #:nlp.util #:nlp.core)
   (:export #:generate-text
 
            #:text-generator
@@ -116,48 +152,11 @@
 
 
 (cl:defpackage #:nlp-user
+  (:nicknames #:nlp)
   (:use #:common-lisp #:rutil
-        #:nlp.util #:nlp.corpora #:nlp.core #:nlp.generation)
-  (:export #:+newline+
-           #:+newline-chars+
-           #:+white-chars+
-           #:+period-chars+
-           #:white-char-p
-           #:period-char-p
-           #:newline-char-p
-           #:ending-word-p
-           #:filler
+        #:nlp.util #:nlp.corpora #:nlp.core #:nlp.generation))
 
-           #:corpus-name
-           #:corpus-lang
-           #:corpus-raw-texts
-           #:corpus-clean-texts
-           #:corpus-text-tokens
-           #:token
-           #:token-word
-           #:token-beg
-           #:token-end
-           #:token-tag
-
-           #:index-context-freqs
-           #:index-prefix-transition-freqs
-           #:index-word-transition-freqs
-           #:normalize-freqs
-           #:tokenize
-           #:regex-word-tokenizer
-           #:baseline-sentence-tokenizer
-           #:doublenewline-paragraph-splitter
-           #:<word-tokenizer>
-           #:<word-chnuker>
-           #:<sentence-tokenizer>
-           #:<paragraph-splitter>
-
-           #:generate-text
-           #:text-generator
-           #:markov-chain-generator
-           #:mark-v-shaney-generator
-           #:<mark-v-shaney>
-           #:markov-order
-
-           #:print-word-in-contexts
-           ))
+(re-export-symbols '#:nutil '#:nlp-user)
+(re-export-symbols '#:ncore '#:nlp-user)
+(re-export-symbols '#:ncorp '#:nlp-user)
+(re-export-symbols '#:ngen  '#:nlp-user)

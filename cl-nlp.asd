@@ -3,8 +3,8 @@
 (in-package #:asdf)
 
 (defsystem #:cl-nlp
-  :version "0.0.2"
-  :description "NLP toolkit for Common Lisp"
+  :version "0.0.3"
+  :description "NLP toolkit for Common Lisp."
   :author "Vsevolod Dyomkin <vseloved@gmail.com>"
   :maintainer "Vsevolod Dyomkin <vseloved@gmail.com>"
   :license "Apache 2.0"
@@ -26,12 +26,30 @@
              (:module #:core
                       :serial t
                       :components
-                      ((:file "tokenization")
-                       (:file "freq")
-                       #+nil (:file "distance")
-                       #+nil (:file "ngram")))
+                      ((:file "measures")
+                       (:file "tokenization")
+                       (:file "ngrams")
+                       (:file "language-models")
+                       (:file "indexing")))
              (:module #:generation
                       :serial t
                       :components
                       ((:file "markov-chain")))
              (:file "user")))))
+
+(defsystem #:cl-nlp.contib
+  :version "0.0.1"
+  :description "CL-NLP additional packages."
+  :author "Vsevolod Dyomkin <vseloved@gmail.com>"
+  :maintainer "Vsevolod Dyomkin <vseloved@gmail.com>"
+  :license "Apache 2.0"
+  :depends-on (#:cl-nlp #:drakma)
+  :serial t
+  :components
+  ((:module #:src
+            :components
+            ((:module #:contrib
+                      :serial t
+                      :components
+                      ((:file "packages")
+                       (:file "ms-ngrams")))))))

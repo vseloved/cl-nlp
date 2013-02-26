@@ -136,10 +136,6 @@
       (set# elt uniqs t))
     (if raw uniqs (ht-keys uniqs))))
 
-(defun sorted-ht-keys (test ht)
-  "Return hash-table keys of HT in sorted order accroding to TEST."
-  (sort (ht-keys ht) test :key #`(get# % ht)))
-
 (defun match-ctxs (word1-ctx word2-ctx)
   "Find the intersection between WORD1-CTX and WORD2-CTX tables
    and for each common context calculate the commonality weight."

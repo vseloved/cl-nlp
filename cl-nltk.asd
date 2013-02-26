@@ -3,7 +3,7 @@
 (in-package #:asdf)
 
 (defsystem #:cl-nltk
-  :version "0.0.1"
+  :version "0.0.2"
   :description "Implementation of the examples from the NLTK book."
   :author "Vsevolod Dyomkin <vseloved@gmail.com>"
   :maintainer "Vsevolod Dyomkin <vseloved@gmail.com>"
@@ -15,4 +15,5 @@
             :serial t
             :components
             ((:file "package")
-             (:file "ch1-1")))))
+             (:file "ch1-1")
+             (:file "ch1-2")))))
