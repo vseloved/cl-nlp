@@ -156,7 +156,7 @@
   (:use #:common-lisp #:rutil
         #:nlp.util #:nlp.corpora #:nlp.core #:nlp.generation))
 
-(re-export-symbols '#:nutil '#:nlp-user)
-(re-export-symbols '#:ncore '#:nlp-user)
-(re-export-symbols '#:ncorp '#:nlp-user)
-(re-export-symbols '#:ngen  '#:nlp-user)
+(rutils:re-export-symbols '#:nutil '#:nlp-user)
+(rutils:re-export-symbols '#:ncore '#:nlp-user)
+(rutils:re-export-symbols '#:ncorp '#:nlp-user)
+(rutils:re-export-symbols '#:ngen  '#:nlp-user)
