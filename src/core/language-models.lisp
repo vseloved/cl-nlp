@@ -119,12 +119,13 @@
   (log (cond-prob model ngram) 2))
 
 
-;;; Stupid Backoff LM
-
 (defclass plain-lm (language-model)
   ()
   (:documentation
    "Plain language model."))
+
+
+;;; Stupid Backoff LM
 
 (defclass stupid-backoff-lm (language-model)
   ((backoff :initarg backoff :initform 0.4 :reader lm-backoff))
