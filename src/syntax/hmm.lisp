@@ -20,8 +20,8 @@
                   &key (transition-lm-class 'plain-lm)
                        (emission-lm-class 'plain-lm)
                   &allow-other-keys)
-  "Train hmm MODEL (using language model of type LM-CLASS)
-   on a set of tagged sentences DATA."
+  "Train hmm MODEL (using language models of types TRANSITION-LM-CLASS
+   and EMISSION-LM-CLASS) on a set of tagged sentences DATA."
   (declare (ignore args))
   (with-slots (order transition-lm emission-lm) model
     (let ((tfs (make-hash-table :test 'equal))
