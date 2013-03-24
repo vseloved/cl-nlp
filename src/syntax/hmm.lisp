@@ -12,7 +12,7 @@
    (emission-lm :initarg :emission-lm :reader hmm-emission-lm
     :documentation "An ngrams model of tag-to-word conditional probabilities."))
   (:documentation
-   "A Hidden Markov Model has an ORDER, a set of TAGS and 2 ngrams models:
+   "A Hidden Markov Model has an ORDER, a set of TAGS and 2 language models:
     - TRANSITION-LM of transition probabilities between TAGS of the model's ORDER
     - EMISSION-LM of emission probabilities of words from tags"))
 
