@@ -3,7 +3,7 @@
 (in-package #:asdf)
 
 (defsystem #:cl-nlp
-  :version "0.0.3"
+  :version "0.0.4"
   :description "NLP toolkit for Common Lisp."
   :author "Vsevolod Dyomkin <vseloved@gmail.com>"
   :maintainer "Vsevolod Dyomkin <vseloved@gmail.com>"
@@ -30,11 +30,17 @@
                        (:file "tokenization")
                        (:file "ngrams")
                        (:file "language-models")
-                       (:file "indexing")))
+                       (:file "indexing")
+                       (:file "learning")))
              (:module #:generation
                       :serial t
                       :components
                       ((:file "markov-chain")))
+             (:module #:syntax
+                      :serial t
+                      :components
+                      ((:file "pos-tag")
+                       (:file "hmm")))
              (:file "user")))))
 
 (defsystem #:cl-nlp.contib

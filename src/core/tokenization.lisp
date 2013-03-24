@@ -4,6 +4,14 @@
 (named-readtables:in-readtable rutils-readtable)
 
 
+(defstruct token
+  "A corpus token with postition and possibly tag."
+  beg
+  end
+  word
+  tag)
+
+
 (defgeneric tokenize (tokenizer string)
   (:documentation
    "Tokenize STRING with TOKENIZER. Outputs 2 values:
@@ -53,7 +61,7 @@
   ((regex :accessor tokenizer-regex :initarg :regex
           :initform
           (re:create-scanner
-           "(\\w+|[!\"#$%&'*+,./:;<=>?@^`~…\\(\\)⟨⟩{}\\[\\|\\]‒–—―«»“”‘’¶-])")
+           "\\w+|[!\"#$%&'*+,./:;<=>?@^`~…\\(\\)⟨⟩{}\\[\\|\\]‒–—―«»“”‘’¶-]")
           :documentation
           "A simpler variant would be [^\\s]+
            — it doesn't split punctuation, yet sometimes it's desirable."))
@@ -68,29 +76,109 @@
      :finally (return (values words
                               spans))))
 
-(define-lazy-singleton word-tokenizer (make 'regex-word-tokenizer)
-  "Basic word tokenizer.")
-
 (define-lazy-singleton word-chunker
     (make 'regex-word-tokenizer :regex (re:create-scanner "[^\\s]+"))
   "Dumb word tokenizer, that will not split punctuation from words.")
 
+(define-lazy-singleton basic-word-tokenizer (make 'regex-word-tokenizer)
+  "Basic word tokenizer.")
 
-(defclass treebank-word-tokenizer (tokenizer)
-  ()
+
+(defclass postprocessing-regex-word-tokenizer (regex-word-tokenizer)
+  ((regex :accessor tokenizer-regex :initarg :regex
+          :initform
+          (re:create-scanner
+           (strcat ;; urls
+                   "\\w+://\\w+"
+                   ;; decimals
+                   "|[+-]?[0-9](?:[0-9,.]*[0-9])?"
+                   ;; regular words
+                   "|[\\w@](?:[\\w'‘’`@-][\\w']|[\\w'][\\w@'‘’`-])*[\\w']?"
+                   ;; punctuation & special symbols
+                   "|[\"#$%&*+,/:;<=>@^`~…\\(\\)⟨⟩{}\\[\\|\\]‒–—―«»“”‘’'¶]"
+                   ;; closing punctuation
+                   "|[.!?]+"
+                   ;; multiple dashes
+                   "|-+"))))
   (:documentation
-   "The Treebank tokenizer uses regular expressions to tokenize text
-    as in Penn Treebank. It's a port of Robert MacIntyre's tokenizer
-    (see: <http://www.cis.upenn.edu/~treebank/tokenizer.sed>).
-    It assumes that the text has already been split into sentences.
+   "Regex-based word tokenizer."))
 
-    This tokenizer performs the following steps:
+(defparameter *2char-contractions-regex*
+  (re:create-scanner
+   "i['‘’`]m|(?:s?he|it)['‘’`]s|(?:i|you|s?he|we|they)['‘’`]d$"
+   :case-insensitive-mode t)
+  "Regex to find 2 character contractions: I'm, he/she/it's, 'd")
 
-    - split standard contractions: don't -> do n't, they'll -> they 'll
-    - treat most punctuation characters as separate tokens
-    - split off commas and single quotes, when followed by whitespace
-    - separate periods that appear at the end of line
-   "))
+(defparameter *3char-contractions-regex*
+  (re:create-scanner
+   "(?:i|you|s?he|we|they)['‘’`](?:ll|[vr]e)|n['‘’`]t$"
+   :case-insensitive-mode t)
+  "Regex to find 3 character contractions: 'll, 're, 've, n't")
+
+(defmethod tokenize :around ((tokenizer postprocessing-regex-word-tokenizer)
+                             string)
+  (mv-bind (words spans) (call-next-method)
+    (let (ws ss)
+      (loop :for wtail :on words :for stail :on spans :do
+         (let ((cur (car wtail))
+               (prev (car ws))
+               (next (cadr wtail)))
+           (macrolet ((push-contractions (char-length)
+                        `(progn (push (substr cur 0 (- ,char-length)) ws)
+                                (push (substr cur (- ,char-length)) ws)
+                                (push (cons (caar stail)
+                                            (- (cdar stail) ,char-length))
+                                      ss)
+                                (push (cons (- (cdar stail) ,char-length)
+                                            (cdar stail))
+                                      ss))))
+             (cond
+               ;; glue together abbreviations and decimals
+               ((and prev
+                     (= (cdar ss) (caar stail))
+                     (or (and (string= "." cur)
+                              next
+                              (not (open-quote-char-p (char next 0)))
+                              (alphanumericp (char prev (1- (length prev)))))
+                         (and (ends-with "." prev)
+                              (alphanumericp (char cur 0)))))
+                (setf (car ws) (strcat prev cur)
+                      (car ss) (cons (caar ss) (cdar stail))))
+               ;; splitting contractions: I'm, he/she/it's, 'd
+               ((re:scan *2char-contractions-regex* cur)
+                (push-contractions 2))
+               ;; splitting contractions: 'll, 've, 're, n't
+               ((re:scan *3char-contractions-regex* cur)
+                (push-contractions 3))
+               ;; pass other tokens as is
+               (t (push cur ws)
+                  (push (car stail) ss))))))
+      ;; ;; add dummy period at the end if the real period was fused in abbr
+      ;; (when (re:scan "[^!?.]\\." (car ws))
+      ;;   (push "." ws)
+      ;;   (push (cons (1- (cdar ss)) (cdar ss)) ss))
+      (values (reverse ws)
+              (reverse ss)))))
+
+(define-lazy-singleton word-tokenizer (make 'postprocessing-regex-word-tokenizer)
+  "Default word tokenizer.")
+
+
+;; (defclass treebank-word-tokenizer (tokenizer)
+;;   ()
+;;   (:documentation
+;;    "The Treebank tokenizer uses regular expressions to tokenize text
+;;     as in Penn Treebank. It's a port of Robert MacIntyre's tokenizer
+;;     (see: <http://www.cis.upenn.edu/~treebank/tokenizer.sed>).
+;;     It assumes that the text has already been split into sentences.
+
+;;     This tokenizer performs the following steps:
+
+;;     - split standard contractions: don't -> do n't, they'll -> they 'll
+;;     - treat most punctuation characters as separate tokens
+;;     - split off commas and single quotes, when followed by whitespace
+;;     - separate periods that appear at the end of line
+;;    "))
 
 ;; (let ((contractions-regex
 ;;        (re:create-scanner (s+ "("
@@ -188,8 +276,8 @@
     and removes single newlines."))
 
 (defmethod tokenize ((tokenizer doublenewline-paragraph-splitter) string)
-  (let ((newline-regex (re:create-scanner
-                        (fmt "(~C|[~C~C]{1,2})" #\Newline #\Return #\Linefeed))))
+  (let ((newline-regex (re:create-scanner (fmt "(?:~C|[~C~C]{1,2})"
+                                               #\Newline #\Return #\Linefeed))))
     (mapcar #`(fmt "~{~A ~}" %)
             (split-sequence-if #'blankp
                                (re:split newline-regex string)

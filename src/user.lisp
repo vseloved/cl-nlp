@@ -4,7 +4,7 @@
 (named-readtables:in-readtable rutils-readtable)
 
 
-(defun print-word-in-contexts (word string &key (width 25) pass-newlines limit)
+(defun grep (word string &key (width 25) pass-newlines limit)
   "Print all (or LIMIT) WORD occurances in STRING with the surrounding
    context up to WIDTH chars. If PASS-NEWLINES isn't set, the context
    will be shown up to the closest newline."

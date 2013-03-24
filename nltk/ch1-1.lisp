@@ -23,7 +23,7 @@
 (defmethod slot-unbound (class (obj text) (slot (eql 'words)))
   (with-slots (raw words) obj
     (format t "~&Tokenizing text...~%")
-    (prog1 (setf words (mapcan #`(cons "¶" (tokenize <word-tokenizer> %))
+    (prog1 (setf words (mapcan #`(cons "¶" (tokenize <basic-word-tokenizer> %))
                                (tokenize <paragraph-splitter> raw)))
       (format t "Number of words: ~A~%" (length words)))))
 
@@ -67,8 +67,7 @@
   "Print contexts (up to WIDTH chars) of WORD usage in TEXT.
    If PASS-NEWLINES isn't set, the context will be shown
    up to the closest newline."
-  (print-word-in-contexts word (text-raw text)
-                          :width 30 :pass-newlines pass-newlines))
+  (grep word (text-raw text) :width 30 :pass-newlines pass-newlines))
 
 (defun similar (text word &key (n 20))
   "Find N most similar words to WORD in TEXT."

@@ -18,7 +18,7 @@
   (with-slots (words ugrams) obj
     (format t "~&Indexing unigrams...~%")
     (prog1 (setf ugrams (index-ngrams 1 words))
-      (format t "Number of ugrams: ~A~%" (ngrams-count ugrams)))))
+      (format t "Number of unigrams: ~A~%" (ngrams-count ugrams)))))
 
 (defmethod slot-unbound (class (obj text) (slot (eql 'bigrams)))
   (with-slots (words bigrams) obj

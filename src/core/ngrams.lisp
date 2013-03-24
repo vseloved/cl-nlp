@@ -7,7 +7,7 @@
 ;;; Abstract Ngrams
 
 (defclass ngrams ()
-  ((order :initarg :order :reader ngrams-order)
+  ((order :initarg :order :initform 1 :reader ngrams-order)
    (count :reader ngrams-count)
    (max-freq :reader ngrams-max-freq)
    (min-freq :reader ngrams-min-freq)
@@ -64,7 +64,7 @@
     (let ((prob (prob ngrams ngram)))
       (if (zerop prob)
           nil
-          (* (log prob) #.(/ 1 (log 2))))))
+          (log prob 2))))
   (:method :around ((ngrams ngrams) (ngram string))
     (if (> (ngrams-order ngrams) 1)
         (logprob ngrams (tokenize-ngram ngrams ngram))

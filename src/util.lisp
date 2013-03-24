@@ -46,6 +46,31 @@
   "Test if CHAR is in +PERIOD-CHARS+."
   (member char +newline-chars+))
 
+(defparameter +quote-chars+
+  '(#\" #\‘ #\’ #\« #\» #\“ #\” #\')
+  "Chars considered legitimate quotation marks.")
+
+(defun quote-char-p (char)
+  "Test if CHAR is in +QUOTE-CHARS+."
+  (member char +quote-chars+))
+
+(defparameter +open-quote-chars+
+  '(#\" #\‘ #\« #\“ #\')
+  "Chars considered legitimate closing quotation marks.")
+
+(defun open-quote-char-p (char)
+  "Test if CHAR is in +OPEN-QUOTE-CHARS+."
+  (member char +open-quote-chars+))
+
+(defparameter +close-quote-chars+
+  '(#\" #\’ #\» #\” #\')
+  "Chars considered legitimate closing quotation marks.")
+
+(defun close-quote-char-p (char)
+  "Test if CHAR is in +CLOSE-QUOTE-CHARS+."
+  (member char +close-quote-chars+))
+
+
 (declaim (inline filler))
 (defun filler (n &optional (fill-char #\Space))
   "Produce an N-element filler string of FILL-CHAR's."

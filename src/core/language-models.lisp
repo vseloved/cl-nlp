@@ -5,10 +5,21 @@
 
 
 (defclass language-model ()
-  ((order :initarg :order :reader lm-order)
-   (ngrams :initarg :ngrams :reader lm-ngrams))
+  ((order :initarg :order :reader model-order)
+   (ngrams :initarg :ngrams :reader model-ngrams))
   (:documentation
    "Language model is a collection of NGRAMS of all orders from 1 upto ORDER."))
+
+(defmethod print-object ((lm language-model) stream)
+  (print-unreadable-object (lm stream :type t :identity t)
+    (if (slot-boundp lm 'order)
+        (with-accessors ((order model-order) (ngrams model-ngrams)) lm
+          (with-accessors ((count ngrams-count) (total-freq ngrams-total-freq))
+              (elt ngrams order)
+            (format stream "order:~A count:~A outcomes:~A"
+                    order count total-freq)))
+        (format stream "not initialized"))))
+
 
 (defmethod vocab ((model language-model) &key order-by)
   (vocab (get-ngrams 1 model) :order-by order-by))
@@ -61,14 +72,6 @@
   (expt 2 (- (/ (reduce #'+ (mapcar #`(logprob ngrams %) test-sentences))
                 (reduce #'+ (mapcar #'length test-sentences))))))
 
-
-;;; Stupid Backoff LM
-
-(defclass stupid-backoff-lm (language-model)
-  ((backoff :initarg backoff :initform 0.4 :reader lm-backoff))
-  (:documentation
-   "Stupid Backoff language model."))
-
 (defmethod prob ((lm language-model) (sentence string))
   (prob lm (tokenize <word-tokenizer> sentence)))
 
@@ -99,6 +102,35 @@
                         (incf rez (cond-logprob model ngram)))))
                   rez)))))))
 
+(defmethod cond-prob ((model language-model) (ngram list))
+  (with-accessors ((order model-order) (ngrams model-ngrams)) model
+    (if (shorter? ngram 2)
+        (let ((ugrams (get-ngrams 1 model)))
+          (/ (freq ugrams ngram)
+             (ngrams-total-freq ugrams)))
+        (let ((denominator-freq (freq (get-ngrams (1- order) model)
+                                      (butlast ngram))))
+          (if (zerop denominator-freq)
+              0
+              (/ (freq (get-ngrams order model) ngram)
+                 denominator-freq))))))
+
+(defmethod cond-logprob ((model language-model) ngram)
+  (log (cond-prob model ngram) 2))
+
+
+;;; Stupid Backoff LM
+
+(defclass plain-lm (language-model)
+  ()
+  (:documentation
+   "Plain language model."))
+
+(defclass stupid-backoff-lm (language-model)
+  ((backoff :initarg backoff :initform 0.4 :reader lm-backoff))
+  (:documentation
+   "Stupid Backoff language model."))
+
 (defmethod cond-prob ((model stupid-backoff-lm) ngram)
   (with-accessors ((ngrams lm-ngrams) (backoff lm-backoff)) model
     (let ((coef 1)
@@ -119,14 +151,11 @@
       (* coef (/ (ngrams-min-freq (elt ngrams 1))
                  (ngrams-total-freq (elt ngrams 1)))))))
 
-(defmethod cond-logprob ((model stupid-backoff-lm) ngram)
-  (log2 (cond-prob model ngram)))
-
 
 ;;; Helper functions
 
 (declaim (inline get-ngrams))
 (defun get-ngrams (order model)
   "Get ngrams of a given ORDER from MODEL."
-  (assert (<= order (lm-order model)))
-  (elt (lm-ngrams model) order))
+  (assert (<= order (model-order model)))
+  (elt (model-ngrams model) order))

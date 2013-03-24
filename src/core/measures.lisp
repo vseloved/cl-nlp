@@ -4,11 +4,6 @@
 (named-readtables:in-readtable rutils-readtable)
 
 
-(declaim (inline log2))
-(defun log2 (x)
-  "Base 2 logarithm."
-  (/ (log x) (log 2)))
-
 (defun entropy (samples &optional total)
   "Compute Shannon's entropy of SAMPLES list.
    To save on calculation a pre-calculated TOTAL can be provided."
@@ -17,7 +12,7 @@
   (reduce #'+ (mapcar #`(if (zerop %)
                             0
                             (let ((r (/ % total)))
-                              (* r (log2 r))))
+                              (* r (log r 2))))
                       samples)))
 
 (defun log-likelihood-ratio (ab a~b ~ab ~a~b)

@@ -13,6 +13,12 @@
            #:white-char-p
            #:+period-chars+
            #:period-char-p
+           #:+quote-chars+
+           #:quote-char-p
+           #:+open-quote-chars+
+           #:open-quote-char-p
+           #:+close-quote-chars+
+           #:close-quote-char-p
 
            #:*stopwords-en*
            #:ending-word-p
@@ -27,6 +33,8 @@
 
            #:define-lazy-singleton
            #:sorted-ht-keys
+
+           #:shorter?
            ))
 
 (cl:defpackage #:nlp.corpora
@@ -43,12 +51,6 @@
 
            #:read-corpus
            #:read-corpus-file
-
-           #:token
-           #:token-word
-           #:token-beg
-           #:token-end
-           #:token-tag
 
            #:+brown-corpus+
            #:+nps-chat-corpus+
@@ -87,10 +89,11 @@
            #:ngrams-table
 
            #:language-model
-           #:lm-order
-           #:lm-ngrams
+           #:model-order
+           #:model-ngrams
            #:make-lm
            #:perplexity
+           #:plain-lm
            #:stupid-backoff-lm
            #:lm-backoff
 
@@ -104,10 +107,19 @@
            ;; #:stream-tokenize
            #:tokenizer
            #:regex-word-tokenizer
+           #:postprocessing-regex-word-tokenizer
            #:baseline-sentence-tokenizer
-           #:<word-tokenizer>
            #:<word-chnuker>
+           #:<basic-word-tokenizer>
+           #:<word-tokenizer>
            #:<sentence-tokenizer>
+
+           #:token
+           #:token-word
+           #:token-beg
+           #:token-end
+           #:token-tag
+           #:make-token
 
            #:doublenewline-paragraph-splitter
            #:<paragraph-splitter>
@@ -121,13 +133,26 @@
 ;;   (:export #:phonetic-transform
 ;;            ))
 
-;; (cl:defpackage #:nlp.syntax
-;;   (:nicknames #:nsyn)
-;;   (:use #:common-lisp #:rutil)
-;;   (:export #:pos-tag
-;;            #:parse
-;;            #:parse-deps
-;;            ))
+(cl:defpackage #:nlp.syntax
+  (:nicknames #:nsyn)
+  (:use #:common-lisp #:rutil #:nutil #:ncore)
+  (:export #:pos-tag
+           #:model-tags
+           #:+stop-tag+
+           ;; #:parse
+           ;; #:parse-deps
+           ))
+
+(cl:defpackage #:nlp.syntax.hmm
+  (:nicknames #:nsyn.hmm)
+  (:use #:common-lisp #:rutil #:nutil #:ncore #:nsyn)
+  (:export #:hmm
+           #:make-hmm
+           #:hmm-transition-lm
+           #:hmm-emission-lm
+
+           #:viterbi-hmm
+           ))
 
 (cl:defpackage #:nlp.generation
   (:nicknames #:ngen)
@@ -154,9 +179,12 @@
 (cl:defpackage #:nlp-user
   (:nicknames #:nlp)
   (:use #:common-lisp #:rutil
-        #:nlp.util #:nlp.corpora #:nlp.core #:nlp.generation))
+        #:nlp.util #:nlp.corpora #:nlp.core #:nlp.generation)
+  (:export #:grep))
 
-(re-export-symbols '#:nutil '#:nlp-user)
-(re-export-symbols '#:ncore '#:nlp-user)
-(re-export-symbols '#:ncorp '#:nlp-user)
-(re-export-symbols '#:ngen  '#:nlp-user)
+(re-export-symbols '#:nutil    '#:nlp-user)
+(re-export-symbols '#:ncore    '#:nlp-user)
+(re-export-symbols '#:ncorp    '#:nlp-user)
+(re-export-symbols '#:ngen     '#:nlp-user)
+(re-export-symbols '#:nsyn     '#:nlp-user)
+(re-export-symbols '#:nsyn.hmm '#:nlp-user)
