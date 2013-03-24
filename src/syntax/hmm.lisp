@@ -21,7 +21,7 @@
                        (emission-lm-class 'plain-lm)
                   &allow-other-keys)
   "Train hmm MODEL (using language models of types TRANSITION-LM-CLASS
-   and EMISSION-LM-CLASS) on a set of tagged sentences DATA."
+   and EMISSION-LM-CLASS) on a list of tagged sentences DATA."
   (declare (ignore args))
   (with-slots (order transition-lm emission-lm) model
     (let ((tfs (make-hash-table :test 'equal))
@@ -37,7 +37,7 @@
                ;; possibly add stop tag
                (when (= len i)
                  (setf ngram (append ngram (list +stop-tag+))))
-               ;; record ngram freq
+               ;; record transition freq
                (unless (< len i)
                  (incf (get# ngram tfs 0)))))
            ;; record emission freq
@@ -48,14 +48,13 @@
           (setf (elt ngrams (1+ i)) (make-hash-table :test 'equal)))
         (dotable (ngram count tfs)
           (set# ngram (elt ngrams (length ngram)) count))
-        ;; add emission language model
-        (setf emission-lm (make-lm emission-lm-class
-                                   :1g (make 'table-ngrams :order 1
-                                             :table (elt ngrams 1))
-                                   :2g (make 'table-ngrams :order 2
-                                             :table efs)))
-        ;; add transition language model
-        (setf transition-lm
+        (setf emission-lm
+              (make-lm emission-lm-class
+                       :1g (make 'table-ngrams :order 1
+                                 :table (elt ngrams 1))
+                       :2g (make 'table-ngrams :order 2
+                                 :table efs))
+              transition-lm
               (apply #'make-lm transition-lm-class
                      (loop :for i :from 1 :to order
                         :nconc (list (mkeyw i :format "~Ag")
@@ -67,7 +66,7 @@
                                 (hmm-class 'viterbi-hmm)
                                 (transition-lm-class 'plain-lm)
                                 (emission-lm-class 'plain-lm))
-  "A simple wrapper to make HMMs."
+  "A simple wrapper to make hmms."
   (train (make hmm-class :order order :tags tags)
          data
          :transition-lm-class transition-lm-class
@@ -77,10 +76,10 @@
 (defclass viterbi-hmm (hmm)
   ()
   (:documentation
-   "HMM that uses the viterbi algorithm for inference."))
+   "Hmm that uses the viterbi algorithm for inference."))
 
 (defmethod pos-tag ((model viterbi-hmm) (sentence list))
-  "POS tag tokenized SENTENCE using a Viterbi algorithm for HMMs."
+  "POS tag tokenized SENTENCE using a Viterbi algorithm for hmms."
   (with-slots (order tags (tps transition-lm) (eps emission-lm)) model
     (let* ((len (length sentence))
            (all-tags (cons nil (cons +stop-tag+ tags)))
@@ -96,7 +95,7 @@
                  (let ((ngrams0 (list (list tag)))
                        (ngrams1 ())
                        (steps-left step)
-                       (rez #{equal}))
+                       (rez (make-hash-table :test 'equal)))
                    (loop :repeat (1- order) :do
                      (if (plusp steps-left)
                          (dolist (cur tags)
