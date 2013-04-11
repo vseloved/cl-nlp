@@ -35,6 +35,10 @@
            #:sorted-ht-keys
 
            #:shorter?
+
+           #:download-file
+           #:download
+           #:write-bin-file
            ))
 
 (cl:defpackage #:nlp.corpora
@@ -42,12 +46,15 @@
   (:use #:common-lisp #:rutil #:nlp.util)
   (:export #:corpus
            #:make-corpus
-
            #:corpus-name
-           #:corpus-lang
-           #:corpus-raw-texts
-           #:corpus-clean-texts
-           #:corpus-text-tokens
+           #:corpus-texts
+           #:corpus-groups
+
+           #:text
+           #:make-text
+           #:text-raw
+           #:text-clean
+           #:text-tokens
 
            #:read-corpus
            #:read-corpus-file
@@ -167,15 +174,6 @@
            #:markov-order
            ))
 
-;; (cl:defpackage #:nlp.learning
-;;   (:nicknames #:nlearn)
-;;   (:use #:common-lisp #:rutil)
-;;   (:export #:cluster
-;;            #:classify
-;;            #:train
-;;            ))
-
-
 (cl:defpackage #:nlp-user
   (:nicknames #:nlp)
   (:use #:common-lisp #:rutil
@@ -184,7 +182,6 @@
 
 (rutils:re-export-symbols '#:nutil    '#:nlp-user)
 (rutils:re-export-symbols '#:ncore    '#:nlp-user)
-(rutils:re-export-symbols '#:ncorp    '#:nlp-user)
 (rutils:re-export-symbols '#:ngen     '#:nlp-user)
 (rutils:re-export-symbols '#:nsyn     '#:nlp-user)
 (rutils:re-export-symbols '#:nsyn.hmm '#:nlp-user)

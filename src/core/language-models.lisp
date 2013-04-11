@@ -133,7 +133,7 @@
    "Stupid Backoff language model."))
 
 (defmethod cond-prob ((model stupid-backoff-lm) ngram)
-  (with-accessors ((ngrams lm-ngrams) (backoff lm-backoff)) model
+  (with-accessors ((ngrams model-ngrams) (backoff lm-backoff)) model
     (let ((coef 1)
           (len (length ngram)))
       (loop :for i :from len :downto 1 :do

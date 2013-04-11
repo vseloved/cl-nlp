@@ -77,7 +77,7 @@
   (make-string n :initial-element fill-char))
 
 
-;;; Working wtih words
+;;; Working with words
 
 (defparameter *stopwords-en*
   '("!" "\"" "'" "," "-" "." ":" ";" "</S>" "<S>" "?" "a" "about" "above" "after" "again" "against" "all" "am" "an" "and" "any" "are" "aren't" "as" "at" "be" "because" "been" "before" "being" "below" "between" "both" "but" "by" "can't" "cannot" "could" "couldn't" "d" "did" "didn't" "do" "does" "doesn't" "doing" "don't" "down" "during" "each" "few" "for" "from" "further" "had" "hadn't" "has" "hasn't" "have" "haven't" "having" "he" "he'd" "he'll" "he's" "her" "here" "here's" "hers" "herself" "him" "himself" "his" "how" "how's" "i" "i'd" "i'll" "i'm" "i've" "if" "in" "into" "is" "isn't" "it" "it's" "its" "itself" "let" "let's" "ll" "me" "more" "most" "mustn't" "my" "myself" "n't" "no" "nor" "not" "of" "off" "on" "once" "only" "or" "other" "ought" "our" "ours " "ourselves" "out" "over" "own" "s" "same" "shan't" "she" "she'd" "she'll" "she's" "should" "shouldn't" "so" "some" "such" "t" "than" "that" "that's" "the" "their" "theirs" "them" "themselves" "then" "there" "there's" "these" "they" "they'd" "they'll" "they're" "they've" "this" "those" "through" "to" "too" "under" "until" "up" "very" "was" "wasn't" "we" "we'd" "we'll" "we're" "we've" "were" "weren't" "what" "what's" "when" "when's" "where" "where's" "which" "while" "who" "who's" "whom" "why" "why's" "with" "won't" "would" "wouldn't" "you" "you'd" "you'll" "you're" "you've" "your" "yours" "yourself" "yourselves")
@@ -106,6 +106,34 @@
     (dolines (line file)
       (push (string-trim +white-chars+ line) rez))
     (reverse rez)))
+
+
+;;; Downloading and saving files
+
+(defun write-bin-file (path data)
+  "Save octet sequence DATA to file at PATH,
+   overwriting it if it already exists."
+  (with-open-file (out path
+                       :direction :output
+                       :if-exists :supersede
+                       :element-type 'flex:octet)
+    (write-sequence data out)))
+
+(defun download-file (url dir)
+  "Download file from URL and place it into DIR by the name
+   inferred from the URL, overwriting any existing file with the same name.
+   Returns file path and filename."
+  (let* ((real-uri (puri:uri-path (nth-value 3 (drakma:http-request
+                                                url :method :head))))
+         (filename (sub real-uri (1+ (position #\/ real-uri :from-end t))))
+         (path (merge-pathnames filename dir)))
+    (write-bin-file path (drakma:http-request url :force-binary t))
+    (values path
+            filename)))
+
+(defgeneric download (what &key url dir)
+  (:documentation
+   "Download WHAT from URL to DIR."))
 
 
 ;;; Search
@@ -153,4 +181,3 @@
   (let ((tail list))
     (loop :repeat (1- n) :do (setf tail (cdr tail)))
     (null tail)))
-

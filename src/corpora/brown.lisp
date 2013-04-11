@@ -4,6 +4,36 @@
 (named-readtables:in-readtable rutils-readtable)
 
 
+(defmethod read-corpus ((type (eql :brown)) path)
+  (let* ((topic-mapping #{#\a :press-reportage
+                          #\b :press-editorial
+                          #\c :press-reviews
+                          #\d :religion
+                          #\e :skill-and-hobbies
+                          #\f :popular-lore
+                          #\g :belles-lettres
+                          #\h :miscellaneous-government-house-organs
+                          #\j :learned
+                          #\k :fiction-general
+                          #\l :fiction-mystery
+                          #\m :fiction-science
+                          #\n :fiction-adventure
+                          #\p :fiction-romance
+                          #\r :humor
+                         })
+         (rez (make-corpus :name (fmt "Brown Corpus - ~A" topic)
+                           :groups #{})))
+    (dotable (_ topic topic-mapping)
+      (set# topic (corpus-groups rez) ()))
+    (dolist (file (directory path))
+      (when (= 4 (length (pathname-name file)))
+        (mv-bind (raw clean tokens) (read-corpus-file :brown file)
+        (let ((text (make-text :name (filename-name file)
+                               :raw raw :clean clean :tokens tokens)))
+          (push text (corpus-texts rez))
+          (push text (get# (get# (char (pathname-name file) 1) topic-mapping)
+                           (corpus-groups rez)))))))))
+
 (defmethod read-corpus-file ((type (eql :brown)) file)
   "Read individual file from the Brown corpus."
   (let ((text (string-trim +white-chars+ (read-file file)))
@@ -22,53 +52,9 @@
                            :word word :tag tag)
                tokens)))
     (values text
-            (let ((clean-text (make-string (token-end (first tokens))
-                                           :initial-element #\Space)))
-              (dolist (token (reverse tokens) clean-text)
+            (let ((clean (make-string (token-end (first tokens))
+                                      :initial-element #\Space)))
+              (dolist (token (reverse tokens) clean)
                 (with-slots (beg end word) token
-                  (setf (subseq clean-text beg end) word))))
+                  (setf (subseq clean beg end) word))))
             (reverse tokens))))
-
-#+manually
-(defparameter +brown-corpus+
-  (let ((brown-topics-mapping #{#\a :press-reportage
-                                #\b :press-editorial
-                                #\c :press-reviews
-                                #\d :religion
-                                #\e :skill-and-hobbies
-                                #\f :popular-lore
-                                #\g :belles-lettres
-                                #\h :miscellaneous-government-house-organs
-                                #\j :learned
-                                #\k :fiction-general
-                                #\l :fiction-mystery
-                                #\m :fiction-science
-                                #\n :fiction-adventure
-                                #\p :fiction-romance
-                                #\r :humor
-                               })
-        (raw-texts #{})
-        (clean-texts #{})
-        (text-tokens #{})
-        (corpus #{}))
-    (dolist (path (directory (merge-pathnames "corpora/brown/*" +project-root+)))
-      (when (= 4 (length (pathname-name path)))
-        (let ((topic (get# (char (pathname-name path) 1) brown-topics-mapping)))
-          (unless (get# topic raw-texts)
-            (set# topic raw-texts '(nil))
-            (set# topic clean-texts '(nil))
-            (set# topic text-tokens '(nil)))
-          (mv-bind (raw text tokens) (read-corpus-file :brown path)
-            (push raw (get# topic raw-texts))
-            (push text (get# topic clean-texts))
-            (push tokens (get# topic text-tokens))))))
-    (dolist (topic (ht-keys raw-texts))
-      (set# topic corpus
-            (make-corpus
-             :name (fmt "Brown Corpus - ~A" topic)
-             :lang :en-us
-             :raw-texts (rest (reverse (get# topic raw-texts)))
-             :clean-texts (rest (reverse (get# topic clean-texts)))
-             :text-tokens (rest (reverse (get# topic text-tokens))))))
-    corpus)
-  "Brown University Standard Corpus of Present-Day American English.")

@@ -2,13 +2,14 @@
 
 (in-package #:asdf)
 
+
 (defsystem #:cl-nlp
   :version "0.0.4"
   :description "NLP toolkit for Common Lisp."
   :author "Vsevolod Dyomkin <vseloved@gmail.com>"
   :maintainer "Vsevolod Dyomkin <vseloved@gmail.com>"
   :license "Apache 2.0"
-  :depends-on (#:rutils #:cl-fad #:cl-ppcre #:cxml)
+  :depends-on (#:rutils #:cl-fad #:cl-ppcre #:cxml #:drakma)
   :serial t
   :components
   ((:module #:src
@@ -19,9 +20,11 @@
              (:module #:corpora
                       :serial t
                       :components
-                      ((:file "corpus")
+                      ((:file "util")
+                       (:file "corpus")
                        (:file "brown")
-                       (:file "nps-chat")))
+                       (:file "nps-chat")
+                       (:file "reuters")))
              (:file "test-util")
              (:module #:core
                       :serial t
@@ -42,20 +45,3 @@
                       ((:file "pos-tag")
                        (:file "hmm")))
              (:file "user")))))
-
-(defsystem #:cl-nlp.contib
-  :version "0.0.1"
-  :description "CL-NLP additional packages."
-  :author "Vsevolod Dyomkin <vseloved@gmail.com>"
-  :maintainer "Vsevolod Dyomkin <vseloved@gmail.com>"
-  :license "Apache 2.0"
-  :depends-on (#:cl-nlp #:drakma)
-  :serial t
-  :components
-  ((:module #:src
-            :components
-            ((:module #:contrib
-                      :serial t
-                      :components
-                      ((:file "packages")
-                       (:file "ms-ngrams")))))))

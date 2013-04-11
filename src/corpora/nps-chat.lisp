@@ -4,54 +4,75 @@
 (named-readtables:in-readtable rutils-readtable)
 
 
+(defmethod read-corpus ((type (eql :nps-chat)) path)
+  (let ((rez (make-corpus :name "NPS Chat Corpus"
+                          :groups #{:by-class #{} :by-user #{equal}}))
+        raw tokens)
+    (fad:walk-directory
+     path
+     #`(when (string= "xml" (pathname-type %))
+         (mv-bind (_ cleans tokens classes users) (read-corpus-file :nps-chat %)
+           (declare (ignore _))
+           (loop :for clean :in cleans
+                 :for class :in classes
+                 :for user :in users
+                 :for toks :in tokens
+                 :for i :from 0 :do
+              (let ((text (make-text :name (fmt "~A-~A" (pathname-name %) i)
+                                     :clean clean :tokens toks))
+                    (cls (mkeyw class)))
+                (with-slots (texts groups) rez
+                  (push text texts)
+                  (unless (get# cls (get# :by-class groups))
+                    (set# cls (get# :by-class groups) ()))
+                  (push text (get# cls (get# :by-class groups)))
+                  (unless (get# user (get# :by-user groups))
+                    (set# user (get# :by-user groups) ()))
+                  (push text (get# usr (get# :by-user groups)))))))))
+    rez))
+
 (defmethod read-corpus-file ((type (eql :nps-chat)) file)
   "Read individual file from the NPS Chat Corpus."
   (cxml:parse-file file (make 'nps-chat-sax)))
 
-#+manually
-(defparameter +nps-chat-corpus+
-  (let ((corpus (make-corpus :name "NPS Chat Corpus" :lang :en-us)))
-    (fad:walk-directory
-     (merge-pathnames "corpora/nps_chat/" +project-root+)
-     #`(when (string= "xml" (pathname-type %))
-         (mv-bind (text tokens) (read-corpus-file :nps-chat %)
-           (push (mapcar #'car text) (corpus-raw-texts corpus))
-           (push tokens (corpus-text-tokens corpus)))))
-    corpus)
-  "NPS Chat Corpus, Release 1.0 (July 2008).")
 
-
-;; sax parsing
-
-(defun attr (name attributes)
-  (sax::standard-attribute-value
-   (find name attributes :test 'string=
-         :key #'sax::standard-attribute-local-name)))
+;; SAX parsing of NPS XML data
 
 (defclass nps-chat-sax (sax:sax-parser-mixin)
-  ((posts :initform nil)
-   (tokens :initform nil)))
+  ((texts :initform nil)
+   (tokens :initform nil)
+   (classes :initform nil)
+   (users :initform nil)
+   (cur-tag :initform nil)
+   (cur-tokens :initform nil)))
 
 (defmethod sax:start-element ((sax nps-chat-sax)
                               namespace-uri local-name qname attributes)
-  (with-slots (posts tokens) sax
-    (case (mkeyw local-name)
-      (:post (push (attr "class" attributes) posts))
-      (:terminals (push (list nil) tokens))
-      (:t (push (make-token :word (attr "word" attributes)
-                            :tag (mkeyw (attr "pos" attributes)))
-                (car tokens))))))
+  (with-slots (classes users cur-tokens cur-tag) sax
+    (let ((name (mkeyw local-name)))
+      (case name
+        (:post (push (attr "class" attributes) classes)
+               (push (attr "user" attributes) users))
+        (:t (push (make-token :word (attr "word" attributes)
+                              :tag (mkeyw (attr "pos" attributes)))
+                  cur-tokens)))
+      (setf cur-tag name))))
 
 (defmethod sax:characters ((sax nps-chat-sax) data)
-  (with-slots (posts) sax
-    (when (stringp (car posts))
-      (setf (car posts) (cons data (car posts))))))
+  (with-slots (cur-tag texts) sax
+    (when (eql :terminals cur-tag)
+      (push data texts))))
 
 (defmethod sax:end-element ((sax nps-chat-sax) namespace-uri local-name qname)
-  ;; to avoid warnings
-  )
+  (when (eql :terminals (mkeyw local-name))
+    (with-slots (tokens cur-tokens) sax
+      (push (reverse cur-tokens) tokens)
+      (setf cur-tokens nil))))
 
 (defmethod sax:end-document ((sax nps-chat-sax))
-  (values (reverse (slot-value sax 'posts))
-          (reverse (mapcar #`(rest (reverse %))
-                           (slot-value sax 'tokens)))))
+  (with-slots (texts tokens users classes) sax
+    (values nil
+            (reverse texts)
+            (reverse tokens)
+            (reverse classes)
+            (reverse users))))

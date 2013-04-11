@@ -170,8 +170,9 @@
 #+manually (
 (format t "       Genre        |  Tokens  |  Types  |  Lexical Diversity")
 (format t "~%--------------------+----------+---------+--------------------")
-(maphash #`(with-accessors ((tokens (corpus-text-tokens +brow-corpus))) %%
-             (let* ((words (mapcar #'ncorp::token-word (flatten tokens)))
+(maphash #`(with-accessors ((tokens (mapcar #'text-tokens
+                                            (corpus-texts +brow-corpus+)))) %%
+             (let* ((words (mapcar #'token-word (flatten tokens)))
                     (words-count (length words))
                     (types-count (hash-table-count (uniq words :raw t))))
                (format t "~&~20A|  ~7A |  ~6A | ~6,1F~%"

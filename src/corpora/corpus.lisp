@@ -5,25 +5,32 @@
 
 
 (defstruct corpus
-  "A structure to cache a unilingual corpus in raw and processed forms."
+  "A corpus is a NAMEd collection of TEXTS that may be groupped into GROUPS."
   name
-  lang
-  raw-texts
-  clean-texts
-  text-tokens)
+  texts
+  groups)
 
-(defstruct token
-  "A corpus token with postition and possibly tag."
-  beg
-  end
-  word
-  tag)
+(defstruct text
+  "A single text from a certain corpus with some logical NAME.
+   A text is stored forms: RAW, CLEAN and tokenized (TOKENS)."
+  name
+  raw
+  clean
+  tokens)
 
 
-(defgeneric read-corpus (type file)
+(defgeneric read-corpus (type path)
   (:documentation
-   "Read corpus data of a certain TYPE (a keyword) from file.
+   "Read the whole corpus of a certain TYPE (a keyword) from some PATH."))
+
+(defgeneric read-corpus-file (type file)
+  (:documentation
+   "Read corpus data of a certain TYPE from FILE.
     Returns as values:
-    - raw text data
-    - cleaned-up text
-    - list of tokens from the text"))
+    - raw text
+    - clean text
+    - list of tokens from the text
+    - possibly some other relevant data"))
+
+(defparameter *corpora-root* (merge-pathnames "corpora/*" +project-root+)
+  "Default root directory for corpuses.")

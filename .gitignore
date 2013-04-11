@@ -3,3 +3,4 @@
 \#*
 .*
 !.gitignore
+wordnet30.sqlite

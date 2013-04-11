@@ -4,8 +4,6 @@
 (named-readtables:in-readtable rutils-readtable)
 
 
-;;; Microsoft ngrams
-
 (defclass ms-ngrams (ngrams)
   ((count :initform -1)  ; special value to inidicate that we don't know it :)
    (url :initarg :url :accessor ms-ngrams-url
@@ -17,9 +15,12 @@
    "Frontend to Microsoft Ngrams service.
     See http://web-ngram.research.microsoft.com/info/"))
 
-(flet ((to-string (ngram)
-         "If NGRAM is a list, convert it to string."
-         (if (listp ngram) (strjoin " " ngram) ngram)))
+(defmethod ngrams-eq ((ngrams ms-ngrams))
+  #'equalp)
+
+(defun ngram-string (ngram)
+  "If NGRAM is a list, convert it to string."
+  (if (listp ngram) (strjoin " " ngram) ngram))
 
 (macrolet ((query-ngrams (op)
              `(with-slots (url user-token catalog order) ms-ngrams
@@ -28,7 +29,7 @@
                    (drakma:http-request
                     (fmt "~A/~A/~A/~A?u=~A&p=~A"
                          url catalog order ,op user-token
-                         (to-string ngram))))))))
+                         (ngram-string ngram))))))))
 
 (defmethod logprob ((ngrams ms-ngrams) ngram)
   (query-ngrams "jp"))
@@ -43,12 +44,12 @@
                 (let ((*read-eval* nil))
                   (mapcar #'read-from-string
                           (split-sequence
-                           #/Newline (drakma:http-request
+                           #\Newline (drakma:http-request
                                       (fmt "~A/~A/~A/~A?u=~A"
                                            url catalog order ,op user-token)
                                       :method :post
                                       :content (fmt "~{~A~%~}"
-                                                    (mapcar #'to-string
+                                                    (mapcar #'ngram-string
                                                             ngrams-list)))))))))
 
 (defmethod logprobs ((ngrams ms-ngrams) &rest ngrams-list)
@@ -58,8 +59,3 @@
   (query-ngrams "cp"))
 
 ) ; end of marolet
-) ; end of flet
-
-
-(defmethod ngrams-eq ((ngrams ms-ngrams))
-  #'equalp)
