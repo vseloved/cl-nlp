@@ -146,7 +146,15 @@
   (:export #:pos-tag
            #:model-tags
            #:+stop-tag+
-           ;; #:parse
+
+           #:parse
+           #:cfg
+           #:pcfg
+
+           #:gr-ts
+           #:gr-nts
+           #:gr-root
+           #:gr-rules
            ;; #:parse-deps
            ))
 

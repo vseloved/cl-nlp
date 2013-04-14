@@ -24,7 +24,7 @@
                        (:file "corpus")
                        (:file "brown")
                        (:file "nps-chat")
-                       (:file "reuters")))
+                       #+nil (:file "reuters")))
              (:file "test-util")
              (:module #:core
                       :serial t
@@ -43,5 +43,6 @@
                       :serial t
                       :components
                       ((:file "pos-tag")
-                       (:file "hmm")))
+                       (:file "hmm")
+                       #+nil (:file "cfg")))
              (:file "user")))))
