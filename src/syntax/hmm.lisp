@@ -1,10 +1,10 @@
 ;;; (c) 2013 Vsevolod Dyomkin
 
-(in-package #:nlp.syntax.hmm)
+(in-package #:nlp.syntax)
 (named-readtables:in-readtable rutils-readtable)
 
 
-(defclass hmm ()
+(defclass hmm-tagger ()
   ((order :initarg :order :initform 2 :reader model-order)
    (tags :initarg :tags :reader model-tags)
    (transition-lm :initarg :transition-lm :reader hmm-transition-lm
@@ -16,11 +16,11 @@
     - TRANSITION-LM of transition probabilities between TAGS of the model's ORDER
     - EMISSION-LM of emission probabilities of words from tags"))
 
-(defmethod train ((model hmm) data &rest args
+(defmethod train ((model hmm-tagger) data &rest args
                   &key (transition-lm-class 'plain-lm)
                        (emission-lm-class 'plain-lm)
                   &allow-other-keys)
-  "Train hmm MODEL (using language models of types TRANSITION-LM-CLASS
+  "Train HMM MODEL (using language models of types TRANSITION-LM-CLASS
    and EMISSION-LM-CLASS) on a list of tagged sentences DATA."
   (declare (ignore args))
   (with-slots (order transition-lm emission-lm) model
@@ -63,31 +63,26 @@
   model)
 
 (defun make-hmm (tags data &key (order 2)
-                                (hmm-class 'viterbi-hmm)
                                 (transition-lm-class 'plain-lm)
                                 (emission-lm-class 'plain-lm))
   "A simple wrapper to make hmms."
-  (train (make hmm-class :order order :tags tags)
+  (train (make 'hmm-tagger :order order :tags tags)
          data
          :transition-lm-class transition-lm-class
          :emission-lm-class emission-lm-class))
 
 
-(defclass viterbi-hmm (hmm)
-  ()
-  (:documentation
-   "Hmm that uses the viterbi algorithm for inference."))
-
-(defmethod pos-tag ((model viterbi-hmm) (sentence list))
-  "POS tag tokenized SENTENCE using a Viterbi algorithm for hmms."
+(defmethod tag ((model hmm-tagger) (sentence list))
+  "Tag the tokenized SENTENCE using a Viterbi algorithm for HMMs."
   (with-slots (order tags (tps transition-lm) (eps emission-lm)) model
     (let* ((len (length sentence))
-           (all-tags (cons nil (cons +stop-tag+ tags)))
+           (all-tags (list* nil +stop-tag+ tags))
            (matrix-dims (make-list (1- order)
                                    :initial-element (+ (length tags) 2)))
            (pi0 (make-pi-matrix matrix-dims 1.0))
            (pi1 (make-pi-matrix matrix-dims))
-           (bps (make-array (cons (1+ len) matrix-dims) :initial-element nil)))
+           (bps (make-array (cons (1+ len) matrix-dims) :initial-element nil))
+           (min most-negative-single-float))
       (labels ((make-ngrams (step tag)
                  "Generate a list of all possible ngram combinations
                   ending in TAG at STEP and arrange them in a table
@@ -113,19 +108,19 @@
                (viterbi-step (step tag emission-prob)
                  "Run one STEP of the Viterbi algorithm for TAG
                   with the given emission probability EMISSION-PROB."
-                 (let ((max most-negative-single-float)
+                 (let ((max min)
                        argmax)
                    (dotable (suffix ngrams (make-ngrams step tag))
                      (let ((key (tags->idx suffix all-tags))
-                           (cur-max most-negative-single-float)
+                           (cur-max min)
                            cur-argmax)
                        (dolist (ngram ngrams)
                          (let* ((idxs (tags->idx ngram all-tags))
                                 (p (if (zerop emission-prob)
-                                       most-negative-single-float
+                                       min
                                        (+ (apply #'aref pi0 (butlast idxs))
                                           (cond-logprob tps ngram)
-                                          (log emission-prob 2)))))
+                                          (log emission-prob 2.0)))))
                            (when (>= p cur-max)
                              (setf cur-max p
                                    cur-argmax idxs))))
@@ -145,12 +140,12 @@
         ;; recreating tags
         (mv-bind (path logprob) (viterbi-step len +stop-tag+ 1)
           (when path
-            (do ((i (- (length sentence) (1- (length path))) (1- i)))
+            (do ((i (- len (1- (length path))) (1- i)))
                 ((< i (1- order)))
               (push (apply #'aref bps (cons i (sub path 0 (1- order))))
                     path))
             (values (mapcar #`(elt all-tags %) path)
-                    (expt 2 logprob))))))))
+                    (expt 2.0 logprob))))))))
 
 
 ;;; Helpers

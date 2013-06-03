@@ -1,6 +1,6 @@
 ;;; (c) 2013 Vsevolod Dyomkin
 
-(in-package #:nlp.test-util)
+(in-package #:nlp.util)
 (named-readtables:in-readtable rutils-readtable)
 
 

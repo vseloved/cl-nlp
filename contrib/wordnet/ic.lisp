@@ -19,13 +19,13 @@
       (zip:do-zipfile-entries (name entry zip)
         (when (and (ends-with "dat" name)
                    (re:scan (fmt "~A\\." filename-pattern) name))
-          (dolist (line (rest (split-sequence
-                               #\Newline (flex:octets-to-string
-                                          (zip:zipfile-entry-contents entry)
-                                          :external-format
-                                          '(:utf-8 :eol-style :crlf)))))
+          (dolist (line (rest (split #\Newline
+                                     (flex:octets-to-string
+                                      (zip:zipfile-entry-contents entry)
+                                      :external-format
+                                      '(:utf-8 :eol-style :crlf)))))
             (unless (blankp line)
-              (ds-bind (id count &optional root) (split-sequence #\Space line)
+              (ds-bind (id count &optional root) (split #\Space line)
                 (let ((sid (parse-integer (substr id 0 -1)))
                       (pos (char id (1- (length id)))))
                   (set# (cons sid pos) rez

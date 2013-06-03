@@ -51,7 +51,7 @@
                  (symbol
                   (fmt "* FROM ~A" (clsql:view-table (find-class from))))
                  (list
-                  (ds-bind (fields tables) (split-sequence :from from)
+                  (ds-bind (fields tables) (split :from from)
                     (fmt "~{~A~^,~} FROM ~{~A~^,~}"
                          (mapcar #`(if (listp %)
                                        (fmt "~A(~A)" (car %) (cadr %))

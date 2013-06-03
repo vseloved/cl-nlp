@@ -41,7 +41,7 @@
                                 `(:where wordid := ,(lemma-id lemma)))))))
 
 (defmethod synset ((wordnet sql-wordnet3) (key string))
-  (ds-bind (word pos sensenum) (split-sequence #\. key)
+  (ds-bind (word pos sensenum) (split #\. key)
     (query1 (select 'synset
                     `(:where pos := ,(esc pos)
                       :and synsetid
@@ -62,7 +62,7 @@
                                   ,@(when pos `(:and pos := ,(esc pos)))))))))
 
 (defmethod sense ((wordnet sql-wordnet3) (key string))
-  (ds-bind (word synset-key) (split-sequence #\- key)
+  (ds-bind (word synset-key) (split #\- key)
     (let ((synset (synset wordnet synset-key)))
       (query1 (select 'sense
                       `(:where wordid

@@ -7,6 +7,6 @@
 (defparameter +stop-tag+ :stop
   "Name of ending tag in POS tagging.")
 
-(defgeneric pos-tag (model sentence)
+(defgeneric tag (model sentence)
   (:documentation
    "Tag a SENTENCE with the algorithm specific to MODEL."))

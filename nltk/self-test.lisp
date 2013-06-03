@@ -139,10 +139,10 @@ t from Yahweh's presence, and lived in the land of Nod, east of E
 (check (float (prob (text-bigrams *moby*) '("Moby" "Dick")))
        3.0310222e-4)
 
-(check (length (split-sequence #\Space (generate *genesis* :order 2 :n 93)))
+(check (length (split #\Space (generate *genesis* :order 2 :n 93)))
        93)
 
-(check (length (split-sequence #\Space (generate *genesis* :order 3 :n 93)))
+(check (length (split #\Space (generate *genesis* :order 3 :n 93)))
        93)
 
 (check (collocations *inaugural*)

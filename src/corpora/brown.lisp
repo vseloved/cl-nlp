@@ -5,34 +5,35 @@
 
 
 (defmethod read-corpus ((type (eql :brown)) path)
-  (let* ((topic-mapping #{#\a :press-reportage
-                          #\b :press-editorial
-                          #\c :press-reviews
-                          #\d :religion
-                          #\e :skill-and-hobbies
-                          #\f :popular-lore
-                          #\g :belles-lettres
-                          #\h :miscellaneous-government-house-organs
-                          #\j :learned
-                          #\k :fiction-general
-                          #\l :fiction-mystery
-                          #\m :fiction-science
-                          #\n :fiction-adventure
-                          #\p :fiction-romance
-                          #\r :humor
-                         })
-         (rez (make-corpus :name (fmt "Brown Corpus - ~A" topic)
+  (let* ((topic-mapping #{
+           #\a :press-reportage
+           #\b :press-editorial
+           #\c :press-reviews
+           #\d :religion
+           #\e :skill-and-hobbies
+           #\f :popular-lore
+           #\g :belles-lettres
+           #\h :miscellaneous-government-house-organs
+           #\j :learned
+           #\k :fiction-general
+           #\l :fiction-mystery
+           #\m :fiction-science
+           #\n :fiction-adventure
+           #\p :fiction-romance
+           #\r :humor
+          })
+         (rez (make-corpus :desc (fmt "Brown Corpus - ~A" topic)
                            :groups #{})))
     (dotable (_ topic topic-mapping)
       (set# topic (corpus-groups rez) ()))
     (dolist (file (directory path))
       (when (= 4 (length (pathname-name file)))
         (mv-bind (raw clean tokens) (read-corpus-file :brown file)
-        (let ((text (make-text :name (filename-name file)
-                               :raw raw :clean clean :tokens tokens)))
-          (push text (corpus-texts rez))
-          (push text (get# (get# (char (pathname-name file) 1) topic-mapping)
-                           (corpus-groups rez)))))))))
+          (let ((text (make-text :name (filename-name file)
+                                 :raw raw :clean clean :tokens tokens)))
+            (push text (corpus-texts rez))
+            (push text (get# (get# (char (pathname-name file) 1) topic-mapping)
+                             (corpus-groups rez)))))))))
 
 (defmethod read-corpus-file ((type (eql :brown)) file)
   "Read individual file from the Brown corpus."
@@ -58,3 +59,10 @@
                 (with-slots (beg end word) token
                   (setf (subseq clean beg end) word))))
             (reverse tokens))))
+
+(defmethod map-corpus ((type (eql :brown)) path fn)
+  (dolist (file (directory path))
+    (when (= 4 (length (pathname-name file)))
+      (mv-bind (raw clean tokens) (read-corpus-file :brown file)
+        (funcall fn (make-text :name (filename-name file)
+                               :raw raw :clean clean :tokens tokens))))))

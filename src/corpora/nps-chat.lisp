@@ -35,6 +35,18 @@
   "Read individual file from the NPS Chat Corpus."
   (cxml:parse-file file (make 'nps-chat-sax)))
 
+(defmethod map-corpus ((type (eql :nps-chat)) path fn)
+  (fad:walk-directory
+   path
+   #`(when (string= "xml" (pathname-type %))
+       (mv-bind (_ cleans tokens) (read-corpus-file :nps-chat %)
+         (declare (ignore _))
+         (loop :for clean :in cleans
+               :for toks :in tokens
+               :for i :from 0 :do
+            (funcall fn (make-text :name (fmt "~A-~A" (pathname-name %) i)
+                                   :clean clean :tokens toks)))))))
+
 
 ;; SAX parsing of NPS XML data
 
@@ -49,14 +61,12 @@
 (defmethod sax:start-element ((sax nps-chat-sax)
                               namespace-uri local-name qname attributes)
   (with-slots (classes users cur-tokens cur-tag) sax
-    (let ((name (mkeyw local-name)))
-      (case name
-        (:post (push (attr "class" attributes) classes)
-               (push (attr "user" attributes) users))
-        (:t (push (make-token :word (attr "word" attributes)
-                              :tag (mkeyw (attr "pos" attributes)))
-                  cur-tokens)))
-      (setf cur-tag name))))
+    (case (setf cur-tag (mkeyw local-name))
+      (:post (push (attr "class" attributes) classes)
+             (push (attr "user" attributes) users))
+      (:t (push (make-token :word (attr "word" attributes)
+                            :tag (mkeyw (attr "pos" attributes)))
+                cur-tokens)))))
 
 (defmethod sax:characters ((sax nps-chat-sax) data)
   (with-slots (cur-tag texts) sax

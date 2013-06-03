@@ -42,25 +42,28 @@
            ))
 
 (cl:defpackage #:nlp.corpora
-  (:nicknames #:ncorp)
+  (:nicknames #:ncorpus)
   (:use #:common-lisp #:rutil #:nlp.util)
   (:export #:corpus
            #:make-corpus
-           #:corpus-name
+           #:corpus-desc
            #:corpus-texts
            #:corpus-groups
 
            #:text
            #:make-text
+           #:text-name
            #:text-raw
            #:text-clean
            #:text-tokens
 
            #:read-corpus
            #:read-corpus-file
+           #:map-corpus
 
            #:+brown-corpus+
            #:+nps-chat-corpus+
+           #:+reuters-corpus+
            ))
 
 (cl:defpackage #:nlp.test-util
@@ -143,30 +146,34 @@
 (cl:defpackage #:nlp.syntax
   (:nicknames #:nsyn)
   (:use #:common-lisp #:rutil #:nutil #:ncore)
-  (:export #:pos-tag
+  (:export #:tag
+
            #:model-tags
            #:+stop-tag+
 
+           #:hmm-tagger
+           #:make-hmm
+           #:hmm-transition-lm
+           #:hmm-emission-lm
+
            #:parse
+           #:parse-n
+
            #:cfg
            #:pcfg
 
            #:gr-ts
            #:gr-nts
+           #:gr-nts-idx
            #:gr-root
            #:gr-rules
-           ;; #:parse-deps
-           ))
+           #:gr-irules
+           #:gr-root-rules
 
-(cl:defpackage #:nlp.syntax.hmm
-  (:nicknames #:nsyn.hmm)
-  (:use #:common-lisp #:rutil #:nutil #:ncore #:nsyn)
-  (:export #:hmm
-           #:make-hmm
-           #:hmm-transition-lm
-           #:hmm-emission-lm
-
-           #:viterbi-hmm
+           #:maptree
+           #:mapleaves
+           #:dotree
+           #:doleaves
            ))
 
 (cl:defpackage #:nlp.generation
@@ -188,8 +195,9 @@
         #:nlp.util #:nlp.corpora #:nlp.core #:nlp.generation)
   (:export #:grep))
 
+
 (rutils:re-export-symbols '#:nutil    '#:nlp-user)
+(rutils:re-export-symbols '#:ncorpus    '#:nlp-user)
 (rutils:re-export-symbols '#:ncore    '#:nlp-user)
 (rutils:re-export-symbols '#:ngen     '#:nlp-user)
 (rutils:re-export-symbols '#:nsyn     '#:nlp-user)
-(rutils:re-export-symbols '#:nsyn.hmm '#:nlp-user)
