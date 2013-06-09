@@ -8,8 +8,7 @@
   (:documentation
    "Generate random text of LENGTH words based on some DATA
     (usually, table of transition probabilities between tokens).
-    May not return period at the end.
-   "))
+    May not return period at the end."))
 
 
 (defclass text-generator ()

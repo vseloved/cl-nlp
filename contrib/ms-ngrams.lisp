@@ -43,14 +43,14 @@
              `(with-slots (url user-token catalog order) ms-ngrams
                 (let ((*read-eval* nil))
                   (mapcar #'read-from-string
-                          (split-sequence
-                           #\Newline (drakma:http-request
-                                      (fmt "~A/~A/~A/~A?u=~A"
-                                           url catalog order ,op user-token)
-                                      :method :post
-                                      :content (fmt "~{~A~%~}"
-                                                    (mapcar #'ngram-string
-                                                            ngrams-list)))))))))
+                          (split #\Newline
+                                 (drakma:http-request
+                                  (fmt "~A/~A/~A/~A?u=~A"
+                                       url catalog order ,op user-token)
+                                  :method :post
+                                  :content (fmt "~{~A~%~}"
+                                                (mapcar #'ngram-string
+                                                        ngrams-list)))))))))
 
 (defmethod logprobs ((ngrams ms-ngrams) &rest ngrams-list)
   (query-ngrams "jp"))

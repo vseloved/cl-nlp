@@ -4,7 +4,10 @@
 (named-readtables:in-readtable rutils-readtable)
 
 
-(defstruct token
+(defstruct (token (:print-object (lambda (token stream)
+                                   (with-slots (word tag beg end) token
+                                       (format stream "#<~A~@[/~A~] ~A..~A>"
+                                               word tag beg end)))))
   "A corpus token with postition and possibly tag."
   beg
   end
@@ -17,8 +20,7 @@
    "Tokenize STRING with TOKENIZER. Outputs 2 values:
 
     - list of words
-    - list of spans as beg-end cons pairs
-   "))
+    - list of spans as beg-end cons pairs"))
 
 ;; (defgeneric stream-tokenize (tokenizer input output &optional span-output)
 ;;   (:documentation
@@ -44,7 +46,7 @@
   "Pre-split text into lines and tokenize each line separately."
   (let ((offset 0)
         words spans)
-    (loop :for line :in (split-sequence #\Newline string) :do
+    (loop :for line :in (split #\Newline string) :do
        (mv-bind (ts ss) (call-next-method tokenizer line)
          (setf words (nconc words ts)
                spans (nconc spans (mapcar #`(cons (+ (car %) offset)
@@ -63,8 +65,8 @@
           (re:create-scanner
            "\\w+|[!\"#$%&'*+,./:;<=>?@^`~…\\(\\)⟨⟩{}\\[\\|\\]‒–—―«»“”‘’¶-]")
           :documentation
-          "A simpler variant would be [^\\s]+
-           — it doesn't split punctuation, yet sometimes it's desirable."))
+          "A simpler variant would be [^\\s]+ —
+           it doesn't split punctuation, yet sometimes it's desirable."))
   (:documentation
    "Regex-based word tokenizer."))
 
@@ -89,7 +91,7 @@
           :initform
           (re:create-scanner
            (strcat ;; urls
-                   "\\w+://\\w+"
+                   "\\w+://\\S+"
                    ;; decimals
                    "|[+-]?[0-9](?:[0-9,.]*[0-9])?"
                    ;; regular words
@@ -160,7 +162,8 @@
       (values (reverse ws)
               (reverse ss)))))
 
-(define-lazy-singleton word-tokenizer (make 'postprocessing-regex-word-tokenizer)
+(define-lazy-singleton word-tokenizer
+    (make 'postprocessing-regex-word-tokenizer)
   "Default word tokenizer.")
 
 
@@ -244,7 +247,7 @@
 (defmethod tokenize ((tokenizer baseline-sentence-tokenizer) string)
   (mv-bind (words word-spans)
       (tokenize (make 'regex-word-tokenizer :regex "[^\\s]+")
-                (substitue #\¶ #\Newline string))
+                (substitute #\¶ #\Newline string))
     (let ((beg 0)
           sentences spans)
       (loop :for ws :on words :and ss :on word-spans :do
