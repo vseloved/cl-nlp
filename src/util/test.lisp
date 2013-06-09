@@ -54,6 +54,6 @@
 ;;; Test predicates
 
 (defun equal-when-present (obj specimen)
-  (maphash #`(unless (equal #~obj@% %%)
+  (maphash #`(unless (equal (slot-value obj %) %%)
                (return-from equal-when-present nil))
            specimen))
