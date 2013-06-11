@@ -47,7 +47,7 @@
 (defvar *nt-count* nil
   "Number of non-terminals in the current grammar.")
 
-;; (declaim (inline @))
+(declaim (inline @))
 (defun @ (m i j k)
   "Access element of M for indices I, J and non-terminal K."
   (get# (+ (* i *n* *nt-count*)
@@ -60,13 +60,6 @@
             (* ,j *nt-count*)
             ,k)
          ,m ,v))
-
-;; (defun @ (m i j k)
-;;   "Access element of M for indices I, J and non-terminal K."
-;;   (get# (list i j k) m))
-
-;; (defsetf @ (m i j k) (v)
-;;   `(set# (list ,i ,j ,k) ,m ,v))
 
 (macrolet
     ((CKY (&body body)
@@ -82,7 +75,6 @@
                   (when-it (get# (list k w) rules)
                     (setf (@ pi0 i i k) (log it)
                           (@ bps i i k) (cons k i))))))
-            ;; (print-ht pi0)
             (do ((pos 1 (1+ pos)))
                 ((>= pos *n*))
               (do ((i 1 (1+ i)))
@@ -99,13 +91,6 @@
                       (when (if (listp max) max (> max min))
                         (setf (@ pi0 i j k) max
                               (@ bps i j k) arg)))))))
-            ;; (terpri)
-            ;; (print-ht pi0)
-            ;; (print-ht bps)
-            ;; (maphash #`(print (cons %
-            ;;                         (mapcar #`(get# % (cdr nts-idx))
-            ;;                                 (mklist (car %%)))))
-            ;;          bps)
             (values pi0
                     bps)))))
 
