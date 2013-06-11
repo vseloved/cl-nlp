@@ -30,6 +30,7 @@
            #:data-file
            #:list-from-file
 
+           #:argmax
            #:bin-search
 
            #:define-lazy-singleton
