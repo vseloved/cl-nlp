@@ -4,9 +4,12 @@
 (named-readtables:in-readtable rutils-readtable)
 
 
-;;; Some package renaming
+;;; Some aliasing
 
 (rename-package "CL-PPCRE" "CL-PPCRE" '("PPCRE" "RE"))
+
+(abbr ~ generic-elt)
+
 
 ;;; Conditions
 
@@ -14,6 +17,8 @@
 
 (define-condition not-implemented-error (simple-error) ())
 
+
+;;; Various functions and macros
 
 (defmacro define-lazy-singleton (name init &optional docstring)
   "Define a function NAME, that will return a singleton object,
@@ -44,10 +49,31 @@
     (loop :repeat (1- n) :do (setf tail (cdr tail)))
     (null tail)))
 
-(defun uniq (list &key raw case-insensitive)
+(defun uniq (list &key raw (eq-test 'equal))
   "Return only unique elements from LIST either as a new list
-   or as hash-table if RAW is set. Can be CASE-INSENSITIVE."
-  (let ((uniqs (make-hash-table :test (if case-insensitive 'equalp 'equal))))
+   or as hash-table if RAW is set.
+   EQ-TEST should be EQUAL or EQUALP."
+  (let ((uniqs (make-hash-table :test eq-test)))
     (dolist (elt list)
       (set# elt uniqs t))
     (if raw uniqs (ht-keys uniqs))))
+
+(defun equal-when-present (obj specimen)
+  "Checks is OBJ has all the slots with values provided by SPECIMEN hash-table."
+  (maphash #`(unless (equal (slot-value obj %) %%)
+               (return-from equal-when-present nil))
+           specimen))
+
+(defgeneric write-tsv (table &key keys cols cumulative order-by)
+  (:documentation
+   "Write a temporary tsv file from TABLE using either all
+    or provided KEYS and COLS. Can use CUMULATIVE counts and ORDER-BY.
+
+    The file contents look like this:
+
+    No Label        Col1   Col2          Col3
+    1  One          1      2             3
+    2  Two          4      5             6
+    ...
+
+    Return the file name and number of keys and columns as other values."))

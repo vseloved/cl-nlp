@@ -14,7 +14,7 @@
 (defmethod read-corpus ((type (eql :reuters)) path)
   "Expects PATH to be a zip archive of the corpus
    with embedded archives for each day."
-  (let ((rez (make-corpus :name "Reuters Corpus"
+  (let ((rez (make-corpus :desc "Reuters Corpus"
                           :groups #{:by-date #{equal}})))
     (zip:with-zipfile (zip path)
       (zip:do-zipfile-entries (name entry zip)

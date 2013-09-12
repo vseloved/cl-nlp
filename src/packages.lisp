@@ -1,10 +1,26 @@
 ;;; (c) 2013 Vsevolod Dyomkin
 
+
 (cl:defpackage #:nlp.util
   (:nicknames #:nutil)
   (:use #:common-lisp #:rutil)
   (:export #:cl-nlp-error
            #:not-implemented-error
+
+           #:generic-elt
+           #:~
+           #:pair
+           #:l
+           #:r
+           #:vals
+           #:keys
+           #:pairs
+           #:ht->pairs
+           #:pairs->ht
+           #:maptable
+           #:donext
+
+           #:*stopwords-en*
 
            #:+newline+
            #:+newline-chars+
@@ -20,11 +36,12 @@
            #:+close-quote-chars+
            #:close-quote-char-p
 
-           #:*stopwords-en*
            #:ending-word-p
 
            #:filler
            #:uniq
+           #:sorted-ht-keys
+           #:shorter?
 
            #:+project-root+
            #:data-file
@@ -34,9 +51,6 @@
            #:bin-search
 
            #:define-lazy-singleton
-           #:sorted-ht-keys
-
-           #:shorter?
 
            #:download-file
            #:download
@@ -47,14 +61,10 @@
            #:dotree
            #:doleaves
            #:pprint-tree
-           ))
 
-(cl:defpackage #:nlp.test-util
-  (:nicknames #:ntest)
-  (:use #:common-lisp #:rutil #:nlp.util)
-  (:export #:deftest
-           #:test
-           #:equal-when-available))
+           #:equal-when-present
+           #:write-tsv
+           ))
 
 (cl:defpackage #:nlp.core
   (:nicknames #:ncore)
@@ -92,6 +102,7 @@
            #:stupid-backoff-lm
            #:lm-backoff
 
+           #:count-ngram-freqs
            #:index-ngrams
            #:index-context-freqs
            #:index-prefix-transition-freqs
@@ -99,7 +110,6 @@
            #:normalize-freqs
 
            #:tokenize
-           ;; #:stream-tokenize
            #:tokenizer
            #:regex-word-tokenizer
            #:postprocessing-regex-word-tokenizer
@@ -107,7 +117,7 @@
            #:<word-chnuker>
            #:<basic-word-tokenizer>
            #:<word-tokenizer>
-           #:<sentence-tokenizer>
+           #:<sentence-splitter>
 
            #:token
            #:token-word
@@ -120,6 +130,11 @@
            #:<paragraph-splitter>
 
            #:find-collocations
+
+           #:normalize
+           #:train
+
+           #:make-cfd
            ))
 
 (cl:defpackage #:nlp.corpora
@@ -143,44 +158,57 @@
            #:read-corpus-file
            #:map-corpus
 
+           #:make-corpus-from-dir
+
            #:+brown-corpus+
            #:+nps-chat-corpus+
-           #:+reuters-corpus+
            ))
 
-
-;; (cl:defpackage #:nlp.phonetics
-;;   (:nicknames #:npho)
-;;   (:use #:common-lisp #:rutil)
-;;   (:export #:phonetic-transform
-;;            ))
-
-(cl:defpackage #:nlp.syntax
-  (:nicknames #:nsyn)
+(cl:defpackage #:nlp.tagging
+  (:nicknames #:ntag)
   (:use #:common-lisp #:rutil #:nutil #:ncore)
-  (:export #:tag
+  (:export #:+stop-tag+
 
-           #:model-tags
-           #:+stop-tag+
+           #:tag
 
-           #:hmm-tagger
+           #:hmm
            #:make-hmm
            #:hmm-transition-lm
            #:hmm-emission-lm
 
+           #:glm
+           #:make-glm
+
+           #:model-tags
+           ))
+
+(cl:defpackage #:nlp.parsing
+  (:nicknames #:nparse)
+  (:use #:common-lisp #:rutil #:nutil #:ncore)
+  (:export #:chomsky-nf
+
            #:parse
            #:parse-n
+
+           #:pretagged
+           #:lexicalized
+           #:markovized
 
            #:cfg
            #:pcfg
 
-           #:gr-ts
-           #:gr-nts
-           #:gr-nts-idx
-           #:gr-root
-           #:gr-rules
-           #:gr-irules
-           #:gr-root-rules
+           #:cky-parser
+           #:pretagged-cky-parser
+
+           #:grammar-ts
+           #:grammar-nts
+           #:grammar-nts-idx
+           #:grammar-root
+           #:grammar-unary-rules
+           #:grammar-binary-rules
+           #:grammar-root-rules
+           #:grammar-iurules
+           #:grammar-ibrules
            ))
 
 (cl:defpackage #:nlp.generation
@@ -200,11 +228,15 @@
   (:nicknames #:nlp)
   (:use #:common-lisp #:rutil
         #:nlp.util #:nlp.corpora #:nlp.core #:nlp.generation)
-  (:export #:grep))
+  (:export #:grep
+           #:tabulate
+           #:plot
+           ))
 
 
 (rutils:re-export-symbols '#:nutil    '#:nlp-user)
 (rutils:re-export-symbols '#:ncorpus  '#:nlp-user)
 (rutils:re-export-symbols '#:ncore    '#:nlp-user)
 (rutils:re-export-symbols '#:ngen     '#:nlp-user)
-(rutils:re-export-symbols '#:nsyn     '#:nlp-user)
+(rutils:re-export-symbols '#:ntag     '#:nlp-user)
+(rutils:re-export-symbols '#:nparse   '#:nlp-user)

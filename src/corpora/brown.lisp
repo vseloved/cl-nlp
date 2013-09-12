@@ -5,7 +5,8 @@
 
 
 (defmethod read-corpus ((type (eql :brown)) path)
-  (let* ((topic-mapping #{
+  (let* ((path (namestring path))
+         (topic-mapping #{
            #\a :press-reportage
            #\b :press-editorial
            #\c :press-reviews

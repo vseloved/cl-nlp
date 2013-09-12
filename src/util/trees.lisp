@@ -50,12 +50,9 @@
    in depth-first order, returning a new tree with the same structure."
   (labels ((rec (node)
              (if (atom node)
-                 node
+                 (funcall fn node)
                  (cons (car node)
-                       (mapcar #`(if (atom %)
-                                     (funcall fn %)
-                                     (rec %))
-                               (cdr node))))))
+                       (mapcar #'rec (cdr node))))))
     (when-it tree
       (rec it))))
 

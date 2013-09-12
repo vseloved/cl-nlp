@@ -30,7 +30,7 @@
 
 (defgeneric ngrams-pairs (ngrams &key order-by)
   (:documentation
-   "Get the alist of all ngrams with their frequencies in NGRAMS,
+   "Get the list of pairs of all ngrams with their frequencies in NGRAMS,
     possibly ordered by ORDER-BY predicate (e.g. < or >)."))
 
 (defgeneric vocab (ngrams &key order-by)
@@ -42,9 +42,14 @@
   (:documentation
    "Get the NGRAM frequency in NGRAMS.")
   (:method :around ((ngrams ngrams) (ngram string))
-    (if (> (ngrams-order ngrams) 1)
-        (freq ngrams (tokenize-ngram ngrams ngram))
-        (call-next-method))))
+    (with-accessors ((order ngrams-order)) ngrams
+      (if (> order 1)
+          (freq ngrams (tokenize <word-tokenizer> ngram))
+          (call-next-method)))))
+
+(defmethod generic-elt ((obj ngrams) key &rest keys)
+  ;; basic element access for ngrams is getting the frequency at KEY
+  (freq obj key))
 
 (defgeneric prob (ngrams ngram)
   (:documentation
@@ -53,9 +58,10 @@
     (/ (freq ngrams ngram)
        (ngrams-total-freq ngrams)))
   (:method :around ((ngrams ngrams) (ngram string))
-    (if (> (ngrams-order ngrams) 1)
-        (prob ngrams (tokenize-ngram ngrams ngram))
-        (call-next-method))))
+    (with-accessors ((order ngrams-order)) ngrams
+      (if (> order 1)
+          (prob ngrams (tokenize <word-tokenizer> ngram))
+          (call-next-method)))))
 
 (defgeneric logprob (ngrams ngram)
   (:documentation
@@ -66,9 +72,10 @@
           nil
           (log prob 2))))
   (:method :around ((ngrams ngrams) (ngram string))
-    (if (> (ngrams-order ngrams) 1)
-        (logprob ngrams (tokenize-ngram ngrams ngram))
-        (call-next-method))))
+    (with-accessors ((order ngrams-order)) ngrams
+      (if (> order 1)
+          (logprob ngrams (tokenize <word-tokenizer> ngram))
+          (call-next-method)))))
 
 (defgeneric cond-prob (ngrams ngram)
   (:documentation
@@ -80,9 +87,10 @@
         1
         (call-next-method)))
   (:method :around ((ngrams ngrams) (ngram string))
-    (if (> (ngrams-order ngrams) 1)
-        (cond-prob ngrams (tokenize-ngram ngrams ngram))
-        (call-next-method))))
+    (with-accessors ((order ngrams-order)) ngrams
+      (if (> order 1)
+          (cond-prob ngrams (tokenize <word-tokenizer> ngram))
+          (call-next-method)))))
 
 (defgeneric cond-logprob (ngrams ngram)
   (:documentation
@@ -90,9 +98,10 @@
     By conditional probability we mean the probability of occurrence
     of the last word given the previous words.")
   (:method :around ((ngrams ngrams) (ngram string))
-    (if (> (ngrams-order ngrams) 1)
-        (cond-logprob ngrams (tokenize-ngram ngrams ngram))
-        (call-next-method))))
+    (with-accessors ((order ngrams-order)) ngrams
+      (if (> order 1)
+          (cond-logprob ngrams (tokenize <word-tokenizer> ngram))
+          (call-next-method)))))
 
 (defgeneric freqs (ngrams &rest ngrams-list)
   (:documentation
@@ -171,14 +180,14 @@
 (defmethod vocab ((ngrams table-ngrams) &key order-by)
   (with-slots (table) ngrams
     (if order-by
-        (mapcar #'car (sort (ngrams-pairs ngrams) order-by :key #'cdr))
+        (mapcar #'l (sort (ngrams-pairs ngrams) order-by :key #'l))
         (ht-keys table))))
 
 (defmethod ngrams-pairs ((ngrams table-ngrams) &key order-by)
   (with-slots (table) ngrams
     (if order-by
-        (sort (ht->alist table) order-by :key #'cdr)
-        (ht->alist table))))
+        (sort (ht->pairs table) order-by :key #'r)
+        (ht->pairs table))))
 
 ;; (defmethod ngrams-pairs ((ngrams table-ngrams))
 ;;   (let ((total 0)
@@ -235,8 +244,12 @@
 
 ;;; Helper functions
 
-(defun tokenize-ngram (ngrams str)
-  "Transform string STR to a list if necessary (depending of order of NGRAMS)."
-  (if (> (ngrams-order ngrams) 1)
-      (tokenize <word-tokenizer> str)
-      str))
+(defun count-ngram-freqs (list &optional (order 1) (eq-test 'equal))
+  (let ((rez (make-hash-table :test eq-test)))
+    (loop :for tail :on list :by #`(nthcdr order %) :do
+       (incf (get# (if (= 1 order)
+                       (first tail)
+                       (sub tail 0 order))
+                   rez 0)))
+    rez))
+

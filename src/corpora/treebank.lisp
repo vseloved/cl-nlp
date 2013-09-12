@@ -10,7 +10,7 @@
 
 
 (defmethod read-corpus ((type (eql :treebank)) path)
-  (let ((rez (make-corpus :desc "Penn Treebank")))
+  (let ((rez (make-corpus :desc "Treebank")))
     (fad:walk-directory
      path
      #`(mv-bind (raw clean tokens trees) (read-corpus-file :treebank %)
@@ -21,10 +21,11 @@
     rez))
 
 (defmethod read-corpus-file ((type (eql :treebank)) file)
-  (let ((raw (string-trim +white-chars+ (read-file file))))
+  (let ((raw (string-trim +white-chars+ (read-file file)))
+        (*package* (find-package :ncorpus)))
     (with-input-from-string (in (prepare-tree-for-reading raw))
       (loop
-         :for tree := (car (read in nil)) :while tree
+         :for tree := (read in nil) :while tree
          :collect raw :into raws
          :collect tree :into trees
          :collect (let ((pos 0)
@@ -52,7 +53,7 @@
 (defmethod map-corpus ((type (eql :treebank)) path fn)
   (fad:walk-directory
    path
-   #`(mv-bind (raw clean tokens tress) (read-corpus-file :treebank %)
+   #`(mv-bind (raw clean tokens trees) (read-corpus-file :treebank %)
        (funcall fn (make-treebank-text :name (pathname-name %)
                                        :raw raw :clean clean
                                        :tokens tokens :trees trees)))))
@@ -70,9 +71,13 @@
                                (fmt "(|~A\\|~A|" (sub % 1 it) (sub % (1+ it))))
                               (t %)))
                            ((position #\) %)
-                            (if (zerop it)
-                                %
-                                (fmt "\"~A\"~A" (sub % 0 it) (sub % it))))
+                            (cond ((zerop it) %)
+                                  ((and (< (1+ it) (length %))
+                                        (position #\( %))
+                                   (fmt "\"~A\")"
+                                        (sub % 0 (position #\) %
+                                                           :start (1+ it)))))
+                                  (t (fmt "\"~A\"~A" (sub % 0 it) (sub % it)))))
                            (t (fmt "\"~A\"" %)))
                        (split-sequence-if #`(member % +white-chars+)
                                           string :remove-empty-subseqs t))))

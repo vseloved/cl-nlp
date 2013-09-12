@@ -20,7 +20,7 @@
    "Tokenize STRING with TOKENIZER. Outputs 2 values:
 
     - list of words
-    - list of spans as beg-end cons pairs"))
+    - list of spans as beg-end pairs"))
 
 ;; (defgeneric stream-tokenize (tokenizer input output &optional span-output)
 ;;   (:documentation
@@ -49,8 +49,8 @@
     (loop :for line :in (split #\Newline string) :do
        (mv-bind (ts ss) (call-next-method tokenizer line)
          (setf words (nconc words ts)
-               spans (nconc spans (mapcar #`(cons (+ (car %) offset)
-                                                  (+ (cdr %) offset))
+               spans (nconc spans (mapcar #`(pair (+ (l %) offset)
+                                                  (+ (r %) offset))
                                           ss)))
          (incf offset (1+ (length line)))))
     (values words
@@ -73,8 +73,8 @@
 (defmethod tokenize ((tokenizer regex-word-tokenizer) string)
   (loop :for (beg end) :on (re:all-matches (tokenizer-regex tokenizer) string)
                        :by #'cddr
-     :collect (subseq string beg end) :into words
-     :collect (cons beg end) :into spans
+     :collect (sub string beg end) :into words
+     :collect (pair beg end) :into spans
      :finally (return (values words
                               spans))))
 
@@ -95,7 +95,7 @@
                    ;; decimals
                    "|[+-]?[0-9](?:[0-9,.]*[0-9])?"
                    ;; regular words
-                   "|[\\w@](?:[\\w'‘’`@-][\\w']|[\\w'][\\w@'‘’`-])*[\\w']?"
+                   "|[\\w@](?:[\\w'’`@-][\\w']|[\\w'][\\w@'’`-])*[\\w']?"
                    ;; punctuation & special symbols
                    "|[\"#$%&*+,/:;<=>@^`~…\\(\\)⟨⟩{}\\[\\|\\]‒–—―«»“”‘’'¶]"
                    ;; closing punctuation
@@ -119,33 +119,34 @@
 
 (defmethod tokenize :around ((tokenizer postprocessing-regex-word-tokenizer)
                              string)
-  (mv-bind (words spans) (call-next-method)
-    (let (ws ss)
-      (loop :for wtail :on words :for stail :on spans :do
-         (let ((cur (car wtail))
-               (prev (car ws))
-               (next (cadr wtail)))
+  (mv-bind (ws ss) (call-next-method)
+    (let (words spans)
+      (loop :for wtail :on ws :for stail :on ss :do
+         (let ((cur (first wtail))
+               (cur-span (first stail))
+               (prev (first words))
+               (next (second wtail)))
            (macrolet ((push-contractions (char-length)
-                        `(progn (push (substr cur 0 (- ,char-length)) ws)
-                                (push (substr cur (- ,char-length)) ws)
-                                (push (cons (caar stail)
-                                            (- (cdar stail) ,char-length))
-                                      ss)
-                                (push (cons (- (cdar stail) ,char-length)
-                                            (cdar stail))
-                                      ss))))
+                        `(let* ((next cur-span)
+                                (split-pos (- (length cur) ,char-length))
+                                (split (- (r next) ,char-length)))
+                           (push (sub cur 0 split-pos) words)
+                           (push (sub cur split-pos) words)
+                           (push (pair (l next) split) spans)
+                           (push (pair split (r next)) spans))))
              (cond
                ;; glue together abbreviations and decimals
                ((and prev
-                     (= (cdar ss) (caar stail))
+                     (= (l cur-span) (r (first ss)))
                      (or (and (string= "." cur)
                               next
                               (not (open-quote-char-p (char next 0)))
                               (alphanumericp (char prev (1- (length prev)))))
                          (and (ends-with "." prev)
                               (alphanumericp (char cur 0)))))
-                (setf (car ws) (strcat prev cur)
-                      (car ss) (cons (caar ss) (cdar stail))))
+                (setf (first words) (strcat prev cur)
+                      (first spans) (pair (l (first spans))
+                                          (r cur-span))))
                ;; splitting contractions: I'm, he/she/it's, 'd
                ((re:scan *2char-contractions-regex* cur)
                 (push-contractions 2))
@@ -153,14 +154,10 @@
                ((re:scan *3char-contractions-regex* cur)
                 (push-contractions 3))
                ;; pass other tokens as is
-               (t (push cur ws)
-                  (push (car stail) ss))))))
-      ;; ;; add dummy period at the end if the real period was fused in abbr
-      ;; (when (re:scan "[^!?.]\\." (car ws))
-      ;;   (push "." ws)
-      ;;   (push (cons (1- (cdar ss)) (cdar ss)) ss))
-      (values (reverse ws)
-              (reverse ss)))))
+               (t (push cur words)
+                  (push cur-span spans))))))
+      (values (reverse words)
+              (reverse spans)))))
 
 (define-lazy-singleton word-tokenizer
     (make 'postprocessing-regex-word-tokenizer)
@@ -251,22 +248,22 @@
     (let ((beg 0)
           sentences spans)
       (loop :for ws :on words :and ss :on word-spans :do
-         (let ((word (first ts))
+         (let ((word (first ws))
                (span (first ss)))
-           (when (or (null (rest ts))
+           (when (or (null (rest ws))
                      (and (member (char word (1- (length word)))
                                   '(#\. #\? #\! #\¶))
                           (not (member word +abbrevs-with-dot+
                                        :test #'string-equal))
-                          (and-it (second ts)
+                          (and-it (second ws)
                                   (upper-case-p (char it 0)))))
-             (push (subseq string beg (cdr span)) sentences)
-             (push (cons beg (cdr span)) spans)
-             (setf beg (car (second ss))))))
+             (push (sub string beg (r span)) sentences)
+             (push (pair beg (r span)) spans)
+             (setf beg (l (second ss))))))
       (values (reverse sentences)
               (reverse spans)))))
 
-(define-lazy-singleton sentence-tokenizer (make 'baseline-sentence-tokenizer)
+(define-lazy-singleton sentence-splitter (make 'baseline-sentence-tokenizer)
   "Basic sentence splitter.")
 
 
@@ -297,8 +294,8 @@
   "For each clause in BODY wrap it in `(setf var (clause arg1 var args))`."
   `(progn
      ,@(mapcar (lambda (clause)
-                 `(setf ,var (,(car clause)
-                               ,@(when-it (cadr clause) (list it))
+                 `(setf ,var (,(first clause)
+                               ,@(when-it (second clause) (list it))
                                ,var
-                               ,@(when-it (cadr clause) (nthcdr 2 clause)))))
+                               ,@(when-it (second clause) (nthcdr 2 clause)))))
                body)))

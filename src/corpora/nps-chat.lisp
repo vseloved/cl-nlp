@@ -5,7 +5,7 @@
 
 
 (defmethod read-corpus ((type (eql :nps-chat)) path)
-  (let ((rez (make-corpus :name "NPS Chat Corpus"
+  (let ((rez (make-corpus :desc "NPS Chat Corpus"
                           :groups #{:by-class #{} :by-user #{equal}}))
         raw tokens)
     (fad:walk-directory
@@ -28,7 +28,7 @@
                   (push text (get# cls (get# :by-class groups)))
                   (unless (get# user (get# :by-user groups))
                     (set# user (get# :by-user groups) ()))
-                  (push text (get# usr (get# :by-user groups)))))))))
+                  (push text (get# user (get# :by-user groups)))))))))
     rez))
 
 (defmethod read-corpus-file ((type (eql :nps-chat)) source)

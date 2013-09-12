@@ -22,3 +22,9 @@
     (* 2 total (- (entropy (list ab a~b ~ab ~a~b) total)
                   (entropy (list (+ ab a~b) (+ ~ab ~a~b)) total)
                   (entropy (list (+ ab ~ab) (+ a~b ~a~b)) total)))))
+
+;; (defun ovis (words)
+;;   "Swedish"
+;;   (/ (log (length words))
+;;      (log (- 2 (/ (log (length (uniqs words)))
+;;                   (log (length words)))))))

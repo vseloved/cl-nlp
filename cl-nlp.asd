@@ -1,16 +1,14 @@
 ;;; (c) 2013 Vsevolod Dyomkin
 
-(in-package #:asdf)
-
-
-(defsystem #:cl-nlp
-  :version "0.0.4"
+(asdf:defsystem #:cl-nlp
+  :version "0.0.5"
   :description "NLP toolkit for Common Lisp."
   :author "Vsevolod Dyomkin <vseloved@gmail.com>"
   :maintainer "Vsevolod Dyomkin <vseloved@gmail.com>"
   :license "Apache 2.0"
   :depends-on (#:rutils #:cl-fad #:cl-ppcre
-               #:cxml #:drakma #:zip #:flexi-streams)
+               #:cxml #:drakma #:zip #:flexi-streams
+               #+dev #:should-test)
   :serial t
   :components
   ((:module #:src
@@ -20,13 +18,23 @@
              (:module #:util
                       :serial t
                       :components
-                      ((:file "misc")
+                      ((:file "generics")
+                       (:file "misc")
                        (:file "files")
                        (:file "chars")
                        (:file "words")
                        (:file "trees")
-                       (:file "math")
-                       (:file "test")))
+                       (:file "math")))
+             (:module #:core
+                      :serial t
+                      :components
+                      ((:file "general")
+                       (:file "stats")
+                       (:file "tokenization")
+                       (:file "ngrams")
+                       (:file "language-models")
+                       (:file "indexing")
+                       (:file "cond-freq-dist")))
              (:module #:corpora
                       :serial t
                       :components
@@ -35,27 +43,34 @@
                        (:file "brown")
                        (:file "nps-chat")
                        (:file "reuters")
-                       (:file "treebank")))
-             (:module #:core
-                      :serial t
-                      :components
-                      ((:file "measures")
-                       (:file "tokenization")
-                       (:file "ngrams")
-                       (:file "language-models")
-                       (:file "indexing")
-                       (:file "learning")))
+                       (:file "treebank")
+                       (:file "user")))
              (:module #:generation
                       :serial t
                       :components
                       ((:file "markov-chain")))
-             (:module #:syntax
+             (:module #:tagging
                       :serial t
                       :components
-                      ((:file "tagging")
-                       (:file "hmm")
+                      ((:file "general")
+                       (:file "hmm")))
+             (:module #:parsing
+                      :serial t
+                      :components
+                      ((:file "general")
                        (:file "tree-util")
-                       (:file "parsing")
-                       (:file "cfg")
-                       (:file "pcfg")))
-             (:file "user")))))
+                       (:file "grammars")
+                       (:file "cky")))
+             (:file "user")))
+   #+dev
+   (:module #:test
+            :components
+            ((:module #:util
+                      :components
+                      ((:file "trees-test")))
+             (:module #:corpora
+                      :components
+                      ((:file "treebank-test")))
+             (:module #:core
+                      :components
+                      ((:file "stats-test")))))))
