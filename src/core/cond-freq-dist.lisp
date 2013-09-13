@@ -5,7 +5,7 @@
 
 
 (defgeneric make-cfd (raw &key eq-test &allow-other-keys)
-  (:docuemntation
+  (:documentation
    "Create a conditional frequency distribution from raw data."))
 
 
