@@ -54,5 +54,5 @@
     result collection, if needed, should be done in the FN."))
 
 
-(defparameter *corpora-root* (merge-pathnames "corpora/*" +project-root+)
+(defparameter *corpora-root* (merge-pathnames "corpora/" +project-root+)
   "Default root directory for corpuses.")

@@ -22,12 +22,13 @@
   "Number of non-terminals in the current grammar.")
 
 (declaim (inline @))
-(defun @ (m i j k)
+(defun @ (m i j k &optional default)
   "Access element of M for indices I, J and non-terminal K."
   (get# (+ (* i *n* *k*)
            (* j *k*)
            k)
-        m))
+        m
+        default))
 
 (defsetf @ (m i j k) (v)
   `(set# (+ (* ,i *n* *k*)
@@ -233,17 +234,17 @@
             :for score :in (take unvisited cur-pi) :do
          (ds-bind ((h l &optional r) . s) bp
            ;; look at alternative paths at current node
-           (dolist (idx (cons (list i s l)
-                              (when r (list (list (1+ s) j r)))))
-             (let* ((cur-scores (apply #'@ *pi* idx))
-                    (next (1+ (apply #'@ visited idx)))
-                    (alt-score (when (< next (length cur-scores))
+           (loop :for (ii jj kk) :in (cons (list i s l)
+                                           (when r (list (list (1+ s) j r)))) :do
+              (let* ((cur-scores (@ *pi* ii jj kk))
+                     (next (1+ (@ visited ii jj kk)))
+                     (alt-score (when (< next (length cur-scores))
                                  (+ score (- (nth next cur-scores)
                                              (car cur-scores))))))
                (when (and alt-score (> alt-score (car best)))
                  (setf best
                        (list alt-score
-                             #`(if (= i (car idx))
+                             #`(if (= i ii)
                                    ;; explore left alternatives
                                    (list iroot
                                          (decode-alt-tree i s l next)
@@ -252,7 +253,7 @@
                                    (list iroot
                                          (decode-alt-tree i s l 0)
                                          (decode-alt-tree (1+ s) j r next)))
-                             idx))))))
+                             (list ii jj kk))))))
            ;; look below already visited nodes
            (dolist (idx (cons (list i s h)
                               (when (< s *n*)
@@ -262,8 +263,9 @@
                (when (> alt-score (car best))
                  (setf best (list alt-score
                                   #`(list iroot (funcall tree-decoder))
-                                  idx))))))
-      (setf (apply #'@ visited best) (1+ (or (apply #'@ visited best) 0)))
+                                  idx)))))))
+      (ds-bind (i j k) best
+        (incf (@ visited best) 0))
       (cons (second best) (first best)))))
 
 
