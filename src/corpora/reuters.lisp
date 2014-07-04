@@ -11,9 +11,10 @@
   dateline)
 
 
-(defmethod read-corpus ((type (eql :reuters)) path)
+(defmethod read-corpus ((type (eql :reuters)) path &key ext)
   "Expects PATH to be a zip archive of the corpus
    with embedded archives for each day."
+  (declare (ignore ext))
   (let ((rez (make-corpus :desc "Reuters Corpus"
                           :groups #{:by-date #{equal}})))
     (zip:with-zipfile (zip path)
@@ -41,7 +42,8 @@
   "Read individual file from the Reuters Corpus."
   (cxml:parse in (make 'reuters-sax)))
 
-(defmethod map-corpus ((type (eql :reuters)) path fn)
+(defmethod map-corpus ((type (eql :reuters)) path fn &key ext)
+  (declare (ignore ext))
   (zip:with-zipfile (zip path)
     (zip:do-zipfile-entries (name entry zip)
       (unless (char= #\/ (last-char name))
@@ -94,14 +96,15 @@
 
 (defmethod sax:end-document ((sax reuters-sax))
   (with-slots (id date paragraphs headline byline dateline) sax
-    (values nil
-            (strjoin "~%" (reverse paragraphs))
-            (ncore:tokenize ncore:<word-tokenizer> text)
-            id
-            date
-            (when headline
-              (string-trim +white-chars+ (fmt "~{~A~}" headline)))
-            (when byline
-              (string-trim +white-chars+ (fmt "~{~A~}" byline)))
-            (when dateline
-              (string-trim +white-chars+ (fmt "~{~A~}" dateline))))))
+    (let ((text (strjoin "~%" (reverse paragraphs))))
+      (values nil
+              text
+              (ncore:tokenize ncore:<word-tokenizer> text)
+              id
+              date
+              (when headline
+                (string-trim +white-chars+ (fmt "~{~A~}" headline)))
+              (when byline
+                (string-trim +white-chars+ (fmt "~{~A~}" byline)))
+              (when dateline
+                (string-trim +white-chars+ (fmt "~{~A~}" dateline)))))))

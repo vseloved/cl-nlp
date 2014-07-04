@@ -60,6 +60,7 @@
                                (or (~ v s) 0))))
             (terpri stream)))))))
 
+#+nil
 (defun plot-table (table &rest args
                          &key keys cols cumulative (order-by (constantly nil)))
   "Plot all or selected KEYS and COLS from a TABLE.

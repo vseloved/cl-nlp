@@ -48,16 +48,10 @@
     - list of tokens from the text
     - possibly some other relevant data"))
 
-(defgeneric map-corpus (type path fn)
+(defgeneric map-corpus (type path fn &key ext)
   (:documentation
    "Map FN to each entry (of type TEXT) in corpus of TYPE (a keyword) at PATH.
     The order of processing the corpus' entries is unspecified.
     Similar to MAPHASH rather than MAPCAR:
-    result collection, if needed, should be done in the FN."))
-
-(defun walk-corpus-dir (dir ext fn)
-  "Just like fad:walk-directory, but filters by extension EXT."
-  (fad:walk-directory dir
-                      #`(when (or (null ext)
-                                  (string= ext (pathname-type %)))
-                          (funcall fn))))
+    result collection, if needed, should be done in the FN.
+    If EXT is given it is a restriction on file's extension."))

@@ -1,6 +1,6 @@
 ;;; (c) 2013 Vsevolod Dyomkin
 
-(in-package #:ncorpus)
+(in-package #:ncorp)
 (named-readtables:in-readtable rutils-readtable)
 (use-package :should-test)
 

@@ -64,3 +64,10 @@
            (do-entries (,name ,stream ,zip
                               :external-format ,external-format :raw ,raw)
              ,@body))))))
+
+(defun walk-corpus-dir (dir ext fn)
+  "Just like fad:walk-directory, but filters by extension EXT."
+  (fad:walk-directory dir
+                      #`(when (or (null ext)
+                                  (string= ext (pathname-type %)))
+                          (funcall fn %))))

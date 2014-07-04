@@ -4,7 +4,8 @@
 (named-readtables:in-readtable rutils-readtable)
 
 
-(defmethod read-corpus ((type (eql :nps-chat)) path)
+(defmethod read-corpus ((type (eql :nps-chat)) path &key ext)
+  (declare (ignore ext))
   (let ((rez (make-corpus :desc "NPS Chat Corpus"
                           :groups #{:by-class #{} :by-user #{equal}}))
         raw tokens)
@@ -35,7 +36,8 @@
   "Read individual file from the NPS Chat Corpus."
   (cxml:parse source (make 'nps-chat-sax)))
 
-(defmethod map-corpus ((type (eql :nps-chat)) path fn)
+(defmethod map-corpus ((type (eql :nps-chat)) path fn &key ext)
+  (declare (ignore ext))
   (fad:walk-directory
    path
    #`(when (string= "xml" (pathname-type %))

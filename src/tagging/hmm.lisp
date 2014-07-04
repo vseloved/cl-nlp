@@ -4,19 +4,10 @@
 (named-readtables:in-readtable rutils-readtable)
 
 
-(defclass hmm ()
-  ((order :initarg :order :initform 2 :reader model-order)
-   (tags :initarg :tags :reader model-tags)
-   (transition-lm :initarg :transition-lm :reader hmm-transition-lm
-    :documentation "A language model of tags transition probabilities.")
-   (emission-lm :initarg :emission-lm :reader hmm-emission-lm
-    :documentation "An ngrams model of tag-to-word conditional probabilities."))
-  (:documentation
-   "A Hidden Markov Model has an ORDER, a set of TAGS and 2 language models:
-    - TRANSITION-LM of transition probabilities between TAGS of the model's ORDER
-    - EMISSION-LM of emission probabilities of words from tags"))
+(defclass hmm-tagger (hmm tagger)
+  ())
 
-(defmethod train ((model hmm) data &rest args
+(defmethod train ((model hmm-tagger) data &rest args
                   &key (transition-lm-class 'plain-lm)
                        (emission-lm-class 'plain-lm)
                   &allow-other-keys)
@@ -72,7 +63,7 @@
          :emission-lm-class emission-lm-class))
 
 
-(defmethod tag ((model hmm) (sentence list))
+(defmethod tag ((model hmm-tagger) (sentence list))
   "Tag the tokenized SENTENCE using a Viterbi algorithm for HMMs."
   (with-slots (order tags (tps transition-lm) (eps emission-lm)) model
     (let* ((len (length sentence))

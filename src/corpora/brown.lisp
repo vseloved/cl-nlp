@@ -1,28 +1,27 @@
-;;; (c) 2013 Vsevolod Dyomkin
+;;; (c) 2013-2014 Vsevolod Dyomkin
 
 (in-package #:nlp.corpora)
 (named-readtables:in-readtable rutils-readtable)
 
 
-(defmethod read-corpus ((type (eql :brown)) path)
+(defmethod read-corpus ((type (eql :brown)) path &key ext)
+  (declare (ignore ext))
   (let* ((path (namestring path))
-         (topic-mapping #{
-           #\a :press-reportage
-           #\b :press-editorial
-           #\c :press-reviews
-           #\d :religion
-           #\e :skill-and-hobbies
-           #\f :popular-lore
-           #\g :belles-lettres
-           #\h :miscellaneous-government-house-organs
-           #\j :learned
-           #\k :fiction-general
-           #\l :fiction-mystery
-           #\m :fiction-science
-           #\n :fiction-adventure
-           #\p :fiction-romance
-           #\r :humor
-          })
+         (topic-mapping #h(#\a :press-reportage
+                           #\b :press-editorial
+                           #\c :press-reviews
+                           #\d :religion
+                           #\e :skill-and-hobbies
+                           #\f :popular-lore
+                           #\g :belles-lettres
+                           #\h :miscellaneous-government-house-organs
+                           #\j :learned
+                           #\k :fiction-general
+                           #\l :fiction-mystery
+                           #\m :fiction-science
+                           #\n :fiction-adventure
+                           #\p :fiction-romance
+                           #\r :humor))
          (rez (make-corpus :desc "Brown Corpus" :groups #{})))
     (dotable (_ topic topic-mapping)
       (set# topic (corpus-groups rez) ()))
@@ -65,7 +64,8 @@
                   (setf (subseq clean b e) w))))
             (reverse tokens))))
 
-(defmethod map-corpus ((type (eql :brown)) path fn)
+(defmethod map-corpus ((type (eql :brown)) path fn &key ext)
+  (declare (ignore ext))
   (dolist (file (directory path))
     (when (= 4 (length (pathname-name file)))
       (mv-bind (raw clean tokens) (read-corpus-file :brown file)

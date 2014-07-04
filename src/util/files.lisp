@@ -4,21 +4,23 @@
 (named-readtables:in-readtable rutils-readtable)
 
 
-(eval-always
-  (defparameter +project-root+ (asdf:system-relative-pathname 'cl-nlp "")
-    "Base dir of cl-nlp project."))
-
 (defun data-file (filename)
   "File in data/ subdir of cl-nlp."
-  (merge-pathnames (strcat "data/" filename)
-                   +project-root+))
+  (asdf:system-relative-pathname 'cl-nlp
+                                 (strcat "data/" filename)))
 
-(defun list-from-file (file)
-  "Load the contents of FILE into a list of strings for each trimmed line."
-  (let (rez)
-    (dolines (line file)
-      (push (string-trim +white-chars+ line) rez))
-    (reverse rez)))
+(defun src-file (filename)
+  "File in src/ subdir of cl-nlp."
+  (asdf:system-relative-pathname 'cl-nlp
+                                 (strcat "src/" filename)))
+
+(defun corpus-file (filename)
+  "File in corpora/ subdir of cl-nlp."
+  (asdf:system-relative-pathname 'cl-nlp
+                                 (strcat "corpora/" filename)))
+
+
+;;; writing
 
 (defun write-bin-file (path data)
   "Save octet sequence DATA to file at PATH,
@@ -29,6 +31,55 @@
                        :element-type 'flex:octet)
     (write-sequence data out))
   path)
+
+(defun write-dict (dict file &key (separator " "))
+  "Dump DICT to a FILE with each key-value pair on a separate line
+   separated by SEPARATOR."
+  (with-out-file (out file)
+    (dotable (k v dict)
+      (format out "~A~A~A~%" k separator v))))
+
+
+;;; reading
+
+(defun list-from-file (file)
+  "Load the contents of FILE into a list of strings for each trimmed line."
+  (format *debug-io* "~&Reading list from file: ~A - " file)
+  (let (rez)
+    (dolines (line file)
+      (push (string-trim +white-chars+ line) rez))
+    (format *debug-io* "done.~%")
+    (reverse rez)))
+
+(defun dict-from-file (file &key (separator " ") (test 'equal)
+                       (key-transform 'identity) (val-transform 'identity))
+  "Read a dict with test predicate TEST from FILE,
+   asssuming each key-value pair is on a separate line,
+   key and value separated by SEPARATOR.
+   If KEY-TRANSFORM and/or VAL-TRANSFORM are provided,
+   they are applied before setting a respected value
+   in the resulting hash-table.
+   If the same key is read several times a warning will be sugnalled."
+  (format *debug-io* "~&Reading dict from file: ~A - " file)
+  (let ((dict (make-hash-table :test test)))
+    (dolines (line file)
+      (let* ((split-pos (search separator line))
+             (k (funcall key-transform (slice line 0 split-pos)))
+             (v (funcall val-transform (slice line (+ split-pos
+                                                      (length separator))))))
+        (when-it (get# k dict)
+          (warn "Key: ~A has been already in dict with value: ~A. New value: ~A"
+                k it v))
+        (set# k dict v)))
+    (format *debug-io* "done.~%")
+    dict))
+
+
+;;; downloading
+
+(defgeneric download (what &key url dir)
+  (:documentation
+   "Download WHAT from URL to DIR."))
 
 (defun download-file (url dir)
   "Download file from URL and place it into DIR by the name
@@ -42,6 +93,19 @@
     (values path
             filename)))
 
-(defgeneric download (what &key url dir)
+
+;;; tsv
+
+(defgeneric write-tsv (table &key keys cols cumulative order-by)
   (:documentation
-   "Download WHAT from URL to DIR."))
+   "Write a temporary tsv file from TABLE using either all
+    or provided KEYS and COLS. Can use CUMULATIVE counts and ORDER-BY.
+
+    The file contents look like this:
+
+    No Label        Col1   Col2          Col3
+    1  One          1      2             3
+    2  Two          4      5             6
+    ...
+
+    Return the file name and number of keys and columns as other values."))

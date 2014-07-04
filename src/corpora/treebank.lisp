@@ -9,10 +9,10 @@
   trees)
 
 
-(defmethod read-corpus ((type (eql :treebank)) path)
+(defmethod read-corpus ((type (eql :treebank)) path &key ext)
   (let ((rez (make-corpus :desc "Treebank")))
-    (fad:walk-directory
-     path
+    (walk-corpus-dir
+     path ext
      #`(mv-bind (raw clean tokens trees) (read-corpus-file :treebank %)
          (push (make-treebank-text :name (pathname-name %)
                                    :raw raw :clean clean
@@ -22,7 +22,7 @@
 
 (defmethod read-corpus-file ((type (eql :treebank)) file)
   (let ((raw (string-trim +white-chars+ (read-file file)))
-        (*package* (find-package :ncorpus)))
+        (*package* (find-package :nlp.tags)))
     (with-input-from-string (in (prepare-tree-for-reading raw))
       (loop
          :for tree := (read in nil) :while tree
@@ -50,10 +50,11 @@
                          tokens
                          trees))))))
 
-(defmethod map-corpus ((type (eql :treebank)) path fn)
-  (fad:walk-directory
-   path
+(defmethod map-corpus ((type (eql :treebank)) path fn &key ext)
+  (walk-corpus-dir
+   path ext
    #`(mv-bind (raw clean tokens trees) (read-corpus-file :treebank %)
+       (format *debug-io* ".")
        (funcall fn (make-treebank-text :name (pathname-name %)
                                        :raw raw :clean clean
                                        :tokens tokens :trees trees)))))
@@ -61,23 +62,24 @@
 ;;; utils
 
 (defun prepare-tree-for-reading (string)
-  (strjoin " " (mapcar #`(cond-it
-                           ((char= #\( (char % 0))
-                            (cond-it
-                              ((member (sub % 1) '("." "," ";" ":" "#" "''" "``")
-                                       :test 'string=)
-                               (fmt "(|~A|" (sub % 1)))
-                              ((position #\| %)
-                               (fmt "(|~A\\|~A|" (sub % 1 it) (sub % (1+ it))))
-                              (t %)))
-                           ((position #\) %)
-                            (cond ((zerop it) %)
-                                  ((and (< (1+ it) (length %))
-                                        (position #\( %))
-                                   (fmt "\"~A\")"
-                                        (sub % 0 (position #\) %
-                                                           :start (1+ it)))))
-                                  (t (fmt "\"~A\"~A" (sub % 0 it) (sub % it)))))
-                           (t (fmt "\"~A\"" %)))
-                       (split-sequence-if #`(member % +white-chars+)
-                                          string :remove-empty-subseqs t))))
+  (strjoin
+   " " (mapcar #`(cond-it
+                   ((char= #\( (char % 0))
+                    (cond-it
+                      ((member (slice % 1) '("." "," ";" ":" "#" "''" "``")
+                               :test 'string=)
+                       (fmt "(|~A|" (slice % 1)))
+                      ((position #\| %)
+                       (fmt "(|~A\\|~A|" (slice % 1 it) (slice % (1+ it))))
+                      (t %)))
+                   ((position #\) %)
+                    (cond ((zerop it) %)
+                          ((and (< (1+ it) (length %))
+                                (position #\( %))
+                           (fmt "\"~A\")"
+                                (slice % 0 (position #\) % :start (1+ it)))))
+                          (t (fmt "\"~A\"~A" (slice % 0 it) (slice % it)))))
+                   (t (fmt "\"~A\"" %)))
+               (split-sequence-if #'white-char-p
+                                  (re:regex-replace-all "\"" string "\\\"")
+                                  :remove-empty-subseqs t))))

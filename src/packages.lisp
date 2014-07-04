@@ -1,4 +1,4 @@
-;;; (c) 2013 Vsevolod Dyomkin
+;;; (c) 2013-2014 Vsevolod Dyomkin
 
 
 (cl:defpackage #:nlp.util
@@ -6,19 +6,6 @@
   (:use #:common-lisp #:rutil)
   (:export #:cl-nlp-error
            #:not-implemented-error
-
-           #:generic-elt
-           #:~
-           #:pair
-           #:l
-           #:r
-           #:vals
-           #:keys
-           #:pairs
-           #:ht->pairs
-           #:pairs->ht
-           #:maptable
-           #:donext
 
            #:*stopwords-en*
 
@@ -42,28 +29,27 @@
            #:uniq
            #:sorted-ht-keys
            #:shorter?
+           #:equal-when-present
 
-           #:+project-root+
+           #:corpus-file
            #:data-file
+           #:src-file
+           #:write-bin-file
+           #:write-dict
+           #:write-tsv
+           #:download
+           #:download-file
+
            #:list-from-file
+           #:dict-from-file
 
            #:argmax
            #:bin-search
 
            #:define-lazy-singleton
 
-           #:download-file
-           #:download
-           #:write-bin-file
-
-           #:maptree
-           #:mapleaves
-           #:dotree
-           #:doleaves
            #:pprint-tree
-
-           #:equal-when-present
-           #:write-tsv
+           #:princ-progress
            ))
 
 (cl:defpackage #:nlp.core
@@ -132,14 +118,20 @@
            #:find-collocations
 
            #:normalize
-           #:train
+           #:*number-regex*
+           #:*url-regex*
+           #:*email-regex*
 
            #:make-cfd
            ))
 
+(cl:defpackage #:nlp.tags
+  (:nicknames #:tag)
+  (:use #:common-lisp #:rutil #:nutil))
+
 (cl:defpackage #:nlp.corpora
-  (:nicknames #:ncorpus)
-  (:use #:common-lisp #:rutil #:nlp.util #:nlp.core)
+  (:nicknames #:ncorp)
+  (:use #:common-lisp #:rutil #:nutil #:nlp.core #:tag)
   (:export #:corpus
            #:make-corpus
            #:corpus-desc
@@ -160,32 +152,74 @@
 
            #:make-corpus-from-dir
 
+           ;; Specific corpora
            #:+brown-corpus+
            #:+nps-chat-corpus+
            ))
 
-(cl:defpackage #:nlp.tagging
-  (:nicknames #:ntag)
-  (:use #:common-lisp #:rutil #:nutil #:ncore)
-  (:export #:+stop-tag+
+(cl:defpackage #:nlp.learning
+  (:nicknames #:nlearn)
+  (:use #:common-lisp #:rutilsx #:nlp.util #:nlp.core)
+  (:export #:init-model
+           #:classify
+           #:train
+           #:train1
+           #:update1
+           #:evaluate
 
-           #:tag
+           ;; Features
+           #:ensure-f-init
+           #:extract-gold
+           #:extract-fs
+           #:make-fs
+           #:*fs-idx*
 
+           ;; Models
+           #:categorical-model
+           #:m-classes
+           #:m-weights
+
+           ;; Hidden Markov Models
            #:hmm
            #:make-hmm
            #:hmm-transition-lm
            #:hmm-emission-lm
 
+           ;; Global Linear Models
            #:glm
            #:make-glm
 
-           #:model-tags
+           ;; Perceptron Models
+           #:perceptron
+           #:avg-perceptron
+           #:greedy-ap
+           #:ap-step
+           #:ap-totals
+           #:ap-timestamps
+           ))
+
+(cl:defpackage #:nlp.tagging
+  (:nicknames #:ntag)
+  (:use #:common-lisp #:rutilsx #:nutil #:ncore #:nlearn #:tag)
+  (:export #:*tags*
+
+           #:tag
+           #:tagger
+           #:tagger-tags
+
+           ;; HMM taggers
+           #:hmm-tagger
+
+           ;; Perceptron taggers
+           #:greedy-ap-tagger
            ))
 
 (cl:defpackage #:nlp.parsing
   (:nicknames #:nparse)
-  (:use #:common-lisp #:rutil #:nutil #:ncore)
-  (:export #:chomsky-nf
+  (:use #:common-lisp #:rutil #:nutil #:ncore #:tag)
+  (:export #:*phrase-tags*
+
+           #:chomsky-nf
 
            #:parse
            #:parse-n
@@ -218,6 +252,7 @@
 
            #:text-generator
 
+           ;; Markov Chain Generators
            #:markov-chain-generator
            #:mark-v-shaney-generator
            #:<mark-v-shaney>
@@ -235,8 +270,9 @@
 
 
 (rutils:re-export-symbols '#:nutil    '#:nlp-user)
-(rutils:re-export-symbols '#:ncorpus  '#:nlp-user)
+(rutils:re-export-symbols '#:ncorp    '#:nlp-user)
 (rutils:re-export-symbols '#:ncore    '#:nlp-user)
+(rutils:re-export-symbols '#:nlearn   '#:nlp-user)
 (rutils:re-export-symbols '#:ngen     '#:nlp-user)
 (rutils:re-export-symbols '#:ntag     '#:nlp-user)
 (rutils:re-export-symbols '#:nparse   '#:nlp-user)

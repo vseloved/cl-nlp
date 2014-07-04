@@ -237,7 +237,7 @@
   (:documentation
    "Basic tokenizer for sentence splitting."))
 
-(defparameter +abbrevs-with-dot+
+(defvar +abbrevs-with-dot+
   (list-from-file (data-file "abbrevs-with-dot.txt"))
   "Widely-used abbreviations ending in dot.")
 

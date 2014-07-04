@@ -8,8 +8,6 @@
 
 (rename-package "CL-PPCRE" "CL-PPCRE" '("PPCRE" "RE"))
 
-(abbr ~ generic-elt)
-
 
 ;;; Conditions
 
@@ -64,16 +62,8 @@
                (return-from equal-when-present nil))
            specimen))
 
-(defgeneric write-tsv (table &key keys cols cumulative order-by)
-  (:documentation
-   "Write a temporary tsv file from TABLE using either all
-    or provided KEYS and COLS. Can use CUMULATIVE counts and ORDER-BY.
-
-    The file contents look like this:
-
-    No Label        Col1   Col2          Col3
-    1  One          1      2             3
-    2  Two          4      5             6
-    ...
-
-    Return the file name and number of keys and columns as other values."))
+(defun princ-progress (cur total)
+  "Print '.' on every full percent of CUR's progress to TOTAL."
+  (when (> (floor (* 100 (/ cur total)))
+           (floor (* 100 (/ (1- cur) total))))
+     (format *debug-io* ".")))
