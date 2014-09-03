@@ -91,8 +91,8 @@ Let's collect the tag distribution for each word from the WSJ section of the PTB
            (map-corpus :ptb-tagged (corpus-file "ptb/TAGGED/POS/WSJ")
                        #`(dolist (sent (text-tokens %))
                            (dolist (tok sent)
-                              (unless (in# (token-word tok) words-dist)
-                                (:= (get# (token-word tok) words-dist) #h()))
+                             (unless (in# (token-word tok) words-dist)
+                               (:= (get# (token-word tok) words-dist) #h()))
                              (:+ (get# (token-tag tok)
                                        (get# (token-word tok) words-dist)
                                        0))))
@@ -334,7 +334,7 @@ This dichotomy is manifested in the training phase:
 
 - the `train` method is specific to the `greedy-ap-tagger`.
   The generic `perceptron` training is much simpler, because it doesn't operate
-  in a sequence labeling scenario (see the [source code here]())
+  in a sequence labeling scenario (see the [source code here](https://github.com/vseloved/cl-nlp/blob/master/src/learning/perceptron.lisp#L22))
 - however, there's also an `:after` method defined for `train` on the `avg-perceptron` model
   which averages all the weights in the end and prunes the model by removing zero weights
 - there are also 2 more methods that are not specialized for `greedy-ap-tagger`:
@@ -394,7 +394,7 @@ Let's retrain our model on the whole OntoNotes (minus the evaluation set of WSJ 
 Here are the results:
 
 - on WSJ evaluation set: 96.76323 - a modest gain of 0.4%: we're already at max here
-- on Webtext: 92.901085 - a huge gain of almost 3.5%!
+- on Webtext: 92.9431 - a huge gain of more than 4%!
 
 So, broader data helps. What else can we do?
 
@@ -430,7 +430,7 @@ And here's a modified one:
                "!HYPH")))
         (t (string-downcase word))))
 
-Such change allows to gain another 0.45% accuracy on the Webtext corpus.
+Such change allows to gain another 0.06% accuracy on the Webtext corpus.
 
 Now, as we finally have the best model we need a way to persist and restore it.
 The corresponding `save-model`/`load-model` methods exist for any categorical model.
@@ -478,7 +478,7 @@ Here's a test we need:
         (extract-gold *tagger* test)))
 
     (deftest greedy-ap-tagger-quality ()
-      (should be = ...
+      (should be = 96.31641
               (accuracy *tagger* *gold*)))
 
 

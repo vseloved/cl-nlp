@@ -36,20 +36,24 @@ The project has already reached a stage of usefulness for the primary author:
 for instance, it supports my current language modelling experiments
 by providing easy access to treebanks and other utilities.
 
-Yet, it is far from being production-ready.
-To reach v.0.1 that may be considered suitable for limited use by non-contributors,
-the following things should be finished:
+Yet, it is far from being production-ready. So, if you want to use it for production tasks,
+expect to bleed on the bleeding edge.
 
-- implement a comprehensive test-suite and fix all bugs encountered in the process
-- write an architecture overview
-- describe available models and their quality metrics
-
-If you want to play with CL-NLP or become a contributor, here are a few texts
-I have already written in connection with it:
+Otherwise, if you want to contribute to developing the toolkit, you're very welcome.
+Here are a few write-ups to give you the sense of the project and to help get started:
 
 - [Writing a POS tagger with CL-NLP](doc/tagger-example.md)
-- [NLTK series](http://lisp-univ-etc.blogspot.com/search/label/nltk) - to be continued, by the way...
+- [NLTK series](http://lisp-univ-etc.blogspot.com/search/label/nltk) -
+  to be continued, by the way...
 - [CL-NLP Style Guide](doc/style-guide.md)
+
+You'll also, probably, need to track the latest version of [RUTILS][RUSTILS] from git.
+
+For `CL-NLP` to reach v.0.1 that may be considered suitable for limited use by non-contributors,
+the following things should be finished (work-in-progress):
+
+- implement a comprehensive test-suite and fix all bugs encountered in the process
+- describe available models and their quality metrics
 
 
 ## Technical notes
@@ -60,9 +64,9 @@ I have already written in connection with it:
 
 ### Dependencies
 
-- [RUTILS](http://github.com/vseloved/rutils)
-- [CXML]()
-- [DRAKMA]()
+- [RUTILS][RUTILS]
+- [Closure XML](http://common-lisp.net/project/cxml/)
+- [DRAKMA](http://weitz.de/drakma/)
 - [ZIP](http://common-lisp.net/project/zip/)
 - [USERIAL](http://nklein.com/software/unet/userial/)
 
@@ -70,11 +74,15 @@ For development:
 
 - [SHOULD-TEST](http://github.com/vseloved/should-test)
 
-### License
 
-The license of `CL-NLP` is Apache 2.0 license.
+## License
+
+The license of `CL-NLP` is Apache 2.0.
 
 Specific models may have different license due to the limitations of the dataset
 they are built with. Please see a `<model>.license` file accompanying each model for details.
 
 (c) 2013-2014, Vsevolod Dyomkin <vseloved@gmail.com>
+
+
+   [RUTILS]:http://github.com/vseloved/rutils
