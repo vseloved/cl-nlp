@@ -217,8 +217,8 @@ Every `tagger` has just one generic function associated with it.
 You guessed its name - `tag` :)
 
     (defmethod tag ((tagger greedy-ap-tagger) (sentence sentence))
-      (let ((prev :start)
-            (prev2 :start2)
+      (let ((prev :-START-)
+            (prev2 :-START2-)
             (ctx (sent-ctx sentence)))
         (doindex (i token (sent-tokens sentence))
           (:= (token-tag token)
@@ -285,7 +285,7 @@ will get the following list of features:
 
 The second part of learning is training. It is the most involved procedure here,
 yet still very simple conceptually. Just like with the `tag` method,
-we're iterating over all tokens preceded by a dummy `:-start2-` and `:-start-` ones,
+we're iterating over all tokens preceded by a dummy `:-START2-` and `:-START-` ones,
 and guessing the current tag using `classify`.
 Afterwards we're updating the model's weights in `train1`.
 The only difference is that we need to explicitly first consider the case
@@ -308,8 +308,8 @@ Note the use of `psetf` to update `prev` and `prev2` simultaneously.
         ;; train
         (dotimes (epoch epochs)
           (dolist (sent (mapcar #'sent-tokens sents))
-            (let* ((prev :-start-)
-                   (prev2 :-start2-)
+            (let* ((prev :-START-)
+                   (prev2 :-START2-)
                    (ctx (sent-ctx sent)))
               (doindex (i token sent)
                 (let ((word (token-word token)))
@@ -341,21 +341,21 @@ This dichotomy is manifested in the training phase:
   `train1` and `update1`. They perform 1 step of the normal perceptron training
   and model update
 
-    (defmethod train1 ((model perceptron) fs gold guess)
-      (:+ (ap-step model))
-      (dolist (f fs)
-        (ensure-f-init model f gold guess)
-        (loop
-           :for class :in (list gold guess)
-           :for val :in '(1 -1) :do
-           (update1 model f class val))))
+        (defmethod train1 ((model perceptron) fs gold guess)
+          (:+ (ap-step model))
+          (dolist (f fs)
+            (ensure-f-init model f gold guess)
+            (loop
+               :for class :in (list gold guess)
+               :for val :in '(1 -1) :do
+               (update1 model f class val))))
 
-    (defmethod update1 ((model avg-perceptron) f class val)
-      (with-slots (step timestamps weights totals) model
-        (:+ (? totals class f) (* (- step (? timestamps class f))
-                                  (? weights class f)))
-        (:+ (? weights class f) val)
-        (:= (? timestamps class f) step)))
+        (defmethod update1 ((model avg-perceptron) f class val)
+          (with-slots (step timestamps weights totals) model
+            (:+ (? totals class f) (* (- step (? timestamps class f))
+                                      (? weights class f)))
+            (:+ (? weights class f) val)
+            (:= (? timestamps class f) step)))
 
 
 ## Evaluation & persisting the model
@@ -431,6 +431,8 @@ And here's a modified one:
         (t (string-downcase word))))
 
 Such change allows to gain another 0.06% accuracy on the Webtext corpus.
+So, normalization improvement doesn't help that much.
+However, I think it should be more useful in real-world scenarios.
 
 Now, as we finally have the best model we need a way to persist and restore it.
 The corresponding `save-model`/`load-model` methods exist for any categorical model.
@@ -491,19 +493,20 @@ As long as you have the necessary data, it is quite straightforward and commonpl
 If you want to use one of the existing models (namely, greedy averaged perceptron, as of now)
 you can reuse almost all of the machinery and just add a couple of functions
 to reflect the specifics of your task. I think, it's a great demonstration of the power
-of the generic programming capabilities of the CLOS.
+of the generic programming capabilities of CLOS.
 
 Obviously, feature engineering is on you,
 but training/evaluation/saving/restoring the model can be handled transparently
 by `CL-NLP` tools. There's also support for common data processing and calculation tasks.
+
 We have looked at some of the popular corpora in this domain
-(which all, unfortunately, have some usage restrictions and are not readily available,
+(all of which, unfortunately, have some usage restrictions and are not readily available,
 but can be obtained for research purposes). And we've observed some of factors that impact
 the performance and robustness of machine learning models.
 I'd say that our final model is of the production-ready state-of-the-art level,
 so you can safely use it for your real-world tasks
-(under the licensing restrictions of the OnotoNotes dataset used for training it).
-Surely, if you have your own data, it should be straightforward to retrain the model with it.
+(under the licensing restrictions of the OntoNotes dataset used for training it).
+Surely, if you have your own data, it should be straightforward to re-train the model with it.
 
 You can also add your own learning algorithms,
 and I'm going to be continue doing the same likewise.
