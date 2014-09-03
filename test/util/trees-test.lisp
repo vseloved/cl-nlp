@@ -2,8 +2,6 @@
 
 (in-package #:nparse)
 (named-readtables:in-readtable rutils-readtable)
-(use-package :should-test)
-
 
 (deftest normalize-to-chomsky-nf ()
   (should be null

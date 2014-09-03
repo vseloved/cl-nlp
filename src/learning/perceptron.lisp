@@ -5,75 +5,77 @@
 
 
 (defclass perceptron (categorical-model)
-  ((weights :initform #h() :accessor m-weights)))
+  ())
 
 (defclass avg-perceptron (perceptron)
   ((step :initform 0 :accessor ap-step)
    (timestamps :initform #h() :accessor ap-timestamps)
    (totals :initform #h() :accessor ap-totals)))
 
-(defclass greedy-ap (avg-perceptron)
-  ())
+(defmethod classify ((model avg-perceptron) fs)
+  (let ((scores #h()))
+    (dotable (class weights (m-weights model))
+      (dolist (f fs)
+        (:+ (get# class scores 0) (get# f weights 0))))
+    (keymax scores)))
 
-;; (defmethod init-model ((model greedy-ap))
-;;   (setf (ap-step model) 0
-;;         (m-weights model) (make-array 0 :adjustable t :fill-pointer t)
-;;         (ap-totals model) (make-array 0 :adjustable t :fill-pointer t)
-;;         (ap-timestamps model) (make-array 0 :adjustable t :fill-pointer t)))
+(defmethod train ((model avg-perceptron) data &key (epochs 5) verbose)
+  (dotimes (epoch epochs)
+    (when verbose
+      (format t "~%~%==== Epoch: ~A ====~%~%" (1+ epoch)))
+    (let ((total (length data)) (prev-j 0) (c 0) (n 0))
+      (doindex (j sample data)
+        (ds-bind (gold . fs) sample
+          (let ((guess (classify model fs)))
+            (train1 model fs gold guess)
+            (when verbose
+              (:+ c (if (eql gold guess) 1 0))
+              (:+ n))))
+        (when (and verbose
+                   (> (/ (- j prev-j) total) 0.01))
+          (setf prev-j j)
+          (format t "~A / ~A = ~5F% - ~2F% ~%"
+                  c n (float (* 100 (/ c n)))
+                  (* 100 (/ j total))))
+        (unless verbose (princ-progress j total))))))
 
-(defmethod classify ((model greedy-ap) fs)
-  (let ((weights (m-weights model))
-        (scores #h())
-        (max 0)
-        argmax)
-    (dolist (f fs)
-;      (unless (>= f (length weights))
-        (dotable (class weight (get# f weights #h()))
-          (incf (get# class scores 0) weight)))
-    (dotable (class score scores)
-      (when (> score max)
-        (setf max score
-              argmax class)))
-    (values argmax
-            max)))
 
-(defmethod train1 ((model avg-perceptron) fs gold guess)
-  (incf (ap-step model))
+(defmethod train :after ((model avg-perceptron) data &key)
+  (with-slots (step totals weights timestamps) model
+    (dotable (class cur-weights weights)
+      (dotable (f weight cur-weights)
+        (update1 model f class 0)  ; final update of totals
+        (if (zerop weight)
+            (progn
+              (rem# f cur-weights)
+              (rem# f (? totals class))
+              (rem# f (? timestamps class)))
+            (set# f cur-weights (/ (? totals class f) step)))))))
+
+(defmethod train1 ((model perceptron) fs gold guess)
+  (:+ (ap-step model))
   (dolist (f fs)
     (ensure-f-init model f gold guess)
     (loop
-       :for c :in (list gold guess)
-       :for v :in '(1 -1) :do
-       (update1 model f c v))))
+       :for class :in (list gold guess)
+       :for val :in '(1 -1) :do
+       (update1 model f class val))))
 
-(defmethod update1 ((model avg-perceptron) f c v)
+(defmethod update1 ((model avg-perceptron) f class val)
   (with-slots (step timestamps weights totals) model
-    (incf (? totals f c)
-          (* (- step (? timestamps f c))
-             (? weights f c)))
-    (setf (? timestamps f c) step)
-    (incf (? weights f c) v)))
+    (:+ (? totals class f) (* (- step (? timestamps class f))
+                              (? weights class f)))
+    (:+ (? weights class f) val)
+    (:= (? timestamps class f) step)))
 
-;; (defmethod ensure-f-init ((model avg-perceptron) f &rest cs)
-;;   (with-slots (weights totals timestamps) model
-;;     (loop :repeat (- f (length weights)) :do
-;;        (vector-push-extend #h() weights)
-;;        (vector-push-extend #h() totals)
-;;        (vector-push-extend #h() timestamps))
-;;     (dolist (c cs)
-;;       (unless (? totals f c)
-;;         (setf (? totals f c) 0
-;;               (? timestamps f c) 0
-;;               (? weights f c) 0)))))
-
-(defmethod ensure-f-init ((model avg-perceptron) f &rest cs)
+(defmethod ensure-f-init ((model avg-perceptron) f &rest classes)
   (with-slots (timestamps weights totals) model
-    (unless (get# f totals)
-      (set# f totals #h())
-      (set# f timestamps #h())
-      (set# f weights #h()))
-    (dolist (c cs)
-      (unless (get# c (get# f totals))
-        (set# c (get# f totals) 0)
-        (set# c (get# f timestamps) 0)
-        (set# c (get# f weights) 0)))))
+    (dolist (class classes)
+      (unless (? weights class)
+        (:= (? totals class) #h()
+            (? timestamps class) #h()
+            (? weights class) #h()))
+      (unless (? weights class f)
+        (:= (? totals class f) 0
+            (? timestamps class f) 0
+            (? weights class f) 0)))))

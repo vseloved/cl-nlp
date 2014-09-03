@@ -67,3 +67,9 @@
   (when (> (floor (* 100 (/ cur total)))
            (floor (* 100 (/ (1- cur) total))))
      (format *debug-io* ".")))
+
+(defun timestamp ()
+  "Return current timestamp as string."
+  (mv-bind (sec min hour day month year)
+      (decode-universal-time (get-universal-time))
+    (fmt "~A~2,'0D~2,'0D~2,'0D~2,'0D~2,'0D" year month day hour min sec)))

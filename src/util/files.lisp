@@ -9,6 +9,11 @@
   (asdf:system-relative-pathname 'cl-nlp
                                  (strcat "data/" filename)))
 
+(defun model-file (filename)
+  "File in models/ subdir of cl-nlp."
+  (asdf:system-relative-pathname 'cl-nlp
+                                 (strcat "models/" filename)))
+
 (defun src-file (filename)
   "File in src/ subdir of cl-nlp."
   (asdf:system-relative-pathname 'cl-nlp
@@ -26,9 +31,8 @@
   "Save octet sequence DATA to file at PATH,
    overwriting it if it already exists."
   (with-open-file (out path
-                       :direction :output
-                       :if-exists :supersede
-                       :element-type 'flex:octet)
+                       :direction :output :element-type 'unsigned-byte
+                       :if-exists :supersede :if-does-not-exist :create)
     (write-sequence data out))
   path)
 
@@ -109,3 +113,22 @@
     ...
 
     Return the file name and number of keys and columns as other values."))
+
+
+;;; zip
+
+(defun zipped-file-data (zip name &key (encoding :utf-8))
+  "Get the contents of a file NAME inside an open zip archive ZIP.
+   If ENCODING is indicated (default - :UTF-8), decode raw data as encoded characters."
+  (let ((raw (zip:zipfile-entry-contents (zip:get-zipfile-entry name zip))))
+    (if encoding
+        (babel:octets-to-string raw :encoding encoding)
+        raw)))
+
+(defun zip-as-text-file (zip name data)
+  "Add DATA as a text file named NAME to the zip archive ZIP."
+  (zip:write-zipentry zip name
+                      (flex:make-in-memory-input-stream
+                       (babel:string-to-octets data
+                                               :encoding :utf-8))
+                      :file-write-date (get-universal-time)))

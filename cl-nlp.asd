@@ -1,13 +1,13 @@
 ;;; (c) 2013 Vsevolod Dyomkin
 
 (asdf:defsystem #:cl-nlp
-  :version "0.0.6"
-  :description "NLP toolkit for Common Lisp."
+  :version "0.0.9"
+  :description "NLP toolkit for Common Lisp"
   :author "Vsevolod Dyomkin <vseloved@gmail.com>"
   :maintainer "Vsevolod Dyomkin <vseloved@gmail.com>"
   :license "Apache 2.0"
   :depends-on (#:rutilsx #:cl-fad #:cl-ppcre
-               #:cxml #:drakma #:zip #:flexi-streams ;#:cgn
+               #:cxml #:drakma #:zip #:userial ;#:cgn
                #+dev #:should-test)
   :serial t
   :components
@@ -19,16 +19,17 @@
                       :serial t
                       :components
                       ((:file "misc")
-                       (:file "files")
                        (:file "chars")
+                       (:file "files")
                        (:file "words")
                        (:file "trees")
                        (:file "math")))
-             (:module #:tags
+             (:module #:syntax
                       :components
-                      ((:static-file "tags.txt")
+                      ((:static-file "word-tags.txt")
                        (:static-file "phrase-tags.txt")
-                       (:file "general" :depends-on ("tags.txt" "phrase-tags.txt"))))
+                       (:file "tags" :depends-on ("word-tags.txt"
+                                                  "phrase-tags.txt"))))
              (:module #:core
                       :serial t
                       :components
@@ -49,6 +50,7 @@
                        (:file "nps-chat")
                        (:file "reuters")
                        (:file "treebank")
+                       (:file "ptb")
                        (:file "user")))
              (:module #:learning
                       :serial t
@@ -65,15 +67,13 @@
                       :components
                       ((:file "general")
                        (:file "dicts")
-                       #+nil (:file "hmm")
                        (:file "greedy-ap")))
              (:module #:parsing
                       :serial t
                       :components
                       ((:file "general")
                        (:file "tree-util")
-                       (:file "grammars")
-                       #+nil (:file "cky")))
+                       (:file "grammars")))
              (:file "user")))
    #+dev
    (:module #:test
@@ -84,6 +84,12 @@
              (:module #:corpora
                       :components
                       ((:file "treebank-test")))
-             (:module #:core
+             (:module #:learning
                       :components
-                      ((:file "stats-test")))))))
+                      ((:file "general-test")))
+             (:module #:tagging
+                      :components
+                      ((:file "greedy-ap-test")))
+             (:module #:user
+                      :components
+                      ((:file "user-test")))))))

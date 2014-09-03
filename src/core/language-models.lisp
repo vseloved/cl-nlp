@@ -5,15 +5,15 @@
 
 
 (defclass language-model ()
-  ((order :initarg :order :reader model-order)
-   (ngrams :initarg :ngrams :reader model-ngrams))
+  ((order :initarg :order :reader m-order)
+   (ngrams :initarg :ngrams :reader m-ngrams))
   (:documentation
    "Language model is a collection of NGRAMS of all orders from 1 upto ORDER."))
 
 (defmethod print-object ((lm language-model) stream)
   (print-unreadable-object (lm stream :type t :identity t)
     (if (slot-boundp lm 'order)
-        (with-accessors ((order model-order) (ngrams model-ngrams)) lm
+        (with-accessors ((order m-order) (ngrams m-ngrams)) lm
           (with-accessors ((count ngrams-count) (total-freq ngrams-total-freq))
               (elt ngrams order)
             (format stream "order:~A count:~A outcomes:~A"
@@ -69,7 +69,7 @@
    "Calculate perplexity of the MODEL on the list of TEST-SENTENCES."))
 
 (defmethod perplexity ((model language-model) test-sentences)
-  (expt 2 (- (/ (reduce #'+ (mapcar #`(logprob ngrams %) test-sentences))
+  (expt 2 (- (/ (reduce #'+ (mapcar #`(logprob model %) test-sentences))
                 (reduce #'+ (mapcar #'length test-sentences))))))
 
 (defmethod prob ((lm language-model) (sentence string))
@@ -103,7 +103,7 @@
                   rez)))))))
 
 (defmethod cond-prob ((model language-model) (ngram list))
-  (with-accessors ((order model-order) (ngrams model-ngrams)) model
+  (with-accessors ((order m-order) (ngrams m-ngrams)) model
     (if (shorter? ngram 2)
         (let ((ugrams (get-ngrams 1 model)))
           (/ (freq ugrams ngram)
@@ -133,7 +133,7 @@
    "Stupid Backoff language model."))
 
 (defmethod cond-prob ((model stupid-backoff-lm) ngram)
-  (with-accessors ((ngrams model-ngrams) (backoff lm-backoff)) model
+  (with-accessors ((ngrams m-ngrams) (backoff lm-backoff)) model
     (let ((coef 1)
           (len (length ngram)))
       (loop :for i :from len :downto 1 :do
@@ -158,5 +158,5 @@
 (declaim (inline get-ngrams))
 (defun get-ngrams (order model)
   "Get ngrams of a given ORDER from MODEL."
-  (assert (<= order (model-order model)))
-  (elt (model-ngrams model) order))
+  (assert (<= order (m-order model)))
+  (elt (m-ngrams model) order))

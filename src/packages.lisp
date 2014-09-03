@@ -3,7 +3,8 @@
 
 (cl:defpackage #:nlp.util
   (:nicknames #:nutil)
-  (:use #:common-lisp #:rutil)
+  (:use #:common-lisp #:rutilsx
+        #+dev #:should-test)
   (:export #:cl-nlp-error
            #:not-implemented-error
 
@@ -30,31 +31,40 @@
            #:sorted-ht-keys
            #:shorter?
            #:equal-when-present
+           #:timestamp
 
            #:corpus-file
            #:data-file
+           #:model-file
            #:src-file
            #:write-bin-file
            #:write-dict
            #:write-tsv
            #:download
            #:download-file
+           #:zipped-file-data
+           #:zip-as-text-file
 
            #:list-from-file
            #:dict-from-file
 
            #:argmax
+           #:keymax
            #:bin-search
+           #:dot
 
            #:define-lazy-singleton
 
            #:pprint-tree
            #:princ-progress
+
+           #:+inf
            ))
 
 (cl:defpackage #:nlp.core
   (:nicknames #:ncore)
-  (:use #:common-lisp #:rutil #:nlp.util)
+  (:use #:common-lisp #:rutilsx #:nlp.util
+        #+dev #:should-test)
   (:export #:ngrams
            #:ngrams-eq
            #:ngrams-order
@@ -80,8 +90,8 @@
            #:ngrams-table
 
            #:language-model
-           #:model-order
-           #:model-ngrams
+           #:m-order
+           #:m-ngrams
            #:make-lm
            #:perplexity
            #:plain-lm
@@ -111,6 +121,8 @@
            #:token-end
            #:token-tag
            #:make-token
+           #:sentence
+           #:sent-tokens
 
            #:doublenewline-paragraph-splitter
            #:<paragraph-splitter>
@@ -127,11 +139,19 @@
 
 (cl:defpackage #:nlp.tags
   (:nicknames #:tag)
+  (:use #:common-lisp #:rutil #:nutil)
+  (:export #:*word-tags*
+           #:*phrase-tags*
+           ))
+
+(cl:defpackage #:nlp.features
+  (:nicknames #:f)
   (:use #:common-lisp #:rutil #:nutil))
 
 (cl:defpackage #:nlp.corpora
   (:nicknames #:ncorp)
-  (:use #:common-lisp #:rutil #:nutil #:nlp.core #:tag)
+  (:use #:common-lisp #:rutil #:nutil #:nlp.core #:tag
+        #+dev #:should-test)
   (:export #:corpus
            #:make-corpus
            #:corpus-desc
@@ -145,12 +165,15 @@
            #:text-clean
            #:text-tokens
            #:text-sentences
+           #:treebank-text-trees
 
            #:read-corpus
            #:read-corpus-file
            #:map-corpus
 
            #:make-corpus-from-dir
+
+           #:remove-dummy-tokens
 
            ;; Specific corpora
            #:+brown-corpus+
@@ -159,53 +182,46 @@
 
 (cl:defpackage #:nlp.learning
   (:nicknames #:nlearn)
-  (:use #:common-lisp #:rutilsx #:nlp.util #:nlp.core)
+  (:use #:common-lisp #:rutilsx #:nlp.util #:nlp.core
+        #+dev #:should-test)
   (:export #:init-model
            #:classify
            #:train
            #:train1
            #:update1
-           #:evaluate
+
+           #:accuracy
+           #:precision
+           #:recall
+           #:f1
+           #:f_
+
+           #:save-model
+           #:load-model
 
            ;; Features
            #:ensure-f-init
            #:extract-gold
            #:extract-fs
            #:make-fs
-           #:*fs-idx*
 
            ;; Models
            #:categorical-model
-           #:m-classes
            #:m-weights
-
-           ;; Hidden Markov Models
-           #:hmm
-           #:make-hmm
-           #:hmm-transition-lm
-           #:hmm-emission-lm
-
-           ;; Global Linear Models
-           #:glm
-           #:make-glm
 
            ;; Perceptron Models
            #:perceptron
            #:avg-perceptron
            #:greedy-ap
-           #:ap-step
-           #:ap-totals
-           #:ap-timestamps
            ))
 
 (cl:defpackage #:nlp.tagging
   (:nicknames #:ntag)
-  (:use #:common-lisp #:rutilsx #:nutil #:ncore #:nlearn #:tag)
-  (:export #:*tags*
-
-           #:tag
+  (:use #:common-lisp #:rutilsx #:nutil #:ncore #:nlearn #:tag
+        #+dev #:should-test)
+  (:export #:tag
            #:tagger
-           #:tagger-tags
+           #:tgr-single-tag-words
 
            ;; HMM taggers
            #:hmm-tagger
@@ -216,10 +232,9 @@
 
 (cl:defpackage #:nlp.parsing
   (:nicknames #:nparse)
-  (:use #:common-lisp #:rutil #:nutil #:ncore #:tag)
-  (:export #:*phrase-tags*
-
-           #:chomsky-nf
+  (:use #:common-lisp #:rutil #:nutil #:ncore #:tag
+        #+dev #:should-test)
+  (:export #:chomsky-nf
 
            #:parse
            #:parse-n
@@ -247,7 +262,8 @@
 
 (cl:defpackage #:nlp.generation
   (:nicknames #:ngen)
-  (:use #:common-lisp #:rutil #:nlp.util #:nlp.core)
+  (:use #:common-lisp #:rutil #:nlp.util #:nlp.core
+        #+dev #:should-test)
   (:export #:generate-text
 
            #:text-generator
@@ -261,8 +277,9 @@
 
 (cl:defpackage #:nlp-user
   (:nicknames #:nlp)
-  (:use #:common-lisp #:rutil
-        #:nlp.util #:nlp.corpora #:nlp.core #:nlp.generation)
+  (:use #:common-lisp #:rutilsx
+        #:nlp.util #:nlp.corpora #:nlp.core #:nlp.generation #:tag
+        #+dev #:should-test)
   (:export #:grep
            #:tabulate
            #:plot

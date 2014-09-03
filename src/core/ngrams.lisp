@@ -1,4 +1,4 @@
-;;; (c) 2013 Vsevolod Dyomkin
+;;; (c) 2013-2014 Vsevolod Dyomkin
 
 (in-package #:nlp.core)
 (named-readtables:in-readtable rutils-readtable)
@@ -161,15 +161,15 @@
     (assert (member (hash-table-test table) '(equal equalp)))
     (with-hash-table-iterator (gen-fn table)
       (when-it (nth-value 2 (gen-fn))
-        (setf total-freq (setf max-freq (setf min-freq it)))
+        (:= total-freq (:= max-freq (:= min-freq it)))
         (loop
            (mv-bind (next? _ freq) (gen-fn)
              (unless next? (return))
-             (incf total-freq freq)
+             (:+ total-freq freq)
              (when (< freq min-freq)
-               (setf min-freq freq))
+               (:= min-freq freq))
              (when (> freq max-freq)
-               (setf max-freq freq))))))))
+               (:= max-freq freq))))))))
 
 (defmethod ngrams-count ((ngrams table-ngrams))
   (hash-table-count (ngrams-table ngrams)))
@@ -180,13 +180,13 @@
 (defmethod vocab ((ngrams table-ngrams) &key order-by)
   (with-slots (table) ngrams
     (if order-by
-        (mapcar #'l (sort (ngrams-pairs ngrams) order-by :key #'l))
+        (mapcar #'lt (sort (ngrams-pairs ngrams) order-by :key 'lt))
         (ht-keys table))))
 
 (defmethod ngrams-pairs ((ngrams table-ngrams) &key order-by)
   (with-slots (table) ngrams
     (if order-by
-        (sort (ht->pairs table) order-by :key #'r)
+        (sort (ht->pairs table) order-by :key 'rt)
         (ht->pairs table))))
 
 ;; (defmethod ngrams-pairs ((ngrams table-ngrams))
@@ -196,9 +196,9 @@
 ;;         (prefix (butlast ngram)))
 ;;     (dolist (ng (vocab ngrams))
 ;;       (cond ((funcall eq-test ngram ng)
-;;              (incf total (setf freq (freq ng))))
+;;              (:+ total (:= freq (freq ng))))
 ;;             ((funcall eq-test prefix (butlast ng))
-;;              (incf total (freq ng)))))
+;;              (:+ total (freq ng)))))
 ;;     (if (zerop total) 0
 ;;         (/ freq total))))
 
@@ -219,17 +219,17 @@
         (eq-test (ngrams-eq ngrams))
         (prefix (butlast ngram)))
     (maphash #`(cond ((funcall eq-test ngram %)
-                      (incf total (setf freq %%)))
+                      (:+ total (:= freq %%)))
                      ((funcall eq-test prefix (butlast %))
-                      (incf total %%)))
-             (ngrams-source ngrams))
+                      (:+ total %%)))
+             ngrams)
     (if (zerop total) 0
         (/ freq total))))
 
 (defmethod top-ngram ((ngrams table-ngrams))
   (with-slots (table max-freq) ngrams
     (dotable (ngram freq table)
-      (when (= (max-freq ngrams) freq)
+      (when (= (ngrams-max-freq ngrams) freq)
         (return ngram)))))
 
 (defmethod hapaxes ((ngrams table-ngrams))
@@ -247,9 +247,8 @@
 (defun count-ngram-freqs (list &optional (order 1) (eq-test 'equal))
   (let ((rez (make-hash-table :test eq-test)))
     (loop :for tail :on list :by #`(nthcdr order %) :do
-       (incf (get# (if (= 1 order)
-                       (first tail)
-                       (sub tail 0 order))
-                   rez 0)))
+       (:+ (get# (if (= 1 order)
+                     (first tail)
+                     (sub tail 0 order))
+                 rez 0)))
     rez))
-

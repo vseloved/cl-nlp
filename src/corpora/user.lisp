@@ -14,14 +14,14 @@
                                         (read-file %))
                                   texts)))
     (setf texts (mapcar #`(make-text
-                           :name (l %)
-                           :raw (r %)
+                           :name (lt %)
+                           :raw (rt %)
                            :tokens
                            (mapcar #`(ncore:make-token :word %)
                                    (mapcan #`(ncore:tokenize
                                               ncore:<word-tokenizer> %)
                                            (ncore:tokenize
-                                            ncore:<sentence-splitter> (r %)))))
+                                            ncore:<sentence-splitter> (rt %)))))
                         texts))
     (make-corpus :desc name
                  :texts texts)))

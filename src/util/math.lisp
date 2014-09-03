@@ -4,16 +4,33 @@
 (named-readtables:in-readtable rutils-readtable)
 
 
+(defparameter +inf most-positive-fixnum)
+
 (defun argmax (fn vals &key (test #'>) key)
   "Return the val from VALS which is the argument for maximum value of FN
-   under TEST. If KEY is provided it's applied to VAL before feeding it to FN."
+   under TEST. If KEY is provided it's applied to VAL before feeding it to FN.
+   Also return the value of FN at VAL as a second value."
   (let ((max 0)
         arg)
     (dolist (val vals)
-      (let ((cur (or (funcall fn (if key (funcall key val) val)) 0)))
+      (let ((cur (or (funcall fn (if key (funcall key val) val))
+                     0)))
         (when (funcall test cur max)
           (setf max cur
                 arg val))))
+    (values arg
+            max)))
+
+(defun keymax (ht &key (test #'>) (min 0))
+  "Return the key corresponding to the maximum of hash-table HT under TEST.
+   Also, MIN can be provided to correspond with the TEST fucntion (default: 0).
+   Also return the value at this key as a second value."
+  (let ((max min)
+        arg)
+    (dotable (k v ht)
+      (when (funcall test v max)
+        (:= max v
+            arg k)))
     (values arg
             max)))
 
@@ -35,3 +52,18 @@
                      val)
             (setf low (1+ mid))
             (setf high mid))))))
+
+(defun dot (v &rest vs)
+  "Dot product of vector V and other vectors in VS."
+  (assert (reduce '= (mapcar 'length (cons v vs))))
+  (let ((rez (make-array (length v))))
+    (dotimes (i (length v))
+      (:= (? rez i) (reduce '+ (mapcar #`(? % i)
+                                       (cons v vs)))))))
+
+(defun sum (fn xs &optional ys)
+  "Sum result of application of FN to each of XS (and optionally YS)."
+  (reduce '+ (if ys
+                 (map 'list fn xs ys)
+                 (map 'list fn xs))
+          :initial-value 0))

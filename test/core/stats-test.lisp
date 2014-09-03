@@ -2,7 +2,6 @@
 
 (in-package #:ncore)
 (named-readtables:in-readtable rutils-readtable)
-(use-package :should-test)
 
 
 (deftest tabulate ()
@@ -29,4 +28,3 @@
     B  0   0    3
 " (tabulate #{:acd #{1 1 2 22 3 333} :b #{4 44 3 3}}
             :samples '(2 3 1) :order-pred '<)))
-

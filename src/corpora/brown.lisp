@@ -69,7 +69,7 @@
   (dolist (file (directory path))
     (when (= 4 (length (pathname-name file)))
       (mv-bind (raw clean tokens) (read-corpus-file :brown file)
-        (funcall fn (make-text :name (filename-name file)
+        (funcall fn (make-text :name (pathname-name file)
                                :raw raw :clean clean :tokens tokens))))))
 
 

@@ -19,15 +19,19 @@
     in the MODEL."))
 
 
-(defvar *fs-idx* #h()
-  "Feature to index mapping for each model.")
+;;; utils
 
 (defmacro make-fs (model &rest fs-templates)
   "Return a list of MODEL-specific feature indices for FS-TEMPLATES."
-  (with-gensyms (fs-idx)
-    `(let ((,fs-idx (or (get# ,model *fs-idx*)
-                        (set# ,model *fs-idx* #h()))))
-       (mapcar #`(or (get# % ,fs-idx)
-                     (set# % ,fs-idx (ht-count ,fs-idx)))
-               (list ,@(mapcar (lambda (x) `(mkeyw (strcat ,@(mklist x))))
-                               fs-templates))))))
+  `(list
+     ,@(mapcar (lambda (x)
+                 `(intern ,(if (listp x)
+                               `(strcat ,(first x) " " ,@(rest x))
+                               x)
+                          :f))
+               fs-templates)))
+
+(defun fs-idx (f fs)
+  "Return an index for feature F in the index table FS or add it to the index."
+  (or (get# f fs)
+      (set# f fs (ht-count fs))))

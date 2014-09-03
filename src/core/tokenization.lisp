@@ -6,14 +6,21 @@
 
 (defstruct (token (:print-object (lambda (token stream)
                                    (with-slots (word tag beg end) token
-                                       (format stream "#<~A~@[/~A~] ~A..~A>"
-                                               word tag beg end)))))
+                                       (format stream "<~A~@[/~A~]~@[ ~A~]>"
+                                               word tag
+                                               (when beg
+                                                 (if end
+                                                     (fmt "~A..~A" beg end)
+                                                     beg)))))))
   "A corpus token with postition and possibly tag."
   beg
   end
   word
   tag)
 
+(defclass sentence ()
+  ((tokens :initarg :tokens :accessor sent-tokens))
+  (:documentation "Basically, a sentence is a list of tokens."))
 
 (defgeneric tokenize (tokenizer string)
   (:documentation
@@ -49,8 +56,8 @@
     (loop :for line :in (split #\Newline string) :do
        (mv-bind (ts ss) (call-next-method tokenizer line)
          (setf words (nconc words ts)
-               spans (nconc spans (mapcar #`(pair (+ (l %) offset)
-                                                  (+ (r %) offset))
+               spans (nconc spans (mapcar #`(pair (+ (lt %) offset)
+                                                  (+ (rt %) offset))
                                           ss)))
          (incf offset (1+ (length line)))))
     (values words
@@ -129,15 +136,15 @@
            (macrolet ((push-contractions (char-length)
                         `(let* ((next cur-span)
                                 (split-pos (- (length cur) ,char-length))
-                                (split (- (r next) ,char-length)))
+                                (split (- (rt next) ,char-length)))
                            (push (sub cur 0 split-pos) words)
                            (push (sub cur split-pos) words)
-                           (push (pair (l next) split) spans)
-                           (push (pair split (r next)) spans))))
+                           (push (pair (lt next) split) spans)
+                           (push (pair split (rt next)) spans))))
              (cond
                ;; glue together abbreviations and decimals
                ((and prev
-                     (= (l cur-span) (r (first ss)))
+                     (= (lt cur-span) (rt (first ss)))
                      (or (and (string= "." cur)
                               next
                               (not (open-quote-char-p (char next 0)))
@@ -145,8 +152,8 @@
                          (and (ends-with "." prev)
                               (alphanumericp (char cur 0)))))
                 (setf (first words) (strcat prev cur)
-                      (first spans) (pair (l (first spans))
-                                          (r cur-span))))
+                      (first spans) (pair (lt (first spans))
+                                          (rt cur-span))))
                ;; splitting contractions: I'm, he/she/it's, 'd
                ((re:scan *2char-contractions-regex* cur)
                 (push-contractions 2))
@@ -257,9 +264,9 @@
                                        :test #'string-equal))
                           (and-it (second ws)
                                   (upper-case-p (char it 0)))))
-             (push (sub string beg (r span)) sentences)
-             (push (pair beg (r span)) spans)
-             (setf beg (l (second ss))))))
+             (push (sub string beg (rt span)) sentences)
+             (push (pair beg (rt span)) spans)
+             (setf beg (lt (second ss))))))
       (values (reverse sentences)
               (reverse spans)))))
 

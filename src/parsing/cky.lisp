@@ -58,8 +58,8 @@
                       (let ((i (1+ i)))
                         (dotable (nt k nts->idx)
                           (when-it (get# (list k w) urules)
-                            (setf (@ *pi* i i k) (log it)
-                                  (@ *bp* i i k) (cons k i))))))
+                            (:= (@ *pi* i i k) (log it)
+                                (@ *bp* i i k) (cons k i))))))
                     (call-next-method))))))
 
 (defmethod parse :around ((parser cky-parser) (grammar pcfg) (sentence list))
@@ -88,8 +88,8 @@
                       (when (= k (first rule))
                         ,acc-clause)))
                   (when (if (listp max) max (> max min))
-                    (setf (@ *pi* i j k) max
-                          (@ *bp* i j k) arg)))))))))
+                    (:= (@ *pi* i j k) max
+                        (@ *bp* i j k) arg)))))))))
 
 (defmethod parse ((parser cky-parser) (grammar pcfg) (sentence list))
   "Return a parse tree of SENTENCE for PCFG.
@@ -242,18 +242,18 @@
                                  (+ score (- (nth next cur-scores)
                                              (car cur-scores))))))
                (when (and alt-score (> alt-score (car best)))
-                 (setf best
-                       (list alt-score
-                             #`(if (= i ii)
-                                   ;; explore left alternatives
-                                   (list iroot
-                                         (decode-alt-tree i s l next)
-                                         (when r (decode-alt-tree (1+ s) j r 0)))
-                                   ;; explore right alternatives
-                                   (list iroot
-                                         (decode-alt-tree i s l 0)
-                                         (decode-alt-tree (1+ s) j r next)))
-                             (list ii jj kk))))))
+                 (:= best
+                     (list alt-score
+                           #`(if (= i ii)
+                                 ;; explore left alternatives
+                                 (list iroot
+                                       (decode-alt-tree i s l next)
+                                       (when r (decode-alt-tree (1+ s) j r 0)))
+                                 ;; explore right alternatives
+                                 (list iroot
+                                       (decode-alt-tree i s l 0)
+                                       (decode-alt-tree (1+ s) j r next)))
+                           (list ii jj kk))))))
            ;; look below already visited nodes
            (dolist (idx (cons (list i s h)
                               (when (< s *n*)
@@ -261,11 +261,11 @@
              (ds-bind (tree-decoder . alt-score)
                  (apply #'decode-best-parse-tree sentence visited idx)
                (when (> alt-score (car best))
-                 (setf best (list alt-score
-                                  #`(list iroot (funcall tree-decoder))
-                                  idx)))))))
+                 (:= best (list alt-score
+                                #`(list iroot (funcall tree-decoder))
+                                idx)))))))
       (ds-bind (i j k) best
-        (incf (@ visited best) 0))
+        (:+ (@ visited best) 0))
       (cons (second best) (first best)))))
 
 
@@ -280,8 +280,8 @@
 (macrolet ((init-for-pretagged-cky ()
              `(doindex (i token sentence)
                 (let ((k (get# (token-tag token) nts->idx)))
-                  (setf (@ *pi* i i k) 0.0
-                        (@ *bp* i i k) (cons k i))))))
+                  (:= (@ *pi* i i k) 0.0
+                      (@ *bp* i i k) (cons k i))))))
 
 (defmethod parse :before ((parser pretagged-cky-parser) (grammar pcfg)
                           (sentence list))

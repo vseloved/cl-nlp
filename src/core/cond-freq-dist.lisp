@@ -11,7 +11,7 @@
 
 (defmethod make-cfd ((raw hash-table) &key (eq-test 'eql) &allow-other-keys)
   (let ((rez (make-hash-table :test eq-test)))
-    (dotable (k v raw)
+    (dotable (k _ raw)
       (set# k rez (make 'table-ngrams :order 1
                         :table (count-ngram-freqs (get# k raw)))))
     rez))
@@ -25,7 +25,7 @@
       (format out "No~tLabel~t~{~A~t~}~%" conds)
       (doindex (i sample samples)
         (format out "~A~t~A~t~{~A~t~}~%" i sample
-                (mapcar #`(let ((val (~ cfd % sample)))
+                (mapcar #`(let ((val (? cfd % sample)))
                             (if cumulative
                                 (incf (get# % totals 0) val)
                                 val))

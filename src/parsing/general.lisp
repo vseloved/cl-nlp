@@ -8,13 +8,7 @@
   (:documentation
    "Parse SENTENCE with a PARSER and MODEL.")
   (:method :around (parser model (sentence string))
-   (call-next-method parser model (tokenize <word-tokenizer> string))))
-
-(defgeneric parse-n (parser model sentence n)
-  (:documentation
-   "Return N best parse trees of the SENTENCE with a PARSER and MODEL.")
-  (:method :around (parser model (sentence string) n)
-   (call-next-method parser model (tokenize <word-tokenizer> string) n)))
+   (call-next-method parser model (tokenize <word-tokenizer> sentence))))
 
 
 ;; Grammar mixins

@@ -1,4 +1,4 @@
-;;; (c) 2013 Vsevolod Dyomkin
+;;; (c) 2013-2014 Vsevolod Dyomkin
 
 (in-package #:nlp-user)
 (named-readtables:in-readtable rutils-readtable)
@@ -44,6 +44,7 @@
            (key-width (reduce #'max (mapcar #'strlen conds))))
       ;; print header
       (format stream (filler key-width))
+      #+TODO
       (mapc #`(rjust-format stream % %%)
             (mapcar #'strlen samples) samples)
       (terpri stream)
@@ -57,7 +58,7 @@
                       (funcall (if cumulative
                                    #`(incf total %)
                                    #'identity)
-                               (or (~ v s) 0))))
+                               (or (? v s) 0))))
             (terpri stream)))))))
 
 #+nil

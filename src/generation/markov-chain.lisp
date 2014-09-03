@@ -68,7 +68,7 @@
   "Generate text of LENGTH with a markov model of some MARKOV-ORDER
    with the given language MODEL.
    May not return period at the end."
-  (assert (<= (markov-order generator) (model-order model)))
+  (assert (<= (markov-order generator) (m-order model)))
   (let* ((order (markov-order generator))
          (vocab (vocab model))
          (len (length vocab))
