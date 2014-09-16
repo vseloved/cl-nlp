@@ -144,6 +144,12 @@
            #:*phrase-tags*
            ))
 
+(cl:defpackage #:nlp.deps
+  (:nicknames #:dep)
+  (:use #:common-lisp #:rutil #:nutil)
+  (:export #:*deps*
+           ))
+
 (cl:defpackage #:nlp.features
   (:nicknames #:f)
   (:use #:common-lisp #:rutil #:nutil))
@@ -234,10 +240,15 @@
   (:nicknames #:nparse)
   (:use #:common-lisp #:rutil #:nutil #:ncore #:tag
         #+dev #:should-test)
-  (:export #:chomsky-nf
+  (:export #:parse
 
-           #:parse
-           #:parse-n
+           #:conparser
+           #:depparser
+
+           #:dep
+           #:dep-rel
+           #:dep-govr
+           #:dep-dept
 
            #:pretagged
            #:lexicalized

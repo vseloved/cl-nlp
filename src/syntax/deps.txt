@@ -1,0 +1,48 @@
+dep dependent
+aux auxiliary
+auxpass passive auxiliary
+cop copula
+conj conjunct
+cc coordination
+arg argument
+subj subject
+nsubj nominal subject
+nsubjpass passive nominal subject
+csubj clausal subject
+comp complement
+obj object
+dobj direct object
+iobj indirect object
+pobj object of preposition
+attr attributive
+ccomp clausal complement with internal subject
+xcomp clausal complement with external subject
+compl complementizer
+mark marker (word introducing an advcl)
+rel relative (word introducing a rcmod)
+acomp adjectival complement
+agent agent
+ref referent
+expl expletive (expletive there)
+mod modifier
+advcl adverbial clause modifier
+purpcl purpose clause modifier
+tmod temporal modifier
+rcmod relative clause modifier
+amod adjectival modifier
+infmod infinitival modifier
+partmod participial modifier
+num numeric modifier
+number element of compound number
+appos appositional modifier
+nn noun compound modifier
+abbrev abbreviation modifier
+advmod adverbial modifier
+neg negation modifier
+poss possession modifier
+possessive possessive modifier ('s)
+prt phrasal verb particle
+det determiner
+prep prepositional modifier (also pmod, sometimes)
+sdep semantic dependent
+xsubj controlling subject
