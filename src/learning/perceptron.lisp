@@ -39,7 +39,6 @@
                   (* 100 (/ j total))))
         (unless verbose (princ-progress j total))))))
 
-
 (defmethod train :after ((model avg-perceptron) data &key)
   (with-slots (step totals weights timestamps) model
     (dotable (class cur-weights weights)

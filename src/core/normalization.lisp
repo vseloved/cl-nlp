@@ -5,7 +5,7 @@
 
 
 (defparameter *number-regex*
-  (re:create-scanner "\\d+([\\.,]\\d)+"))
+  (re:create-scanner "^-*\\d+[0-9,\\.]+$"))
 (defparameter *email-regex*
   (re:create-scanner
    "<?(?:[a-z0-9!#$%&'*+/=?^_`{|}~-]+(?:\\.[a-z0-9!#$%&'*+/=?^_`{|}~-]+)*@(?:[a-z0-9](?:[a-z0-9-]*[a-z0-9])?\\.)+[a-z0-9](?:[a-z0-9-]*[a-z0-9])?)>?"

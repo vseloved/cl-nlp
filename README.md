@@ -47,9 +47,9 @@ Here are a few write-ups to give you the sense of the project and to help get st
   to be continued, by the way...
 - [CL-NLP Style Guide](doc/style-guide.md)
 
-You'll also, probably, need to track the latest version of [RUTILS][RUSTILS] from git.
+You'll also, probably, need to track the latest version of [RUTILS][RUTILS] from git.
 
-For `CL-NLP` to reach v.0.1 that may be considered suitable for limited use by non-contributors,
+For CL-NLP to reach v.0.1 that may be considered suitable for limited use by non-contributors,
 the following things should be finished (work-in-progress):
 
 - implement a comprehensive test-suite and fix all bugs encountered in the process
@@ -77,7 +77,7 @@ For development:
 
 ## License
 
-The license of `CL-NLP` is Apache 2.0.
+The license of CL-NLP is Apache 2.0.
 
 Specific models may have different license due to the limitations of the dataset
 they are built with. Please see a `<model>.license` file accompanying each model for details.

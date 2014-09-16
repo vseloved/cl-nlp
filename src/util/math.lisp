@@ -6,31 +6,35 @@
 
 (defparameter +inf most-positive-fixnum)
 
-(defun argmax (fn vals &key (test #'>) key)
-  "Return the val from VALS which is the argument for maximum value of FN
-   under TEST. If KEY is provided it's applied to VAL before feeding it to FN.
+(defun argmax (fn vals &key (test #'>) (key #'identity) (min 0))
+  "Return the val from VALS which is the argument for maximum value of FN under TEST.
+   If KEY is provided it's applied to VAL before feeding it to FN.
+   Also, MIN can be provided to correspond with the TEST fucntion (default: 0).
    Also return the value of FN at VAL as a second value."
-  (let ((max 0)
+  (let ((max min)
         arg)
-    (dolist (val vals)
-      (let ((cur (or (funcall fn (if key (funcall key val) val))
-                     0)))
+    (dolist (v vals)
+      (let ((cur (or (funcall fn (funcall key v))
+                     min)))
         (when (funcall test cur max)
           (setf max cur
-                arg val))))
+                arg v))))
     (values arg
             max)))
 
-(defun keymax (ht &key (test #'>) (min 0))
+(defun keymax (ht &key (test #'>) (key #'identity) (min 0))
   "Return the key corresponding to the maximum of hash-table HT under TEST.
+   If KEY is provided it's applied to VAL before feeding it to FN.
    Also, MIN can be provided to correspond with the TEST fucntion (default: 0).
    Also return the value at this key as a second value."
   (let ((max min)
         arg)
     (dotable (k v ht)
-      (when (funcall test v max)
-        (:= max v
-            arg k)))
+      (let ((cur (or (funcall key v)
+                     min)))
+        (when (funcall test cur max)
+          (:= max cur
+              arg k))))
     (values arg
             max)))
 

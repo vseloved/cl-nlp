@@ -1,4 +1,4 @@
-;;; (c) 2013 Vsevolod Dyomkin
+;;; (c) 2013-2014 Vsevolod Dyomkin
 
 (in-package #:nlp.parsing)
 (named-readtables:in-readtable rutils-readtable)
@@ -8,7 +8,7 @@
   (:documentation
    "Parse SENTENCE with a PARSER and MODEL.")
   (:method :around (parser model (sentence string))
-   (call-next-method parser model (tokenize <word-tokenizer> sentence))))
+    (call-next-method parser model (tokenize <word-tokenizer> sentence))))
 
 
 ;; Grammar mixins
