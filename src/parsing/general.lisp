@@ -4,11 +4,11 @@
 (named-readtables:in-readtable rutils-readtable)
 
 
-(defgeneric parse (parser model sentence)
+(defgeneric parse (parser sentence)
   (:documentation
-   "Parse SENTENCE with a PARSER and MODEL.")
-  (:method :around (parser model (sentence string))
-    (call-next-method parser model (tokenize <word-tokenizer> sentence))))
+   "Parse SENTENCE with a PARSER.")
+  (:method :around (parser (sentence string))
+    (call-next-method parser (tokenize <word-tokenizer> sentence))))
 
 
 ;; Parser types

@@ -6,7 +6,7 @@
 
 (defun export-dep (str)
   "Intern and export DEP in package, then return it."
-  (let ((dep (intern dep)))
+  (let ((dep (intern str)))
     (export dep)
     dep))
 

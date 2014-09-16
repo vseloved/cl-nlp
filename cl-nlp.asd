@@ -28,8 +28,10 @@
                       :components
                       ((:static-file "word-tags.txt")
                        (:static-file "phrase-tags.txt")
+                       (:static-file "deps.txt")
                        (:file "tags" :depends-on ("word-tags.txt"
-                                                  "phrase-tags.txt"))))
+                                                  "phrase-tags.txt"))
+                       (:file "deps" :depends-on ("deps.txt"))))
              (:module #:core
                       :serial t
                       :components
@@ -73,7 +75,8 @@
                       :components
                       ((:file "general")
                        (:file "tree-util")
-                       (:file "grammars")))
+                       (:file "grammars")
+                       (:file "greedy-ap")))
              (:file "user")))
    #+dev
    (:module #:test
