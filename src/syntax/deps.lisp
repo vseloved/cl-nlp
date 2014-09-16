@@ -11,5 +11,6 @@
     dep))
 
 (defparameter *deps* (dict-from-file (src-file "syntax/deps.txt")
+                                     :test 'eql
                                      :key-transform #'export-dep)
   "Dependencies.")

@@ -11,9 +11,11 @@
     tag))
 
 (defparameter *word-tags* (dict-from-file (src-file "syntax/word-tags.txt")
+                                          :test 'eql
                                           :key-transform #'export-tag)
   "Word-level tags.")
 
 (defparameter *phrase-tags* (dict-from-file (src-file "syntax/phrase-tags.txt")
+                                            :test 'eql
                                             :key-transform #'export-tag)
   "Phrase-level tags.")
