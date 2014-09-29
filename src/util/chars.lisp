@@ -9,7 +9,8 @@
   "A string with a single newline.")
 
 (defparameter +white-chars+
-  '(#\Space #\No-Break_Space #\Tab #\Newline #\Return #\Linefeed)
+  (list #\Space #\Tab #\Newline #\Return #\Linefeed
+        (code-char 160))  ; #\No-Break_Space
   "Chars considered WHITESPACE.")
 
 (defun white-char-p (char)

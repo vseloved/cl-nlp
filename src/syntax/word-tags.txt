@@ -49,4 +49,5 @@ $ Literal dollar sign
 NFP Non-final punctuation
 AFX Affix
 GW Incomplete word
+ADD Email, URL
 -NONE- Service token, not present in the actual text
