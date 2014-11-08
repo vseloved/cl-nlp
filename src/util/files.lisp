@@ -24,6 +24,10 @@
   (asdf:system-relative-pathname 'cl-nlp
                                  (strcat "corpora/" filename)))
 
+(defun test-file (filename)
+  "File in test/ subdir of cl-nlp."
+  (asdf:system-relative-pathname 'cl-nlp
+                                 (strcat "test/" filename)))
 
 ;;; writing
 
