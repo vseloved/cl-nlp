@@ -11,7 +11,6 @@
 ;;; @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@  
 
 (defparameter *word-tokenization-tests*
-  "Load the word tokenizer tests."
   (dict-from-file (test-file "core/word-tests.txt")
                   :separator "[>>>]"
                   :val-transform #'(lambda (v)
@@ -19,7 +18,6 @@
                                                      v))))
 
 (deftest word-tokenizer ()
-  "Test each target string in a collection of word tokenizer tests"
   (maphash #'(lambda (str tokens)
                 (should be equal
                         tokens
@@ -30,7 +28,6 @@
            *word-tokenization-tests*))
 
 (deftest regex-tokenizer ()
-  "Test custom regex based tokenizers."
   (should be equal
           '("," "." "," "," "?")
           (multiple-value-bind (tokens spans)
@@ -54,7 +51,6 @@
             tokens)))
 
 (deftest sentence-tokenizer ()
-  "Test the simple sentence splitter tokenizer."
   (should be equal
             '("Good muffins cost $3.88  in New York." "Please buy me  two of them." "Thanks.")
             (multiple-value-bind (tokens spans)
