@@ -37,6 +37,7 @@
            #:data-file
            #:model-file
            #:src-file
+           #:test-file
            #:write-bin-file
            #:write-dict
            #:write-tsv

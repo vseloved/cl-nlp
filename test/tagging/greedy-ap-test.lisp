@@ -8,10 +8,10 @@
   (mapcar #`(make 'ncore:sentence :tokens (ncorp:remove-dummy-tokens %))
           (ncorp:text-tokens text)))
 
-(defpar *tagger2* (load-model (make 'greedy-ap-tagger)
+(defvar *tagger2* (load-model (make 'greedy-ap-tagger)
                              (model-file "pos-tagging/onf.zip")
                              :classes-package :tag))
-(defpar *gold2*
+(defvar *gold2*
   (let (test)
     (ncorp:map-corpus :treebank (corpus-file "onf-wsj/")
                       #`(appendf test (extract-sents %)))

@@ -1,7 +1,7 @@
 ;;; (c) 2013 Vsevolod Dyomkin
 
 (asdf:defsystem #:cl-nlp
-  :version "0.0.9"
+  :version "0.0.10"
   :description "NLP toolkit for Common Lisp"
   :author "Vsevolod Dyomkin <vseloved@gmail.com>"
   :maintainer "Vsevolod Dyomkin <vseloved@gmail.com>"
@@ -84,6 +84,9 @@
             ((:module #:util
                       :components
                       ((:file "trees-test")))
+             (:module #:core
+                      :components
+                      ((:file "tokenization-test")))
              (:module #:corpora
                       :components
                       ((:file "treebank-test")))

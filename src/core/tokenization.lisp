@@ -55,11 +55,11 @@
         words spans)
     (loop :for line :in (split #\Newline string) :do
        (mv-bind (ts ss) (call-next-method tokenizer line)
-         (setf words (nconc words ts)
-               spans (nconc spans (mapcar #`(pair (+ (lt %) offset)
-                                                  (+ (rt %) offset))
-                                          ss)))
-         (incf offset (1+ (length line)))))
+         (:= words (nconc words ts)
+             spans (nconc spans (mapcar #`(pair (+ (lt %) offset)
+                                                (+ (rt %) offset))
+                                        ss)))
+         (:+ offset (1+ (length line)))))
     (values words
             spans)))
 
@@ -80,7 +80,7 @@
 (defmethod tokenize ((tokenizer regex-word-tokenizer) string)
   (loop :for (beg end) :on (re:all-matches (tokenizer-regex tokenizer) string)
                        :by #'cddr
-     :collect (sub string beg end) :into words
+     :collect (slice string beg end) :into words
      :collect (pair beg end) :into spans
      :finally (return (values words
                               spans))))
@@ -127,42 +127,52 @@
 (defmethod tokenize :around ((tokenizer postprocessing-regex-word-tokenizer)
                              string)
   (mv-bind (ws ss) (call-next-method)
-    (let (words spans)
+    (let (words spans skip)
       (loop :for wtail :on ws :for stail :on ss :do
-         (let ((cur (first wtail))
-               (cur-span (first stail))
-               (prev (first words))
-               (next (second wtail)))
-           (macrolet ((push-contractions (char-length)
-                        `(let* ((next cur-span)
-                                (split-pos (- (length cur) ,char-length))
-                                (split (- (rt next) ,char-length)))
-                           (push (sub cur 0 split-pos) words)
-                           (push (sub cur split-pos) words)
-                           (push (pair (lt next) split) spans)
-                           (push (pair split (rt next)) spans))))
-             (cond
-               ;; glue together abbreviations and decimals
-               ((and prev
-                     (= (lt cur-span) (rt (first ss)))
-                     (or (and (string= "." cur)
-                              next
-                              (not (open-quote-char-p (char next 0)))
-                              (alphanumericp (char prev (1- (length prev)))))
-                         (and (ends-with "." prev)
-                              (alphanumericp (char cur 0)))))
-                (setf (first words) (strcat prev cur)
-                      (first spans) (pair (lt (first spans))
-                                          (rt cur-span))))
-               ;; splitting contractions: I'm, he/she/it's, 'd
-               ((re:scan *2char-contractions-regex* cur)
-                (push-contractions 2))
-               ;; splitting contractions: 'll, 've, 're, n't
-               ((re:scan *3char-contractions-regex* cur)
-                (push-contractions 3))
-               ;; pass other tokens as is
-               (t (push cur words)
-                  (push cur-span spans))))))
+         (if skip (void skip)
+             (let ((cur (first wtail))
+                   (cur-span (first stail))
+                   (prev (first words))
+                   (next (second wtail)))
+               (macrolet ((push-contractions (char-length)
+                            `(let* ((next cur-span)
+                                    (split-pos (- (length cur) ,char-length))
+                                    (split (- (rt next) ,char-length)))
+                               (push (slice cur 0 split-pos) words)
+                               (push (slice cur split-pos) words)
+                               (push (pair (lt next) split) spans)
+                               (push (pair split (rt next)) spans))))
+                 (cond
+                   ;; glue together abbreviations, decimals
+                   ((and prev
+                         (= (lt cur-span) (rt (first spans)))
+                         (or (and (string= "." cur)
+                                  next
+                                  (not (open-quote-char-p (char next 0)))
+                                  (alphanumericp (char prev (1- (length prev)))))
+                             (and (ends-with "." prev)
+                                  (alphanumericp (char cur 0)))))
+                    (:= (first words) (strcat prev cur)
+                        (first spans) (pair (lt (first spans))
+                                            (rt cur-span))))
+                   ;; processing times (00:00)
+                   ((and prev next
+                         (string= ":" cur)
+                         (digit-char-p (char prev (1- (length prev))))
+                         (digit-char-p (char next 0)))
+                    (:= (first words) (strcat prev cur next)
+                        (first spans) (pair (lt (first spans))
+                                            (rt (second stail)))
+                        skip t))
+                   ;; splitting contractions: I'm, he/she/it's, 'd
+                   ((re:scan *2char-contractions-regex* cur)
+                    (push-contractions 2))
+                   ;; splitting contractions: 'll, 've, 're, n't
+                   ((re:scan *3char-contractions-regex* cur)
+                    (push-contractions 3))
+                   ;; pass other tokens as is
+                   (t (push cur words)
+                      (push cur-span spans)))))))
       (values (reverse words)
               (reverse spans)))))
 
@@ -264,9 +274,9 @@
                                        :test #'string-equal))
                           (and-it (second ws)
                                   (upper-case-p (char it 0)))))
-             (push (sub string beg (rt span)) sentences)
+             (push (slice string beg (rt span)) sentences)
              (push (pair beg (rt span)) spans)
-             (setf beg (lt (second ss))))))
+             (:= beg (lt (second ss))))))
       (values (reverse sentences)
               (reverse spans)))))
 
