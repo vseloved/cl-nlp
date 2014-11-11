@@ -13,7 +13,7 @@
                                       'chipz:gzip tarball)))
       (let ((name (slice (archive:name entry)
                          (1+ (position #\/ (archive:name entry) :from-end t)))))
-        (when (starts-with "br-" name) (print name)
+        (when (starts-with "br-" name)
           (let ((buf (make-array (slot-value entry 'archive::size)
                                  :element-type '(unsigned-byte 8)
                                  :adjustable t :fill-pointer t)))
