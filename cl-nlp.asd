@@ -45,16 +45,16 @@
                        (:file "indexing")
                        (:file "cond-freq-dist")))
              (:module #:corpora
-                      :serial t
                       :components
                       ((:file "general")
-                       (:file "util")
-                       (:file "brown")
-                       (:file "nps-chat")
-                       (:file "reuters")
-                       (:file "treebank")
-                       (:file "ptb")
-                       (:file "user")))
+                       (:file "util" :depends-on ("general"))
+                       (:file "brown" :depends-on ("util"))
+                       (:file "nps-chat" :depends-on ("util"))
+                       (:file "reuters" :depends-on ("util"))
+                       (:file "semcor" :depends-on ("util"))
+                       (:file "treebank" :depends-on ("util"))
+                       (:file "ptb" :depends-on ("treebank"))
+                       (:file "user" :depends-on ("brown" "nps-chat" "reuters"))))
              (:module #:learning
                       :serial t
                       :components
