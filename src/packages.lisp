@@ -172,6 +172,7 @@
            #:text-clean
            #:text-tokens
            #:text-sentences
+           #:text-paragraphs
            #:treebank-text-trees
 
            #:read-corpus

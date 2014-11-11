@@ -13,7 +13,7 @@
                                       'chipz:gzip tarball)))
       (let ((name (slice (archive:name entry)
                          (1+ (position #\/ (archive:name entry) :from-end t)))))
-        (when (starts-with "br-" name)
+        (when (starts-with "br-" name) (print name)
           (let ((buf (make-array (slot-value entry 'archive::size)
                                  :element-type '(unsigned-byte 8)
                                  :adjustable t :fill-pointer t)))
@@ -21,9 +21,12 @@
             (mv-bind (_ clean tokens paragraphs)
                 (read-corpus-file :semcor
                                   (re:regex-replace-all
-                                   "=([a-zA-Z0-9:$_-]+)"
-                                   (flex:octets-to-string buf :external-format :utf-8)
-                                  "=\"\\1\""))
+                                   "&"
+                                   (re:regex-replace-all
+                                    "=\"?([^ >\"]*)\"?"
+                                    (flex:octets-to-string buf :external-format :utf-8)
+                                    "=\"\\1\"")
+                                   "&amp;"))
               (declare (ignore _))
               (funcall fn (make-text :name name :clean clean :tokens tokens
                                      :paragraphs paragraphs)))))))))
@@ -46,7 +49,8 @@
   lemma
   ot
   wsn
-  lexsn)
+  lexsn
+  sep)
 
 (defclass semcor-sax (sax:sax-parser-mixin)
   ((cur-tag :initform nil)
@@ -68,7 +72,8 @@
                                :lemma (attr "lemma" attributes)
                                :wsn (attr "wsn" attributes)
                                :lexsn (attr "lexsn" attributes)
-                               :ot (attr "ot" attributes))
+                               :ot (attr "ot" attributes)
+                               :sep (attr "sep" attributes))
             cur-sent))))
 
 (defmethod sax:characters ((sax semcor-sax) data)
