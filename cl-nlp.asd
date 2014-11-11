@@ -7,7 +7,8 @@
   :maintainer "Vsevolod Dyomkin <vseloved@gmail.com>"
   :license "Apache 2.0"
   :depends-on (#:rutilsx #:cl-fad #:cl-ppcre
-               #:cxml #:drakma #:zip #:userial ;#:cgn
+               #:cxml #:drakma #:zip #:archive #:chipz #:flexi-streams #:userial
+               ;; #:cgn
                #+dev #:should-test)
   :serial t
   :components
