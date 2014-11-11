@@ -14,12 +14,15 @@
   "A single text from a certain corpus with some logical NAME.
    A text is stored in the following forms:
    - RAW - unprocessed, as it is in the corpus
-   - CLEAN - processed, but in plain format
-   - TOKENS - tokenized"
+           (if possible: for instance, for XML corpora ir doesn't make sense)
+   - CLEAN - processed, but in plain format (just words)
+   - TOKENS - tokens grouped into lists for each sentence
+   - PARAGRAPHS - sentence-level token lists collected into paragraph lists (if present)"
   name
   raw
   clean
-  tokens)
+  tokens
+  paragraphs)
 
 (defun print-text (text stream)
   (with-slots (name raw clean tokens) text

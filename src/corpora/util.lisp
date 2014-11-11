@@ -6,10 +6,9 @@
 
 (defun attr (name attributes)
   "Shortut XML attribute accessor."
-  (sax::standard-attribute-value
-   (find name attributes :test 'string=
-         :key #'sax::standard-attribute-local-name)))
-
+  (when-it (find name attributes :test 'string=
+                 :key #'sax::standard-attribute-local-name)
+    (sax::standard-attribute-value it)))
 
 (defmacro do-entries ((name stream zip &key (external-format :utf-8) raw)
                       &body body)
