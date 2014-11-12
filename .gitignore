@@ -2,6 +2,7 @@
 *.fasl
 \#*
 .*
+!.travis.yml
 !.gitignore
 wordnet30.sqlite
 *.auto.html

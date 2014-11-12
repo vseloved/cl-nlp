@@ -99,4 +99,5 @@
                       ((:file "greedy-ap-test")))
              (:module #:user
                       :components
-                      ((:file "user-test")))))))
+                      ((:file "user-test")))
+             (:file "ci")))))
