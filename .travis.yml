@@ -1,0 +1,34 @@
+language: lisp
+
+env:
+  matrix:
+#    - LISP=abcl
+#    - LISP=allegro
+   - LISP=sbcl
+#    - LISP=sbcl32
+#    - LISP=ccl
+#    - LISP=ccl32
+#    - LISP=clisp
+#    - LISP=clisp32
+#    - LISP=cmucl
+#    - LISP=ecl
+
+#matrix:
+#  allow_failures:
+#    - env: LISP=sbcl
+
+install:
+  - if [ -x ./install.sh ] && head -2 ./install.sh | grep '^# cl-nlp' > /dev/null;
+    then
+      ./install.sh;
+    else
+      curl https://raw.githubusercontent.com/luismbo/cl-travis/master/install.sh | sh;
+    fi     
+        
+before_script:
+    - cd $HOME/lisp
+    - git clone https://github.com/vseloved/rutils.git
+    - git clone https://github.com/vseloved/should-test.git
+
+script:
+    - sbcl --non-interactive --eval '(progn (pushnew :dev *features*) (ql:quickload :cl-nlp) (asdf:test-system :cl-nlp))'
