@@ -1,4 +1,4 @@
-;;; (c) 2013 Vsevolod Dyomkin
+;;; (c) 2013-2014 Vsevolod Dyomkin
 
 (in-package #:nlp.corpora)
 (named-readtables:in-readtable rutils-readtable)
@@ -21,13 +21,14 @@
       (zip:do-zipfile-entries (name entry zip)
         (unless (char= #\/ (last-char name))
           (with-zipped-zip (subname in entry :raw t)
-            (mv-bind (_ text tokens __ date headline byline dateline)
+            (mv-bind (_ text tokens paragraphs __ date headline byline dateline)
                 (read-corpus-file :reuters in)
               (declare (ignore _ __))
               (let ((text (make-reuters-text
                            :name (strcat name "/" subname)
                            :clean text
                            :tokens tokens
+                           :paragraphs paragraphs
                            :headline headline
                            :byline byline
                            :dateline dateline)))
@@ -48,13 +49,14 @@
     (zip:do-zipfile-entries (name entry zip)
       (unless (char= #\/ (last-char name))
         (with-zipped-zip (subname in entry :raw t)
-          (mv-bind (_ text tokens __ ___ headline byline dateline)
+          (mv-bind (_ text tokens paragraphs __ ___ headline byline dateline)
               (read-corpus-file :reuters in)
             (declare (ignore _ __ ___))
             (funcall fn (make-reuters-text
                          :name (strcat name "/" subname)
                          :clean text
                          :tokens tokens
+                         :paragraphs paragraphs
                          :headline headline
                          :byline byline
                          :dateline dateline))))))))
@@ -78,9 +80,10 @@
 (defmethod sax:start-element ((sax reuters-sax)
                               namespace-uri local-name qname attributes)
   (with-slots (id date cur-tag) sax
-    (when (eql :newsitem (setf cur-tag (mkeyw local-name)))
-      (setf id (parse-integer (attr "itemid" attributes))
-            date (attr "date" attributes)))))
+    (:= cur-tag (mkeyw local-name))
+    (when (eql :newsitem cur-tag)
+      (:= id (parse-integer (attr "itemid" attributes))
+          date (attr "date" attributes)))))
 
 (defmethod sax:characters ((sax reuters-sax) data)
   (with-slots (cur-tag text paragraphs headline byline dateline) sax
@@ -96,10 +99,11 @@
 
 (defmethod sax:end-document ((sax reuters-sax))
   (with-slots (id date paragraphs headline byline dateline) sax
-    (let ((text (strjoin "~%" (reverse paragraphs))))
+    (let ((text (strjoin #\Newlinw (reverse paragraphs))))
       (values nil
               text
               (ncore:tokenize ncore:<word-tokenizer> text)
+              paragraphs
               id
               date
               (when headline
