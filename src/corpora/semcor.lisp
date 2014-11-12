@@ -87,12 +87,14 @@
     (case (mkeyw local-name)
       (:s (reversef cur-sent)
           (push cur-sent cur-par)
+          (push cur-sent tokens)
           (void cur-sent))
-      (:p (push cur-par paragraphs)
+      (:p (reversef cur-par)
+          (push cur-par paragraphs)
           (void cur-par)))))
 
 (defmethod sax:end-document ((sax semcor-sax))
-  (with-slots (paragraphs) sax
+  (with-slots (tokens paragraphs) sax
     (reversef paragraphs)
     (values nil
             (strjoin #\Newline
@@ -103,5 +105,5 @@
                                                            (mapcar #'token-word sent)))
                                                 par)))
                             paragraphs))
-            (reduce #'append paragraphs)
+            (reverse tokens)
             paragraphs)))
