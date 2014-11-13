@@ -99,7 +99,7 @@
 
 (defmethod sax:end-document ((sax reuters-sax))
   (with-slots (id date paragraphs headline byline dateline) sax
-    (let ((text (strjoin #\Newlinw (reverse paragraphs))))
+    (let ((text (strjoin #\Newline (reverse paragraphs))))
       (values nil
               text
               (ncore:tokenize ncore:<word-tokenizer> text)
