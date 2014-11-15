@@ -10,9 +10,15 @@
    "A categorical model has some way of distinguishing different categories
     based on the WEIGHTS mapping categories to some models."))
 
+(defgeneric rank (model fs)
+  (:documentation
+   "Score all classes of a MODEL in a table for a given feature set FS."))
+
 (defgeneric classify (model fs)
   (:documentation
-   "Classify a feature set FS with a MODEL."))
+   "Classify a feature set FS with a MODEL.")
+  (:method (model fs)
+    (keymax (rank model fs))))
 
 (defgeneric train (model data &key)
   (:documentation

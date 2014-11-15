@@ -12,12 +12,12 @@
    (timestamps :initform #h() :accessor ap-timestamps)
    (totals :initform #h() :accessor ap-totals)))
 
-(defmethod classify ((model avg-perceptron) fs)
+(defmethod rank ((model perceptron) fs)
   (let ((scores #h()))
     (dotable (class weights (m-weights model))
       (dolist (f fs)
         (:+ (get# class scores 0) (get# f weights 0))))
-    (keymax scores)))
+    scores))
 
 (defmethod train ((model avg-perceptron) data &key (epochs 5) verbose)
   (dotimes (epoch epochs)
