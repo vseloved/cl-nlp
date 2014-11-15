@@ -40,38 +40,36 @@
     (let* ((samples (sort (or cols
                               (uniq (flatten (mapcar #'keys (vals table)))))
                           order-by))
-	   (cumulative-table (if cumulative
-				 (let ((cv (copy-hash-table table)))
-				   (dolist (v (vals cv))
-				     (let ((total 0))
-				       (dolist (s samples)
-					 (+ (incf total (or (? v s) 0)))
-					 (set# s v total))))
-				   cv)))
-	   (val-width (let ((vt #{}))
-			(dolist (s samples)
-			  (set# s vt (max (strlen s) 
-                                          (strlen (reduce #'max (mapcar #`(or (? % s) 0) 
-                                                                        (vals (if cumulative
-                                                                                  cumulative-table
-                                                                                  table))))))))
-			vt))
+           (table (if cumulative
+                      (let ((cv (copy-hash-table table)))
+                        (dotable (_ v cv)
+                          (let ((total 0))
+                            (dolist (s samples)
+                              (:+ total (or (? v s) 0))
+                              (set# s v total))))
+                        cv)
+                      table))
+           (val-width #h())
            (conds (or keys (keys table)))
            (key-width (reduce #'max (mapcar #'strlen conds))))
+      (dolist (s samples)
+        (set# s val-width
+              (max (strlen s)
+                   (strlen (reduce #'max
+                                   (mapcar #`(or (? % s) 0)
+                                           (vals table)))))))
       ;; print header
       (format stream " ~V:@A" key-width "")
       (dolist (s samples)
         (format stream "  ~V:@A" (? val-width s) s))
       (terpri stream)
       ;; print rows
-      (dotable (k v (if cumulative cumulative-table table))
+      (dotable (k v table)
         (when (member k conds)
           (format stream "  ~V:@A" key-width k)
-          (let ((total 0))
-            (dolist (s samples)
-              (format stream "  ~V:@A" (? val-width s)
-		      (or (? v s) 0)))
-            (terpri stream)))))))
+          (dolist (s samples)
+            (format stream "  ~V:@A" (? val-width s) (or (? v s) 0)))
+          (terpri stream))))))
 
 #+nil
 (defun plot-table (table &rest args
