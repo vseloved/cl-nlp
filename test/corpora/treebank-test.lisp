@@ -14,16 +14,18 @@
 
 
 (deftest read-treebank ()
-  (should be equal '((S (NP-SBJ "I")
+  (should be equal '((S (NLP.TAGS::NP-SBJ "I")
                         (VP "do" "not"
                             (VP "mind"
-                                (S (NP-SBJ "you(r)")
+                                (S (NLP.TAGS::NP-SBJ "you(r)")
                                    (VP "leaving"
-                                       (ADV-TMP "early")))))))
+                                       (NLP.TAGS::ADV-TMP "early")))))))
           (with-tmp-file (f "(S (NP-SBJ I)
                                 (VP do not
                                     (VP mind
                                         (S (NP-SBJ you(r))
                                            (VP leaving
                                                (ADV-TMP early))))))")
-            (read-corpus-file :treebank f))))
+	    (mv-bind (nil? tokens-str tokens trees)
+		(read-corpus-file :treebank f)
+	      trees))))
