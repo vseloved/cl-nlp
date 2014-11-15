@@ -41,7 +41,7 @@
       (dotable (c fw weights)
         (format out "~S ~A~%" c (ht-count fw))
         (dotable (f w fw)
-          (format out "~S ~A " f w)
+          (format out "~S ~A " (string f) w)
           (princ-progress (:+ i) total))
         (terpri out)))))
 
@@ -66,7 +66,7 @@
                 (count (read in))
                 (weights (set# class (m-weights model) #h())))
            (loop :repeat count :do
-              (:= (? weights (read in)) (read in)))
+              (:= (? weights (intern (read in) :f)) (read in)))
            (princ-progress (:+ i) total))))))
 
 (defgeneric accuracy (model gold-fs &key verbose)
