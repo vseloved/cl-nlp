@@ -54,7 +54,7 @@
     (format *debug-io* "~&Loading model from file: ~A - " path)
     (with-open-file (in path :element-type 'flex:octet)
       (:= in (flex:make-flexi-stream (gzip-stream:make-gzip-input-stream in)
-                                     :external-format +utf8+))
+                                     :external-format +utf-8+))
       (call-next-method model in))
     (format *debug-io* "done.~%")
     model)
