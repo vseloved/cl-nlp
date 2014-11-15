@@ -40,25 +40,37 @@
     (let* ((samples (sort (or cols
                               (uniq (flatten (mapcar #'keys (vals table)))))
                           order-by))
+	   (cumulative-table (if cumulative
+				 (let ((cv (copy-hash-table table)))
+				   (dolist (v (vals cv))
+				     (let ((total 0))
+				       (dolist (s samples)
+					 (+ (incf total (or (? v s) 0)))
+					 (set# s v total))))
+				   cv)))
+	   (val-width (let ((vt #{}))
+			(dolist (s samples)
+			  (set# s vt (max (strlen s) 
+                                          (strlen (reduce #'max (mapcar #`(or (? % s) 0) 
+                                                                        (vals (if cumulative
+                                                                                  cumulative-table
+                                                                                  table))))))))
+			vt))
            (conds (or keys (keys table)))
            (key-width (reduce #'max (mapcar #'strlen conds))))
       ;; print header
-      (format stream (filler key-width))
-      #+TODO
-      (mapc #`(rjust-format stream % %%)
-            (mapcar #'strlen samples) samples)
+      (format stream " ~V:@A" key-width "")
+      (dolist (s samples)
+        (format stream "  ~V:@A" (? val-width s) s))
       (terpri stream)
       ;; print rows
-      (dotable (k v table)
+      (dotable (k v (if cumulative cumulative-table table))
         (when (member k conds)
           (format stream "  ~V:@A" key-width k)
           (let ((total 0))
             (dolist (s samples)
-              (format stream "  ~V:@A" (strlen s)
-                      (funcall (if cumulative
-                                   #`(incf total %)
-                                   #'identity)
-                               (or (? v s) 0))))
+              (format stream "  ~V:@A" (? val-width s)
+		      (or (? v s) 0)))
             (terpri stream)))))))
 
 #+nil
