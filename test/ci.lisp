@@ -5,5 +5,6 @@
                          (s (eql (asdf:find-system :cl-nlp))))
   (asdf:load-system :cl-nlp)
   ;;; TO DO: Fix and add other package tests
-  (should-test:test :package :ncore)
+  (dolist (package '(:ncore :ncorp))
+    (should-test:test :package package))
   t)
