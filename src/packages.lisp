@@ -8,6 +8,8 @@
   (:export #:cl-nlp-error
            #:not-implemented-error
 
+           #:+utf-8+
+
            #:*stopwords-en*
 
            #:+newline+
@@ -44,7 +46,7 @@
            #:download
            #:download-file
            #:zipped-file-data
-           #:zip-as-text-file
+           #:zip-add-text-file
 
            #:list-from-file
            #:dict-from-file

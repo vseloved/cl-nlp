@@ -129,7 +129,7 @@
         (babel:octets-to-string raw :encoding encoding)
         raw)))
 
-(defun zip-as-text-file (zip name data)
+(defun zip-add-text-file (zip name data)
   "Add DATA as a text file named NAME to the zip archive ZIP."
   (zip:write-zipentry zip name
                       (flex:make-in-memory-input-stream

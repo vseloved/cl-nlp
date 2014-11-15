@@ -160,26 +160,22 @@
 
 ;;; loading/saving
 
-(defmethod save-model :after ((model greedy-ap-tagger) &optional zip)
-  (zip-as-text-file zip "single-tag-words.txt"
-                    (strjoin #\Newline
-                             (mapcar #`(fmt "~A	~A" (lt %) (rt %))
-                                     (ht->pairs (tgr-single-tag-words model)))))
-  (zip-as-text-file zip "dict.txt"
-                    (strjoin #\Newline (keys (tgr-dict model)))))
+(defmethod save-model :after ((model greedy-ap-tagger) &optional out)
+  (with-slots (single-tag-words dict) model
+    (let ((total (+ (ht-count single-tag-words) (ht-count dict)))
+          (i 0))
+      (format out "~&~A~%" (ht-count single-tag-words))
+      (dotable (word tag single-tag-words)
+        (format out "~S ~S " word tag)
+        (princ-progress (:+ i) total))
+      (format out "~%~A~%" (ht-count dict))
+      (dotable (word _ dict)
+        (format out " ~S" word)
+        (princ-progress (:+ i) total)))))
 
-(defmethod load-model :after ((model greedy-ap-tagger) path &key)
-  (zip:with-zipfile (zip path)
-    (:= (tgr-single-tag-words model)
-        (pairs->ht (mapcar #`(ds-bind (word tag) (split #\Tab %)
-                               (pair word (intern tag :tag)))
-                           (split #\Newline
-                                  (zipped-file-data zip "single-tag-words.txt")
-                                  :remove-empty-subseqs t))
-                   :test 'equalp)
-        (tgr-dict model)
-        (alist->ht (mapcar #'list
-                           (split #\Newline
-                                  (zipped-file-data zip "dict.txt")
-                                  :remove-empty-subseqs t))
-                   :test 'equal))))
+(defmethod load-model :after ((model greedy-ap-tagger) in &key)
+  (with-slots (single-tag-words dict) model
+    (loop :repeat (read in) :do
+       (:= (? single-tag-words (read in)) (read in)))
+    (loop :repeat (read in) :do
+       (:= (? dict (read in)) t))))

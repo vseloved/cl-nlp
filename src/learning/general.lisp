@@ -23,47 +23,27 @@
    "Perform one step of MODEL training with features FS
     with GOLD and GUESS variants."))
 
-
 (defgeneric save-model (model &optional path)
   (:documentation
    "Save MODEL data into PATH (which will be overwritten).")
   (:method :around (model &optional path)
-     (zip:with-output-to-zipfile (zip (or path (fmt "model-~A.zip" (timestamp))))
-       (call-next-method model zip)
-       path))
-  (:method ((model categorical-model) &optional zip)
-    (let ((weights (m-weights model))
-          (total-fs 0)
-          (fs #h()))
-      ;; classes
-      (zip-as-text-file zip "classes.txt"
-                        (strjoin #\Newline
-                                 (mapcar #`(fmt "~A	~A"
-                                                (lt %)
-                                                (:+ total-fs (ht-count (rt %))))
-                                         (ht->pairs weights))))
-      (let ((fbuf (userial:make-buffer total-fs))
-            (wbuf (userial:make-buffer total-fs))
-            (i 0))
-        ;; features
-        (dotable (_ fw weights)
-          (princ-progress (:+ i) (* 2 total-fs))
-          (dotable (f _ fw)
-            (userial:with-buffer fbuf
-              (userial:serialize :int32 (coerce (fs-idx f fs) 'fixnum)))))
-        (zip-as-text-file zip "fs.txt" (strjoin #\Newline (keys fs)))
-        (zip:write-zipentry zip "fs.bin"
-                            (flex:make-in-memory-input-stream fbuf)
-                            :file-write-date (get-universal-time))
-        ;; weights
-        (dotable (_ fw weights)
-          (princ-progress (:+ i) (* 2 total-fs))
-          (dotable (_ weight fw)
-            (userial:with-buffer wbuf
-              (userial:serialize :float32 (coerce weight 'single-float)))))
-        (zip:write-zipentry zip "weights.bin"
-                            (flex:make-in-memory-input-stream wbuf)
-                            :file-write-date (get-universal-time))))))
+    (with-open-file (out path :direction :output :element-type 'flex:octet
+                         :if-does-not-exist :create)
+      (:= out (flex:make-flexi-stream (gzip-stream:make-gzip-output-stream out)
+                                      :external-format +utf-8+))
+      (call-next-method model out)
+      path))
+  (:method ((model categorical-model) &optional out)
+    (let* ((weights (m-weights model))
+           (total (reduce '+ (mapcar #'ht-count (vals weights))))
+           (i 0))
+      (format out "~A~%" (ht-count weights))
+      (dotable (c fw weights)
+        (format out "~S ~A~%" c (ht-count fw))
+        (dotable (f w fw)
+          (format out "~S ~A " f w)
+          (princ-progress (:+ i) total))
+        (terpri out)))))
 
 (defgeneric load-model (model path &key)
   (:documentation
@@ -71,45 +51,23 @@
     Keyword arg CLASSES-PACKAGE determines the package where class names
     will be interned (default: keyword).")
   (:method :around (model path &key)
-    (call-next-method)
+    (format *debug-io* "~&Loading model from file: ~A - " path)
+    (with-open-file (in path :element-type 'flex:octet)
+      (:= in (flex:make-flexi-stream (gzip-stream:make-gzip-input-stream in)
+                                     :external-format +utf8+))
+      (call-next-method model in))
+    (format *debug-io* "done.~%")
     model)
-  (:method ((model categorical-model) path &key (classes-package :keyword))
-    (zip:with-zipfile (zip path)
-      (flet ((unserialize-buf (type raw)
-               (userial:with-buffer (make-array (length raw) :displaced-to raw
-                                                :element-type 'flex:octet
-                                                :adjustable t :fill-pointer t)
-                 (userial:buffer-rewind)
-                 (let ((total (/ (length raw) 4)))
-                   (coerce (loop :for i :from 0 :below total
-                              :do (princ-progress i (* 2 total))
-                              :collect (userial:unserialize type))
-                           'vector)))))
-        (let* ((classes (pairs->ht
-                         (mapcar #`(ds-bind (class count) (split #\Tab %)
-                                     (pair (intern class classes-package)
-                                           (parse-integer count)))
-                                 (split #\Newline
-                                        (zipped-file-data zip "classes.txt")
-                                        :remove-empty-subseqs t))))
-               (fsx (pairs->ht (mapindex #`(pair % (when %% (intern %% :f)))
-                                         (split #\Newline
-                                                (zipped-file-data zip "fs.txt")
-                                                :remove-empty-subseqs t))))
-               (raw-fs (unserialize-buf :int32
-                                        (zipped-file-data zip "fs.bin"
-                                                          :encoding nil)))
-               (raw-ws (unserialize-buf :float32
-                                        (zipped-file-data zip "weights.bin"
-                                                          :encoding nil)))
-               (i 0))
-          (dotable (class count classes)
-            (princ-progress i (length raw-fs))
-            (let ((weights (set# class (m-weights model) #h())))
-              (loop :while (< i count) :do
-                 (set# (get# (svref raw-fs i) fsx) weights (svref raw-ws i))
-                 (:+ i)))))))
-    model))
+  (:method ((model categorical-model) in &key)
+    (let ((total (read in))
+          (i 0))
+      (loop :repeat total :do
+         (let* ((class (read in))
+                (count (read in))
+                (weights (set# class (m-weights model) #h())))
+           (loop :repeat count :do
+              (:= (? weights (read in)) (read in)))
+           (princ-progress (:+ i) total))))))
 
 (defgeneric accuracy (model gold-fs &key verbose)
   (:documentation

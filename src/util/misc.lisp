@@ -8,6 +8,8 @@
 
 (rename-package "CL-PPCRE" "CL-PPCRE" '("PPCRE" "RE"))
 
+(defparameter +utf-8+ (flex:make-external-format :utf-8))
+
 
 ;;; Conditions
 

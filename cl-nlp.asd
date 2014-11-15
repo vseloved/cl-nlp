@@ -1,13 +1,14 @@
 ;;; (c) 2013 Vsevolod Dyomkin
 
 (asdf:defsystem #:cl-nlp
-  :version "0.0.11"
+  :version "0.0.12"
   :description "NLP toolkit for Common Lisp"
   :author "Vsevolod Dyomkin <vseloved@gmail.com>"
   :maintainer "Vsevolod Dyomkin <vseloved@gmail.com>"
   :license "Apache 2.0"
   :depends-on (#:rutilsx #:cl-fad #:cl-ppcre
-               #:cxml #:drakma #:zip #:archive #:chipz #:flexi-streams #:userial
+               #:cxml #:drakma #:flexi-streams
+               #:zip #:archive #:chipz #:gzip-stream
                ;; #:cgn
                #+dev #:should-test)
   :serial t
@@ -48,11 +49,13 @@
                       :components
                       ((:file "general")
                        (:file "util" :depends-on ("general"))
+                       (:file "xml" :depends-on ("util"))
+                       (:file "treebank" :depends-on ("util"))
+
                        (:file "brown" :depends-on ("util"))
                        (:file "nps-chat" :depends-on ("util"))
                        (:file "reuters" :depends-on ("util"))
-                       (:file "semcor" :depends-on ("util"))
-                       (:file "treebank" :depends-on ("util"))
+                       (:file "semcor" :depends-on ("xml"))
                        (:file "ptb" :depends-on ("treebank"))
                        (:file "user" :depends-on ("brown" "nps-chat" "reuters"))))
              (:module #:learning
