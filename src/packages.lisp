@@ -1,6 +1,5 @@
 ;;; (c) 2013-2014 Vsevolod Dyomkin
 
-
 (cl:defpackage #:nlp.util
   (:nicknames #:nutil)
   (:use #:common-lisp #:rutilsx
@@ -299,7 +298,6 @@
            #:tabulate
            #:plot
            ))
-
 
 (rutils:re-export-symbols '#:nutil    '#:nlp-user)
 (rutils:re-export-symbols '#:ncorp    '#:nlp-user)
