@@ -31,4 +31,4 @@ before_script:
     - git clone https://github.com/vseloved/should-test.git
 
 script:
-    - sbcl --non-interactive --eval '(progn (pushnew :dev *features*) (ql:quickload :cl-nlp) (asdf:test-system :cl-nlp))'; [ $? -eq 1 ]
+    - sbcl --non-interactive --eval '(progn (pushnew :dev *features*) (ql:quickload :cl-nlp) (unless (asdf:test-system :cl-nlp) (uiop:quit 1)))'
