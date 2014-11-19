@@ -24,8 +24,9 @@
                       (subrec (cdr subtree))))
                ((and (single (rest subtree))
                      (listp (second subtree)))
-                (rec (cons (mksym (fmt "~A+~A" (car subtree) (caadr subtree)))
-                           (cdadr subtree))))
+                (let ((*package* (find-package :nlp.parsing)))
+                  (rec (cons (mksym (fmt "~A+~A" (car subtree) (caadr subtree)))
+                             (cdadr subtree)))))
                (t
                 (cons (car subtree)
                       (mapcar #'rec (cdr subtree))))))
@@ -34,7 +35,8 @@
                      "Subtree ~S is improper!" nodes)
              (if (dyadic nodes)
                  (mapcar #'rec nodes)
-                 (let ((left (butlast nodes)))
+                 (let ((left (butlast nodes))
+                       (*package* (find-package :nlp.parsing)))
                    (cons (cons (mksym (fmt "~{~A~^_~}" (mapcar #'car left)))
                                (subrec left))
                          (list (rec (last1 nodes))))))))
@@ -50,8 +52,9 @@
                ((atom subtree)
                 (list subtree))
                ((find #\+ (symbol-name (car subtree)))
-                (let ((parts (mapcar #'mksym (split
-                                              #\+ (symbol-name (car subtree))))))
+                (let* ((*package* (find-package :nlp.parsing))
+                       (parts (mapcar #'mksym (split
+                                               #\+ (symbol-name (car subtree))))))
                   (list (reduce #'list (butlast parts)
                                 :from-end t
                                 :initial-value

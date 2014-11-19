@@ -14,7 +14,7 @@
 (defun run-all-tests ()
   "Run all test modules and keep track of number of failures/errors."
   (setf *test-failures-or-errors* 0)
-  (dolist (package '(:ncore :ncorp :nlearn :ntag :nlp-user))
+  (dolist (package '(:ncore :ncorp :nlearn :ntag :nlp-user :nparse))
     (unless (should-test:test :package package)
       (incf *test-failures-or-errors* 1))))
 
