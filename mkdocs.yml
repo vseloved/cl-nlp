@@ -1,0 +1,16 @@
+site_name: cl-nlp
+site_url: http://cl-nlp.readthedocs.org/
+site_description: Project documenation for cl-nlp toolkit
+
+repo_url: https://github.com/vseloved/cl-nlp/
+
+pages:
+    - ['index.md', 'Home']
+    - ['user-guide/getting-started.md', 'Documentation', 'Getting Started']
+    - ['user-guide/nlp-tasks.md', 'Documentation', 'NLP Tasks']
+    - ['user-guide/samples.md', 'Documentation', 'Samples']
+    - ['about/support.md', 'About', 'Support']
+    - ['about/technical-notes.md', 'About', 'Technical Notes']
+    - ['about/license.md', 'About', 'License']
+
+copyright: Copyright &copy; 2013-2014, Vsevolod Dymokin (vseloved@gmail.com) 
