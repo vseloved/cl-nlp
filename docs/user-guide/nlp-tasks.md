@@ -1,24 +1,17 @@
 # NLP Tasks
 
-This describes the NLP Tasks currently supported. 
+This describes the NLP Tasks currently supported.
 
 ---
 
 ## Tokenization
 
-## Corpus Support
+## Language modelling with ngrams
 
-## Supervised Learning
+## Reading various corpora (treebanks, plain text, and XML-based corpora)
+
+## Supervised Learning using Averaged Perceptron
 
 ## POS Tagging
 
-## Parsing 
-
-### Shift Reduce Dependency Parsing
-
-### Consitutency Parsing with PCFG
-
-## Contributing More NLP Tasks
-
-
-
+## Interfacing with WordNet

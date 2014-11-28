@@ -1,6 +1,6 @@
 # Getting Started
 
-The steps to install and run cl-nlp with quicklisp. You will also find
+The steps to install and run CL-NLP with quicklisp. You will also find
 information about the test, docs infrastructure with guidelines to contribute.
 
 ---
@@ -10,12 +10,12 @@ information about the test, docs infrastructure with guidelines to contribute.
 If you are new to NLP, here are a few documents to help you get started.
 
 - [NLP](http://en.wikipedia.org/wiki/Natural_language_processing)
-- [Writing a POS tagger with CL-NLP](../user-guide/samples.md)
+- [Writing a POS tagger with CL-NLP](../user-guide/examples.md)
 - [NLTK series](http://lisp-univ-etc.blogspot.com/search/label/nltk)
 
 ## Dependencies
 
-As of now cl-nlp has been tested only on SBCL. 
+As of now cl-nlp has been tested only on SBCL.
 
 - [RUTILS](https://github.com/vseloved/rutils.git)
 - [Closure XML](http://common-lisp.net/project/cxml/)
@@ -29,37 +29,38 @@ As of now cl-nlp has been tested only on SBCL.
 
 ## Installation
 
-Currently cl-nlp is not available from the quicklisp repository. You need to
-clone it your quicklisp local projects directory. You will also need to clone
-rutils and should-test to local projects.
+Currently CL-NLP is not available from the quicklisp repository. You need to
+clone it to your quicklisp local projects directory.
+You are also advised to clone RUTILS and SHOULD-TEST to local projects.
 
 ```
-cd path/to/quicklisp/local-projects
+cd path/to/quicklisp/local-projects (usually, ~/quicklisp/local-projects/)
 
-git clone git@github.com:vseloved/cl-nlp.git 
+git clone git@github.com:vseloved/cl-nlp.git
 
-git clone git@github.com:vseloved/rutils.git 
+git clone git@github.com:vseloved/rutils.git
 
-git clone git@github.com:vseloved/should-test.git 
+git clone git@github.com:vseloved/should-test.git
 ```
 
 ## Test System
 
-The tests are guarded by a ```#+dev``` feature. As such you need to push this
-symbol to ```*features*``` in order to run the tests. The tests can be run with
-a single command using the asdf test system, as is shown in the next section.
+The tests are guarded by the ```#+dev``` feature. As such you need to push this
+symbol to ```*features*``` in order to run the tests **before** loading CL-NLP.
+The tests can be run with a single command using ASDF:TEST-SYSTEM
+as is shown in the next section.
 
-If you do not wish to run tests, you can skip this step. We hope a developer
-who wants to contribute does not do this!
+If you do not wish to run tests, you can skip this step.
+We hope a developer who wants to contribute does not do this!
 
 ### Travis CI
 
-cl-nlp is also enabled by [Travis CI](https://travis-ci.org/vseloved/cl-nlp)
-which runs the test suite using SBCL. 
+CL-NLP is automatically tested with [Travis CI](https://travis-ci.org/vseloved/cl-nlp)
+which runs the test suite using SBCL.
 
 ## Using Quicklisp with Test System
 
-Now you can load cl-nlp and run the tests. 
+Now you can load CL-NLP and run the tests.
 
 ```
 * (pushnew :dev *features*) ;;; use only if you want to run tests
@@ -72,14 +73,16 @@ Now you can load cl-nlp and run the tests.
 
 ## Project Layout
 
-1. src - contains source code divided into modules by NLP tasks
-2. test - contains test code guarded by ```#+dev```
-3. docs - contains documentation using MKDocs
+1. `src` - contains source code divided into modules by NLP tasks
+2. `contrib` - contains supplementary source code
+   (usually, targeted at integration with external software)
+2. `test` - contains test code guarded by ```#+dev```
+3. `docs` - contains documentation created with MKDocs
 
 ## Contribution Guidelines
 
-You are welcome to submit bug fixes and new features. The following is the
-process you need to follow:
+You are welcome to submit bug fixes and new features.
+The following is the process you need to follow:
 
 ### Process Guidelines
 
@@ -111,15 +114,15 @@ process you need to follow:
   and `word-tokenizer` classes. For more details on it see
   [Overview of CL-NLP architecture](http://lisp-univ-etc.blogspot.com/2013/02/natural-language-meta-processing-with.html).
 - Tests for `CL-NLP` are written using [SHOULD-TEST](http://github.com/vseloved/should-test).
-  The test module is only compiled when `:dev` is present in `*features*`
+  The test module is only loaded when `:dev` is present in `*features*`
 
 ## Documentation
 
 The project is documented using [MkDocs](http://www.mkdocs.org) and hosted on
-[readthedocs.org](http://cl-nlp.readthedocs.org). 
+[readthedocs.org](http://cl-nlp.readthedocs.org).
 
 If you wish to contribute to the documentation, the following steps are
-recommended
+recommended:
 
 - Install MkDocs as described [here](http://www.mkdocs.org/#installation).
 - Create a new branch and make the changes.

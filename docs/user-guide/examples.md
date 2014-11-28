@@ -1,7 +1,7 @@
 # NLP applications
 
-This is a sample gallery of NLP applications that can be developed using
-this toolkit. If you have an application developed using cl-nlp and want to add
+This is a gallery of NLP application examples that can be developed using
+this toolkit. If you have an application developed using CL-NLP and want to add
 it to this gallery, please reach out.
 
 ---

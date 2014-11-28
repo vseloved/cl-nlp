@@ -1,6 +1,6 @@
-# cl-nlp 
+# cl-nlp
 
-cl-nlp is a Modern NLP toolkit built using Common Lisp.
+CL-NLP is a Modern NLP toolkit built using Common Lisp.
 
 CL-NLP aims to provide a comprehensive and extensible set of tools to solve
 natural language processing problems in Common Lisp.
