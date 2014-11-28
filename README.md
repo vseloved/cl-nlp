@@ -1,4 +1,5 @@
 [![Build Status](https://travis-ci.org/vseloved/cl-nlp.png?branch=master)](https://travis-ci.org/vseloved/cl-nlp)
+[![Documentation Status](https://readthedocs.org/projects/cl-nlp/badge/?version=latest)](https://readthedocs.org/projects/cl-nlp/?badge=latest)
 
 # CL-NLP -- a Lisp NLP toolkit
 

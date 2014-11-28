@@ -6,3 +6,4 @@
 !.gitignore
 wordnet30.sqlite
 *.auto.html
+site/
