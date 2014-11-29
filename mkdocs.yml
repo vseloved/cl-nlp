@@ -8,9 +8,9 @@ pages:
     - ['index.md', 'Home']
     - ['user-guide/getting-started.md', 'Documentation', 'Getting Started']
     - ['user-guide/nlp-tasks.md', 'Documentation', 'NLP Tasks']
-    - ['user-guide/examples/about.md', 'Samples', 'About']
-    - ['user-guide/examples/eng-pos-tagger.md', 'Samples', 'English POS Tagger']
+    - ['user-guide/examples/about.md', 'Examples', 'About']
+    - ['user-guide/examples/eng-pos-tagger.md', 'Examples', 'English POS Tagger']
     - ['about/support.md', 'About', 'Support']
     - ['about/license.md', 'About', 'License']
 
-copyright: Copyright &copy; 2013-2014, Vsevolod Dymokin (vseloved@gmail.com) 
+copyright: Copyright &copy; 2013-2014, Vsevolod Dymokin (vseloved@gmail.com)
