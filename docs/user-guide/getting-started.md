@@ -10,7 +10,7 @@ information about the test, docs infrastructure with guidelines to contribute.
 If you are new to NLP, here are a few documents to help you get started.
 
 - [NLP](http://en.wikipedia.org/wiki/Natural_language_processing)
-- [Writing a POS tagger with CL-NLP](../user-guide/examples.md)
+- [Writing a POS tagger with CL-NLP](../user-guide/examples/eng-pos-tagger.md)
 - [NLTK series](http://lisp-univ-etc.blogspot.com/search/label/nltk)
 
 ## Dependencies

@@ -1,6 +1,6 @@
-# How to write an English POS tagger with CL-NLP
+## How to write an English POS tagger with CL-NLP
 
-## State-of-the-art
+---
 
 The problem of POS tagging is a sequence labeling task:
 assign each word in a sentence the correct part of speech.
@@ -20,7 +20,7 @@ For other languages, that don't possess such data,
 an unsupervised or a rule-based approach can be applied.
 
 
-## Data sources
+### Data sources
 
 The standard dataset that is used not only for training POS taggers,
 but, most importantly, for evaluation is the
@@ -51,7 +51,7 @@ It's, obviously, possible to extend it with other tags if necessary.
 All of them are, finally, available as symbols of the `tag` package in `CL-NLP`.
 
 
-## Available data and tools to process it
+### Available data and tools to process it
 
 What we're interested in, is obtaining a structured representation of this data.
 The `ncorp` package implements interfaces to various raw representations,
@@ -189,7 +189,7 @@ Some of them are:
   and `:+` analogy for `incf`
 
 
-## Building the POS tagger
+### Building the POS tagger
 
 We have explored how to access different corpus data that we'll need to train the POS tagger.
 To actually do that, we'll re-implement the approach described by Matthew Honnibal in
@@ -261,7 +261,7 @@ In the future this method will probably be assigned to a `linear-model` class,
 but it hasn't been added to `CL-NLP` so far.
 
 
-## Training
+### Training
 
 Let's take a look at the training part. It consists of 2 steps.
 `extract-fs` performs feature extraction.
@@ -358,7 +358,7 @@ This dichotomy is manifested in the training phase:
             (:= (? timestamps class f) step)))
 
 
-## Evaluation & persisting the model
+### Evaluation & persisting the model
 
 We have reached the last part of every machine learning exercise - evaluation.
 Usually it's about measuring precision/recall/f-measure, but in the tagger case
@@ -484,7 +484,7 @@ Here's a test we need:
               (accuracy *tagger* *gold*)))
 
 
-## Summing up
+### Summing up
 
 In this article I've tried to describe the whole process of creating
 a new statistics-based model using `CL-NLP`.
@@ -508,7 +508,6 @@ so you can safely use it for your real-world tasks
 (under the licensing restrictions of the OntoNotes dataset used for training it).
 Surely, if you have your own data, it should be straightforward to re-train the model with it.
 
-You can also add your own learning algorithms,
-and I'm going to be continue doing the same likewise.
+You can also add your own learning algorithms, and I'm going to be continue doing the same likewise.
 
 Stay tuned and have fun!
