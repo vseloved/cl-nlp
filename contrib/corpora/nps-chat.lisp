@@ -1,6 +1,6 @@
-;;; (c) 2013 Vsevolod Dyomkin
+;;; (c) 2013-2014 Vsevolod Dyomkin
 
-(in-package #:nlp.corpora)
+(in-package #:nlp.contrib.corpora)
 (named-readtables:in-readtable rutils-readtable)
 
 

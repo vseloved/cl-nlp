@@ -4,12 +4,13 @@
 
 
 (defsystem #:cl-nlp-contrib
-  :version "0.0.2"
+  :version "0.0.3"
   :description "CL-NLP additional packages."
   :author "Vsevolod Dyomkin <vseloved@gmail.com>"
   :maintainer "Vsevolod Dyomkin <vseloved@gmail.com>"
   :license "Apache 2.0"
-  :depends-on (#:cl-nlp #:closer-mop #:clsql #:clsql-sqlite3 #:zip)
+  :depends-on (#:cl-nlp #:closer-mop
+               #:clsql #:clsql-sqlite3)
   :serial t
   :components
   ((:module #:contrib
@@ -28,7 +29,13 @@
                        (:file "interface")
                        (:file "similarity")
                        (:file "sql-wordnet")
-                       (:file "wn")))))))
+                       (:file "wn")))
+             (:module #:corpora
+                      :components
+                      ((:file "ptb")
+                       (:file "nps-chat")
+                       (:file "semcor")
+                       (:file "reuters")))))))
 
 
 (defmethod asdf:perform :after ((o asdf:load-op)

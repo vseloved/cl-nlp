@@ -6,3 +6,9 @@
            #:ms-ngrams-url
            #:ms-ngrams-user-token
            #:ms-ngrams-catalog))
+
+(cl:defpackage #:nlp.contrib.corpora
+  (:use #:common-lisp #:rutil #:nlp)
+  (:export #:ptb-tagged-text
+           #:reuters-text
+           #:semcor-token))

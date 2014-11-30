@@ -72,8 +72,9 @@
 
 ;;; Tree pretty printing.
 
-(defun pprint-tree (tree &optional (stream *standard-output*))
+(defun pprint-tree (tree &key (stream *standard-output*) use-unicode-chars)
   "Pretty print TREE represented as a list to STREAM.
+   If USE-ASCII-ART will draw using
 
    The result may look like this:
 
@@ -82,13 +83,13 @@
                              (\"VP\" (\"PP\" \"sea\" 1 2 (3 5 6)
                                              4 (5 aa) 6))))
                             S
-              /~~~~~~~~~~~~~~~~~~~~~~~~~\
+              /`````````````````````````\
               NP                        VP
-           /~~~~~~~~~~~\                |
+           /```````````\                |
            NP         test              PP
-       /~~~~~~|~~~\         /~~~|~~|~~~~|~~~|~~~|~~\
+       /``````|```\         /```|``|````|```|```|``\
     Theeeee  big  b        sea  1  2    3   4   5  6
-                                      /~~\      |
+                                      /``\      |
                                       5  6     AA
   "
   (labels ((to-strings (subtree)
@@ -97,7 +98,9 @@
                    (let* ((children (mapcar #'to-strings (cdr subtree)))
                           (merged (apply #'zip-with #'strcat
                                          (align-bottoms children)))
-                          (merged+ (cons (format-connectors (car merged))
+                          (merged+ (cons (format-connectors (car merged)
+                                                            :use-unicode-chars
+                                                            use-unicode-chars)
                                          merged))
                           (diff (- (length head) (length (car merged)))))
                      (if (plusp diff)
@@ -106,23 +109,27 @@
     (dolist (level (to-strings tree))
       (write-line level stream))))
 
-(defun format-connectors (string)
+(defun format-connectors (string &key use-unicode-chars)
   "Print connectors above one level of the tree being pprinted."
   (let* ((width (length string))
-         (center (floor width 2))
+         (center (ceiling width 2))
          (spans (re:all-matches "[^\\s]+" string)))
     (if (= 2 (length spans))  ; spans = (1 2) for string = " I "
-        (strcat (filler center)
-                "|"
-                (filler (- width center 1)))
+        (strcat (filler (1- center))
+                (if use-unicode-chars "│" "|")
+                (filler (- width center)))
         (let ((pos (ceiling (+ (first spans) (second spans)) 2)))
-          (fmt "~A/~{~A~}~A"
+          (fmt "~A~C~{~A~}~A"
                (filler (1- pos))
+               (if use-unicode-chars #\┌ #\/)
                (loop
                   :for (beg end . tail) :on (cddr spans) :by #'cddr
                   :for c := (ceiling (+ beg end) 2)
-                  :collect (strcat (filler (- c pos 1) #\~)
-                                   (if tail "|" "\\"))
+                  :collect (strcat (filler (- c pos 1)
+                                           (if use-unicode-chars #\─ #\`))
+                                   (if tail
+                                       (if use-unicode-chars "┬" "|")
+                                       (if use-unicode-chars "┐" "\\")))
                   :do (setf pos c)) ;(print (list beg end c)) (force-output))
                (filler (- width pos)))))))
 
@@ -140,6 +147,6 @@
 (defun pad (padding text)
   "Return a string of TEXT padded with PADDING spaces devided equally
    on both sides of it."
-  (strcat (filler (ceiling padding 2))
+  (strcat (filler #1=(floor padding 2))
           text
-          (filler (floor padding 2))))
+          (filler (- padding #1#))))

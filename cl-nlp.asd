@@ -1,7 +1,7 @@
-;;; (c) 2013 Vsevolod Dyomkin
+;;; (c) 2013-2014 Vsevolod Dyomkin
 
 (asdf:defsystem #:cl-nlp
-  :version "0.0.12"
+  :version "0.0.13"
   :description "NLP toolkit for Common Lisp"
   :author "Vsevolod Dyomkin <vseloved@gmail.com>"
   :maintainer "Vsevolod Dyomkin <vseloved@gmail.com>"
@@ -49,15 +49,10 @@
                       :components
                       ((:file "general")
                        (:file "util" :depends-on ("general"))
+                       (:file "brown" :depends-on ("util"))
                        (:file "xml" :depends-on ("util"))
                        (:file "treebank" :depends-on ("util"))
-
-                       (:file "brown" :depends-on ("util"))
-                       (:file "nps-chat" :depends-on ("util"))
-                       (:file "reuters" :depends-on ("util"))
-                       (:file "semcor" :depends-on ("xml"))
-                       (:file "ptb" :depends-on ("treebank"))
-                       (:file "user" :depends-on ("brown" "nps-chat" "reuters"))))
+                       (:file "user" :depends-on ("brown" "xml" "treebank"))))
              (:module #:learning
                       :serial t
                       :components

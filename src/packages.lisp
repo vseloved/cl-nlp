@@ -184,9 +184,7 @@
 
            #:remove-dummy-tokens
 
-           ;; Specific corpora
            #:+brown-corpus+
-           #:+nps-chat-corpus+
            ))
 
 (cl:defpackage #:nlp.learning
