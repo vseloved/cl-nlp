@@ -26,23 +26,23 @@
     (:= (tree-decision-fn model) (eval `(lambda (%) ,tree))
         (tree-repr model) tree
         (tree-classes model) classes)
-    tree))
+    model))
 
 (defmethod train ((model cart-tree) data
                   &key classes verbose (min-size 0) idx-count)
   (let ((tree (tree-train #`(- 1 (gini-split-idx %)) data
-                          :binary? t :min-size min-size :idx-count idx-count
+                          :binary t :min-size min-size :idx-count idx-count
                           :verbose verbose)))
     (:= (tree-decision-fn model) (eval `(lambda (%) ,tree))
         (tree-repr model) tree
         (tree-classes model) classes)
-    tree))
+    model))
 
 (defun tree-train (criterion data
                    &key (min-size 0)
                         (idxs (range 0 (length (lt (first data)))))
                         idx-count
-                        binary?
+                        binary
                         verbose)
   (cond
     ;; no data
@@ -61,28 +61,30 @@
                      (if idx-count
                          (sample idxs idx-count :with-replacement? nil)
                          idxs)
-                     :binary? binary? :verbose verbose)
-         (if (or binary? split-point)
+                     :binary binary :verbose verbose)
+         (if (or binary split-point)
              (ds-bind (left right) (split-at split-point data idx
                                              :test test :key 'lt)
                `(if (,test (elt % ,idx) ,split-point)
                     ,(tree-train criterion left :idxs idxs :idx-count idx-count
-                                 :min-size min-size :binary? binary?
+                                 :min-size min-size :binary binary
                                  :verbose verbose)
                     ,(tree-train criterion right :idxs idxs :idx-count idx-count
-                                 :min-size min-size :binary? binary?
+                                 :min-size min-size :binary binary
                                  :verbose verbose)))
              (let ((idxs (remove idx idxs)))
                `(case (elt % ,idx)
-                  ,@(mapcar (lambda (cat-vals)
-                              `(,(lt cat-vals)
-                                ,(tree-train criterion (rt cat-vals)
-                                             :idxs idxs :idx-count idx-count
-                                             :min-size min-size
-                                             :verbose verbose)))
-                            (ht->pairs (partition-by idx data))))))))))
+                  ,@(sort (mapcar (lambda (cat-vals)
+                                    `(,(lt cat-vals)
+                                       ,(tree-train criterion (rt cat-vals)
+                                                    :idxs idxs :idx-count idx-count
+                                                    :min-size min-size
+                                                    :verbose verbose)))
+                                  (ht->pairs (partition-by idx data)))
+                          ;; putting T case if present last
+                          #`(not (eql % t)) :key 'first))))))))
 
-(defun best-idx (criterion data idxs &key binary? verbose)
+(defun best-idx (criterion data idxs &key binary verbose)
   (let ((best-gain 0)
         best-idx
         best-test
@@ -96,7 +98,7 @@
                (:= numeric? t)
                (argmax #`(funcall criterion (split-at % data idx :test '<= :key 'lt))
                        (sort (uniq vals) '<)))
-              (binary?
+              (binary
                (argmax #`(funcall criterion (split-at % data idx :key 'lt))
                        (uniq vals)))
               (t (values nil
@@ -160,8 +162,10 @@
   (if idx
       (- (entropy samples :key key)
          (entropy samples :idx idx :key key))
-      (- (entropy (reduce 'append samples) :key key)
-         (entropy samples :key key :already-split? t))))
+      (if (some 'null samples)
+          0
+          (- (entropy (reduce 'append samples) :key key)
+             (entropy samples :key key :already-split? t)))))
 
 (defun weighted-info-gain (info-gain split &key (key 'rt))
   (/ info-gain (split-info split)))

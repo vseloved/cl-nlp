@@ -88,13 +88,15 @@ rain    |      71     |    80    | true  | Don't Play
 (deftest c4.5-train ()
   (should be equal
           '(case (elt % 0)
+            (:rain (case (elt % 3)
+                     (nil t)
+                     (t nil)))
+            (:overcast t)
             (:sunny
              (if (<= (elt % 2) 70)
                  t
-                 nil))
-            (:overcast t)
-            (:rain (case (elt % 3) (t nil) (() t))))
-          (train (make 'c4.5-tree) (car *golf-data*))))
+                 nil)))
+          (tree-repr (train (make 'c4.5-tree) (car *golf-data*)))))
 
 (deftest cart-train ()
   (should be equal
@@ -109,4 +111,4 @@ rain    |      71     |    80    | true  | Don't Play
                                nil
                                t)))
                    nil))
-          (train (make 'cart-tree) (car *golf-data*))))
+          (tree-repr (train (make 'cart-tree) (car *golf-data*)))))

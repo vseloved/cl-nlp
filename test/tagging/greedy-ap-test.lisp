@@ -18,7 +18,7 @@
 (defvar *gold* (extract-gold *tagger* (sub *sents* 0 5)))
 
 (deftest greedy-ap-dict-tagger-quality ()
-  (should be = 97.64706
+  (should be = 98.23529
           (accuracy *tagger* *gold*)))
 
 (deftest greedy-ap-training ()
