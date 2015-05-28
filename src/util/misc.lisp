@@ -75,3 +75,12 @@
   (mv-bind (sec min hour day month year)
       (decode-universal-time (get-universal-time))
     (fmt "~A~2,'0D~2,'0D~2,'0D~2,'0D~2,'0D" year month day hour min sec)))
+
+
+;;; temporary
+
+(defun mappend (function &rest lists)
+  "Apply FUNCTION to respective elements of each LIST, appending all the
+result lists to a single list. FUNCTION must return a list."
+  (loop :for results :in (apply #'mapcar function lists)
+     :append results))

@@ -61,6 +61,9 @@
            #:princ-progress
 
            #:+inf
+
+           ;; temporary
+           #:mappend
            ))
 
 (cl:defpackage #:nlp.core
