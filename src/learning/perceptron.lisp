@@ -71,9 +71,9 @@
   (with-slots (timestamps weights totals) model
     (dolist (class classes)
       (unless (? weights class)
-        (:= (? totals class) #h()
-            (? timestamps class) #h()
-            (? weights class) #h()))
+        (:= (? totals class) #h(equal)
+            (? timestamps class) #h(equal)
+            (? weights class) #h(equal)))
       (unless (? weights class f)
         (:= (? totals class f) 0
             (? timestamps class f) 0

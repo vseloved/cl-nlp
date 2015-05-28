@@ -9,12 +9,12 @@
    (sentence-class :initform nil :initarg :sentence-class :type sentence)
    (struct-map :initform #h() :initarg :struct-map)
    (attr-map :initform #h() :initarg :attr-map)
-   (xml-tags :initform nil)
+   (xml-tags :initform nil  :accessor sax-xml-tags)
    (cur-sent :initform nil)
    (cur-par :initform nil)
-   (paragraphs :initform nil)
-   (sentences :initform nil)
-   (raw-text :initform nil))
+   (paragraphs :initform nil :accessor sax-paragraphs)
+   (sentences :initform nil :accessor sax-sentences)
+   (raw-text :initform nil :accessor sax-raw-text))
   (:documentation
    "Generic XML corpus sax parser distinguishes up to 3 levels:
     paragraph / sentence / token (STRUCT-MAP slot provides the name of tags

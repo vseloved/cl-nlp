@@ -70,9 +70,9 @@
       (loop :repeat total :do
          (let* ((class (read in))
                 (count (read in))
-                (weights (set# class (m-weights model) #h())))
+                (weights (set# class (m-weights model) #h(equal))))
            (loop :repeat count :do
-              (:= (? weights (intern (read in) :f)) (read in)))
+              (:= (? weights (read in)) (read in)))
            (princ-progress (:+ i) total))))))
 
 (defgeneric accuracy (model gold-fs &key verbose)

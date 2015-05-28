@@ -8,15 +8,20 @@
   (mapcar #`(make 'ncore:sentence :tokens (ncorp:remove-dummy-tokens %))
           (ncorp:text-tokens text)))
 
-(defvar *tagger* (load-model (make 'greedy-ap-tagger)
+(defvar *tagger* (load-model (make 'greedy-ap-dict-tagger)
                              (model-file "pos-tagging/wsj.zip")))
 
-(defvar *gold*
-  (let (test)
-    (ncorp:map-corpus :treebank (corpus-file "onf-wsj/")
-                      #`(appendf test (extract-sents %)))
-    (extract-gold *tagger* test)))
+(defvar *sents* ())
+(ncorp:map-corpus :treebank (corpus-file "onf-wsj/")
+                  #`(appendf *sents* (extract-sents %)))
 
-(deftest greedy-ap-tagger-quality ()
-  (should be = 96.31641
+(defvar *gold* (extract-gold *tagger* (sub *sents* 0 5)))
+
+(deftest greedy-ap-dict-tagger-quality ()
+  (should be = 97.64706
           (accuracy *tagger* *gold*)))
+
+(deftest greedy-ap-training ()
+  (let ((tagger (make 'greedy-ap-dict-tagger)))
+    (train tagger (sub *sents* 0 5))
+    (should be >= 95 (accuracy tagger *gold*))))

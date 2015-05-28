@@ -54,11 +54,12 @@
                        (:file "treebank" :depends-on ("util"))
                        (:file "user" :depends-on ("brown" "xml" "treebank"))))
              (:module #:learning
-                      :serial t
                       :components
                       ((:file "general")
-                       (:file "features")
-                       (:file "perceptron")))
+                       (:file "features" :depends-on ("general"))
+                       (:file "perceptron" :depends-on ("features"))
+                       (:file "decision-tree" :depends-on ("features"))
+                       (:file "random-forest" :depends-on ("decision-tree"))))
              (:module #:generation
                       :serial t
                       :components
@@ -91,7 +92,8 @@
                       ((:file "treebank-test")))
              (:module #:learning
                       :components
-                      ((:file "general-test")))
+                      ((:file "general-test")
+                       (:file "decision-tree-test")))
              (:module #:tagging
                       :components
                       ((:file "greedy-ap-test")))

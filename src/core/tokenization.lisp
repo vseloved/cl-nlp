@@ -1,21 +1,25 @@
-;;; (c) 2013 Vsevolod Dyomkin
+;;; (c) 2013-2015 Vsevolod Dyomkin
 
 (in-package #:nlp.core)
 (named-readtables:in-readtable rutils-readtable)
 
 
 (defstruct (token (:print-object (lambda (token stream)
-                                   (with-slots (word tag beg end) token
-                                       (format stream "<~A~@[/~A~]~@[ ~A~]>"
+                                   (with-slots (id word tag beg end) token
+                                       (format stream "<~A~@[/~A~]~@[:~A~]~@[ ~A~]>"
                                                word tag
+                                               id
                                                (when beg
                                                  (if end
                                                      (fmt "~A..~A" beg end)
                                                      beg)))))))
-  "A corpus token with postition and possibly tag."
+  "A corpus token with id or postition and possibly tag.
+   Also may contain word lemma."
+  id
   beg
   end
   word
+  lemma
   tag)
 
 (defclass sentence ()

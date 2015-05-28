@@ -21,14 +21,13 @@
 
 ;;; utils
 
-(defmacro make-fs (model &rest fs-templates)
-  "Return a list of MODEL-specific feature indices for FS-TEMPLATES."
+(defmacro make-fs (&rest fs-templates)
+  "Return a list features based on FS-TEMPLATES."
   `(list
-     ,@(mapcar (lambda (x)
-                 `(intern ,(if (listp x)
-                               `(strcat ,(first x) " " ,@(rest x))
-                               x)
-                          :f))
+     ,@(mapcar (lambda (tmpl)
+                 (etypecase tmpl
+                   (list `(strcat ,@(rest (mappend #`(list " " %) tmpl))))
+                   (string tmpl)))
                fs-templates)))
 
 (defun fs-idx (f fs)

@@ -23,16 +23,6 @@
   (:documentation
    "Dependency parser that returns a list of dependencies from PARSE."))
 
-(defstruct (dep (:conc-name "dep-")
-                (:print-object (lambda (dep stream)
-                                 "Print DEP in Stanford standard dependency format."
-                                 (with-slots (rel govr dept) dep
-                                   (format stream "~@[~(~A~)~](~A, ~A)"
-                                           rel govr dept)))))
-  (rel nil)
-  govr
-  dept)
-
 
 ;; Parser mixins
 

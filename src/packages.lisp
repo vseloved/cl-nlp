@@ -118,7 +118,9 @@
            #:<sentence-splitter>
 
            #:token
+           #:token-id
            #:token-word
+           #:token-lemma
            #:token-beg
            #:token-end
            #:token-tag
@@ -150,11 +152,8 @@
   (:nicknames #:dep)
   (:use #:common-lisp #:rutil #:nutil)
   (:export #:*deps*
+           #:+ROOT+
            ))
-
-(cl:defpackage #:nlp.features
-  (:nicknames #:f)
-  (:use #:common-lisp #:rutil #:nutil))
 
 (cl:defpackage #:nlp.corpora
   (:nicknames #:ncorp)
@@ -180,8 +179,9 @@
            #:read-corpus-file
            #:map-corpus
 
-           #:make-corpus-from-dir
+           #:xml-corpus-sax
 
+           #:make-corpus-from-dir
            #:remove-dummy-tokens
 
            #:+brown-corpus+
@@ -229,17 +229,12 @@
   (:export #:tag
            #:tagger
            #:tgr-single-tag-words
-
-           ;; HMM taggers
-           #:hmm-tagger
-
-           ;; Perceptron taggers
-           #:greedy-ap-tagger
+           #:greedy-ap-dict-tagger
            ))
 
 (cl:defpackage #:nlp.parsing
   (:nicknames #:nparse)
-  (:use #:common-lisp #:rutil #:nutil #:ncore #:tag
+  (:use #:common-lisp #:rutilsx #:nutil #:ncore #:tag
         #+dev #:should-test)
   (:export #:parse
 

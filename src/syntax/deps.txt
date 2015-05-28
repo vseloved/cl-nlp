@@ -1,3 +1,4 @@
+ROOT root
 DEP dependent
 AUX auxiliary
 AUXPASS passive auxiliary
@@ -46,3 +47,5 @@ DET determiner
 PREP prepositional modifier (also pmod, sometimes)
 SDEP semantic dependent
 XSUBJ controlling subject
+COMPOUND compound
+PARATAXIS parataxis

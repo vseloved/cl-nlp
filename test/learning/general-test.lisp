@@ -6,8 +6,8 @@
 (deftest serialize-model ()
   (unwind-protect
        (let ((dummy-model (make 'categorical-model
-                                :weights #h(:a #h('f::x 1.0 'f::y 2.0)
-                                            :b #h('f::x 2.0 'f::z 0))))
+                                :weights #h(:a #h(equal "x" 1.0 "y" 2.0)
+                                            :b #h(equal "x" 2.0 "z" 0))))
              (restored-model (make 'categorical-model)))
          (save-model dummy-model "/tmp/dummy-model")
          (load-model restored-model "/tmp/dummy-model")
