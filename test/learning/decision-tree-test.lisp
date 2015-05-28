@@ -98,11 +98,15 @@ rain    |      71     |    80    | true  | Don't Play
 
 (deftest cart-train ()
   (should be equal
-          '(if (eql :sunny (elt % 0))
-            (:sunny
-             (if (<= (elt % 2) 70)
-                 t
-                 nil))
-            (:overcast t)
-            (:rain (case (elt % 3) (t nil) (() t))))
+          '(if (eql (elt % 0) :overcast)
+               t
+               (if (<= (elt % 1) 75)
+                   (if (<= (elt % 1) 65)
+                       nil
+                       (if (<= (elt % 1) 70)
+                           t
+                           (if (<= (elt % 1) 72)
+                               nil
+                               t)))
+                   nil))
           (train (make 'cart-tree) (car *golf-data*))))
