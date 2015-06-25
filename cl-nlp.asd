@@ -26,6 +26,9 @@
                        (:file "words")
                        (:file "trees")
                        (:file "math")))
+             (:module #:lexics
+                      :components
+                      ((:file "general")))
              (:module #:syntax
                       :components
                       ((:static-file "word-tags.txt")
@@ -48,10 +51,9 @@
              (:module #:corpora
                       :components
                       ((:file "general")
-                       (:file "util" :depends-on ("general"))
-                       (:file "brown" :depends-on ("util"))
-                       (:file "xml" :depends-on ("util"))
-                       (:file "treebank" :depends-on ("util"))
+                       (:file "brown" :depends-on ("general"))
+                       (:file "xml" :depends-on ("general"))
+                       (:file "treebank" :depends-on ("general"))
                        (:file "user" :depends-on ("brown" "xml" "treebank"))))
              (:module #:learning
                       :components
@@ -89,7 +91,9 @@
                       ((:file "tokenization-test")))
              (:module #:corpora
                       :components
-                      ((:file "treebank-test")))
+                      ((:file "brown-test")
+                       (:file "treebank-test")
+                       (:file "xml-test")))
              (:module #:learning
                       :components
                       ((:file "general-test")

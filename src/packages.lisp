@@ -1,4 +1,4 @@
-;;; (c) 2013-2014 Vsevolod Dyomkin
+;;; (c) 2013-2015 Vsevolod Dyomkin
 
 (cl:defpackage #:nlp.util
   (:nicknames #:nutil)
@@ -18,6 +18,8 @@
            #:white-char-p
            #:+period-chars+
            #:period-char-p
+           #:+punct-chars+
+           #:punct-char-p
            #:+quote-chars+
            #:quote-char-p
            #:+open-quote-chars+
@@ -39,16 +41,26 @@
            #:model-file
            #:src-file
            #:test-file
-           #:write-bin-file
-           #:write-dict
-           #:write-tsv
-           #:download
-           #:download-file
-           #:zipped-file-data
-           #:zip-add-text-file
 
+           #:with-tmp-file
+           #:write-bin-file
+
+           #:write-dict
            #:list-from-file
            #:dict-from-file
+
+           #:dofiles
+
+           #:write-tsv
+
+           #:download
+           #:download-file
+
+           #:zipped-file-data
+           #:zip-add-text-file
+           #:do-zip-entries
+           #:with-zip
+           #:with-zipped-zip
 
            #:argmax
            #:keymax
@@ -63,7 +75,7 @@
            #:+inf
 
            ;; temporary
-           #:mappend
+           #:flat-map
            ))
 
 (cl:defpackage #:nlp.core
@@ -115,10 +127,14 @@
            #:regex-word-tokenizer
            #:postprocessing-regex-word-tokenizer
            #:baseline-sentence-tokenizer
+           #:full-text-tokenizer
            #:<word-chnuker>
            #:<basic-word-tokenizer>
            #:<word-tokenizer>
            #:<sentence-splitter>
+           #:<full-text-tokenizer>
+
+           #:paragraphs->text
 
            #:token
            #:token-id
@@ -160,7 +176,7 @@
 
 (cl:defpackage #:nlp.corpora
   (:nicknames #:ncorp)
-  (:use #:common-lisp #:rutil #:nutil #:nlp.core #:tag
+  (:use #:common-lisp #:rutilsx #:nutil #:nlp.core #:tag
         #+dev #:should-test)
   (:export #:corpus
            #:make-corpus
@@ -173,22 +189,43 @@
            #:text-name
            #:text-raw
            #:text-clean
-           #:text-tokens
-           #:text-sentences
-           #:text-paragraphs
-           #:treebank-text-trees
+           #:text-tokenized
+           #:text-trees
 
            #:read-corpus
            #:read-corpus-file
            #:map-corpus
 
+           #:walk-corpus-dir
+
+           #:sax-progress
+           #:sax-progress-count
+           #:sax-progress-report-rate
+           #:sax-progress-tracking-tag
            #:xml-corpus-sax
+           #:xml-progress-mixin
+           #:xml-attr
 
            #:make-corpus-from-dir
            #:remove-dummy-tokens
+           #:clean-up-tree
 
            #:+brown-corpus+
            ))
+
+(cl:defpackage #:nlp.lexics
+  (:nicknames #:nlex)
+  (:use #:common-lisp #:rutilsx #:nlp.util #:nlp.core
+        #+dev #:should-test)
+  (:export #:stem
+           #:lemma
+
+           #:porter-stemmer
+           #:<porter-stemmer>
+
+           #:wordnet-lemmatizer
+           #:wikt-lemmatizer
+           #:load-wikt-lemma-dict))
 
 (cl:defpackage #:nlp.learning
   (:nicknames #:nlearn)
@@ -298,6 +335,7 @@
 (rutils:re-export-symbols '#:nutil    '#:nlp-user)
 (rutils:re-export-symbols '#:ncorp    '#:nlp-user)
 (rutils:re-export-symbols '#:ncore    '#:nlp-user)
+(rutils:re-export-symbols '#:nlex     '#:nlp-user)
 (rutils:re-export-symbols '#:nlearn   '#:nlp-user)
 (rutils:re-export-symbols '#:ngen     '#:nlp-user)
 (rutils:re-export-symbols '#:ntag     '#:nlp-user)

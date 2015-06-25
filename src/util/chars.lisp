@@ -1,8 +1,11 @@
-;;; (c) 2013 Vsevolod Dyomkin
+;;; (c) 2013-2015 Vsevolod Dyomkin
 
 (in-package #:nlp.util)
 (named-readtables:in-readtable rutils-readtable)
 
+
+(declaim (inline white-char-p newline-char-p period-char-p punct-char-p
+                 quote-char-p open-quote-char-p close-quote-char-p))
 
 (defparameter +newline+
   (fmt "~%")
@@ -17,6 +20,14 @@
   "Test if CHAR is in +WHITE-CHARS+."
   (member char +white-chars+))
 
+(defparameter +newline-chars+
+  '(#\Newline #\Return #\Linefeed)
+  "Chars considered legitimate paragraph endings.")
+
+(defun newline-char-p (char)
+  "Test if CHAR is in +PERIOD-CHARS+."
+  (member char +newline-chars+))
+
 (defparameter +period-chars+
   '(#\. #\? #\!)
   "Chars considered legitimate sentence endings.")
@@ -25,13 +36,12 @@
   "Test if CHAR is in +PERIOD-CHARS+."
   (member char +period-chars+))
 
-(defparameter +newline-chars+
-  '(#\Newline #\Return #\Linefeed)
-  "Chars considered legitimate paragraph endings.")
+(defparameter +punct-chars+
+  '(#\, #\; #\: #\. #\! #\? #\" #\) #\( #\] #\[ #\} #\{ #\' #\-))
 
-(defun newline-char-p (char)
-  "Test if CHAR is in +PERIOD-CHARS+."
-  (member char +newline-chars+))
+(defun punct-char-p (char)
+  "Test if CHAR is in +PUNCT-CHARS+."
+  (member char +punct-chars+))
 
 (defparameter +quote-chars+
   '(#\" #\‘ #\’ #\« #\» #\“ #\” #\')

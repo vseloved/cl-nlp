@@ -1,58 +1,49 @@
-;;; (c) 2013-2014 Vsevolod Dyomkin
+;;; (c) 2013-2015 Vsevolod Dyomkin
 
 (in-package #:nlp.contrib.corpora)
 (named-readtables:in-readtable rutils-readtable)
 
 
-(defmethod read-corpus ((type (eql :nps-chat)) path &key ext)
-  (declare (ignore ext))
+(defmethod read-corpus-file ((type (eql :nps-chat)) file &key)
+  (with-open-file (in file)
+    (read-corpus-file :nps-chat in :file file)))
+
+(defmethod read-corpus-file ((type (eql :nps-chat)) (in stream) &key file)
+  "Read individual file from the NPS Chat Corpus."
+  (mv-bind (_ cleans tokenizeds classes users) (cxml:parse in (make 'nps-chat-sax))
+    (declare (ignore _))
+    (let ((filename (pathname-name file)))
+      (values (loop :for clean :in cleans
+                    :for tokenized :in tokenizeds
+                    :for i :from 0
+                    :collect (make-text :name (fmt "~A-~A" filename i)
+                                        :clean clean :tokenized tokenized))
+              (mapcar 'mkeyw classes)
+              users))))
+
+(defmethod read-corpus ((type (eql :nps-chat)) path &key (ext "xml"))
   (let ((rez (make-corpus :desc "NPS Chat Corpus"
-                          :groups #{:by-class #{} :by-user #{equal}}))
-        raw tokens)
-    (fad:walk-directory
-     path
-     #`(when (string= "xml" (pathname-type %))
-         (mv-bind (_ cleans tokens classes users) (read-corpus-file :nps-chat %)
-           (declare (ignore _))
-           (loop :for clean :in cleans
-                 :for class :in classes
-                 :for user :in users
-                 :for toks :in tokens
-                 :for i :from 0 :do
-              (let ((text (make-text :name (fmt "~A-~A" (pathname-name %) i)
-                                     :clean clean :tokens toks))
-                    (cls (mkeyw class)))
-                (with-slots (texts groups) rez
-                  (push text texts)
-                  (unless (get# cls (get# :by-class groups))
-                    (set# cls (get# :by-class groups) ()))
-                  (push text (get# cls (get# :by-class groups)))
-                  (unless (get# user (get# :by-user groups))
-                    (set# user (get# :by-user groups) ()))
-                  (push text (get# user (get# :by-user groups)))))))))
+                          :groups #h(:by-class #h() :by-user #h(equal)))))
+    (with-slots (texts groups) rez
+      (dofiles (file path :ext ext)
+        (mv-bind (texts classes users) (read-corpus-file :nps-chat file)
+          (loop :for text :in texts
+                :for class :in classes
+                :for user :in users :do
+                (push text texts)
+                (push text (get# cls (get# :by-class groups)))
+                (push text (get# user (get# :by-user groups)))))))
     rez))
 
-(defmethod read-corpus-file ((type (eql :nps-chat)) source)
-  "Read individual file from the NPS Chat Corpus."
-  (cxml:parse source (make 'nps-chat-sax)))
-
-(defmethod map-corpus ((type (eql :nps-chat)) path fn &key ext)
-  (declare (ignore ext))
-  (fad:walk-directory
-   path
-   #`(when (string= "xml" (pathname-type %))
-       (mv-bind (_ cleans tokens) (read-corpus-file :nps-chat %)
-         (declare (ignore _))
-         (loop :for clean :in cleans
-               :for toks :in tokens
-               :for i :from 0 :do
-            (funcall fn (make-text :name (fmt "~A-~A" (pathname-name %) i)
-                                   :clean clean :tokens toks)))))))
+(defmethod map-corpus ((type (eql :nps-chat)) path fn &key (ext "xml"))
+  (dofiles (file path :ext ext)
+    (dolist (text (read-corpus-file :nps-chat file))
+      (funcall fn text))))
 
 
-;; SAX parsing of NPS XML data
+;;; SAX parsing of NPS XML data
 
-(defclass nps-chat-sax (sax:sax-parser-mixin)
+(defclass nps-chat-sax (sax-progress-mixin)
   ((texts :initform nil)
    (tokens :initform nil)
    (classes :initform nil)
@@ -68,10 +59,10 @@
                               namespace-uri local-name qname attributes)
   (with-slots (classes users cur-tokens cur-tag) sax
     (case (setf cur-tag (mkeyw local-name))
-      (:post (push (attr "class" attributes) classes)
-             (push (attr "user" attributes) users))
-      (:t (push (make-token :word (attr "word" attributes)
-                            :tag (mkeyw (attr "pos" attributes)))
+      (:post (push (xml-attr "class" attributes) classes)
+             (push (xml-attr "user" attributes) users))
+      (:t (push (make-token :word (xml-attr "word" attributes)
+                            :tag (mkeyw (xml-attr "pos" attributes)))
                 cur-tokens)))))
 
 (defmethod sax:characters ((sax nps-chat-sax) data)

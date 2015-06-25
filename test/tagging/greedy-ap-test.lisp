@@ -6,7 +6,7 @@
 
 (defun extract-sents (text)
   (mapcar #`(make 'ncore:sentence :tokens (ncorp:remove-dummy-tokens %))
-          (ncorp:text-tokens text)))
+          (flatten (ncorp:text-tokenized text) 1)))
 
 (defvar *tagger* (load-model (make 'greedy-ap-dict-tagger)
                              (model-file "pos-tagging/wsj.zip")))

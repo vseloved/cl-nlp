@@ -170,7 +170,7 @@
 #+manually (
 (format t "       Genre        |  Tokens  |  Types  |  Lexical Diversity")
 (format t "~%--------------------+----------+---------+--------------------")
-(maphash #`(with-accessors ((tokens (mapcar #'text-tokens
+(maphash #`(with-accessors ((tokens (mapcar #'text-tokenized  ;; TODO
                                             (corpus-texts +brow-corpus+)))) %%
              (let* ((words (mapcar #'token-word (flatten tokens)))
                     (words-count (length words))

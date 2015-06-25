@@ -1,6 +1,6 @@
 ;;; (c) 2013 Vsevolod Dyomkin
 
-(in-package #:nlp.contrib.ngrams)
+(in-package #:nlp.contrib.ms-ngrams)
 (named-readtables:in-readtable rutils-readtable)
 
 

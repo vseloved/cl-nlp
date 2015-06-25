@@ -1,34 +1,30 @@
-;;; (c) 2013-2014 Vsevolod Dyomkin
+;;; (c) 2013-2015 Vsevolod Dyomkin
 
 (in-package #:nlp.corpora)
 (named-readtables:in-readtable rutils-readtable)
 
 
-(defun make-corpus-from-dir (name dir &key (test 'identity))
-  "Make a corpus named NAME of texts from files in DIR.
-   Optionally, filenames may need to satisfy TEST."
-  (let (texts)
-    (fad:walk-directory dir
-                        #`(when (funcall test (pathname-name %))
-                            (push (pair (pathname-name %)
-                                        (read-file %))
-                                  texts)))
-    (setf texts (mapcar #`(make-text
-                           :name (lt %)
-                           :raw (rt %)
-                           :tokens
-                           (mapcar #`(ncore:make-token :word %)
-                                   (mapcan #`(ncore:tokenize
-                                              ncore:<word-tokenizer> %)
-                                           (ncore:tokenize
-                                            ncore:<sentence-splitter> (rt %)))))
-                        texts))
-    (make-corpus :desc name
-                 :texts texts)))
+(defun make-corpus-from-dir (name dir &key ext (test 'identity))
+  "Make a corpus named NAME of texts from files in DIR
+   (optionally limited by extension EXT)."
+  (let ((corpus (make-corpus :name name)))
+    (with-slots (texts) corpus
+      (dofiles (file dir :ext ext)
+        (when (funcall test (pathname-name %))
+          (let ((raw (read-file %)))
+            (push (make-texts :name (pathname-name %)
+                              :raw raw
+                              :tokenized (tokenize <full-text-tokenizer> raw))
+                  texts))))
+      (reversef texts))
+    corpus))
 
 
 ;;; pre-defined corpora
 
 (defparameter +brown-corpus+
-  (read-corpus :brown (corpus-file "brown/"))
+  (let ((dir (corpus-file "brown/")))
+    (format *debug-io* "~&Reading Brown corpus from: ~A - " dir)
+    (read-corpus :brown dir)
+    (format *debug-io* "done.~%"))
   "Brown University Standard Corpus of Present-Day American English.")

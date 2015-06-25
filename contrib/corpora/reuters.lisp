@@ -1,4 +1,4 @@
-;;; (c) 2013-2014 Vsevolod Dyomkin
+;;; (c) 2013-2015 Vsevolod Dyomkin
 
 (in-package #:nlp.contrib.corpora)
 (named-readtables:in-readtable rutils-readtable)
@@ -11,55 +11,47 @@
   dateline)
 
 
-(defmethod read-corpus ((type (eql :reuters)) path &key ext)
+(defmethod read-corpus-file ((type (eql :reuters-rcv1)) in &key name)
+  "Read individual file from the Reuters Corpus."
+  (mv-bind (_ clean tokenized __ date headline byline dateline)
+      (cxml:parse in (make 'reuters-sax))
+    (declare (ignore _ __))
+    (values (make-reuters-text :name name
+                               :clean clean
+                               :tokenized tokenized
+                               :headline headline
+                               :byline byline
+                               :dateline dateline)
+            date)))
+
+(defmacro do-reuters-texts ((path text &optional date) &body body)
+  (with-gensyms (zip entry name subname in)
+    `(zip:with-zipfile (,zip ,path)
+       (zip:do-zipfile-entries (,name ,entry ,zip)
+         (unless (char= #\/ (last-char ,name))
+           (with-zipped-zip (,subname ,in ,entry :raw t)
+             (mv-bind (,text ,@(when date (list date)))
+                 (read-corpus-file :reuters-rcv1 ,in
+                                   :name (strcat ,name "/" ,subname))
+               ,@body)))))))
+
+(defmethod read-corpus ((type (eql :reuters-rcv1)) path &key ext)
   "Expects PATH to be a zip archive of the corpus
    with embedded archives for each day."
   (declare (ignore ext))
   (let ((rez (make-corpus :desc "Reuters Corpus"
-                          :groups #{:by-date #{equal}})))
-    (zip:with-zipfile (zip path)
-      (zip:do-zipfile-entries (name entry zip)
-        (unless (char= #\/ (last-char name))
-          (with-zipped-zip (subname in entry :raw t)
-            (mv-bind (_ text tokens paragraphs __ date headline byline dateline)
-                (read-corpus-file :reuters in)
-              (declare (ignore _ __))
-              (let ((text (make-reuters-text
-                           :name (strcat name "/" subname)
-                           :clean text
-                           :tokens tokens
-                           :paragraphs paragraphs
-                           :headline headline
-                           :byline byline
-                           :dateline dateline)))
-                (with-slots (texts groups) rez
-                  (push text texts)
-                  (if (get# date (get# :by-date groups))
-                      (set# date (get# :by-date groups) (list text))
-                      (push text (get# date (get# :by-date groups)))))))))))))
+                          :groups #h(:by-date #h(equal)))))
+    (do-reuters-texts (path text date)
+      (with-slots (texts groups) rez
+        (push text texts)
+        (if (in# date (? groups :by-date))
+            (push text (? groups :by-date date))
+            (set# date (? groups :by-date) (list text)))))))
 
-
-(defmethod read-corpus-file ((type (eql :reuters)) in)
-  "Read individual file from the Reuters Corpus."
-  (cxml:parse in (make 'reuters-sax)))
-
-(defmethod map-corpus ((type (eql :reuters)) path fn &key ext)
+(defmethod map-corpus ((type (eql :reuters-rcv1)) path fn &key ext)
   (declare (ignore ext))
-  (zip:with-zipfile (zip path)
-    (zip:do-zipfile-entries (name entry zip)
-      (unless (char= #\/ (last-char name))
-        (with-zipped-zip (subname in entry :raw t)
-          (mv-bind (_ text tokens paragraphs __ ___ headline byline dateline)
-              (read-corpus-file :reuters in)
-            (declare (ignore _ __ ___))
-            (funcall fn (make-reuters-text
-                         :name (strcat name "/" subname)
-                         :clean text
-                         :tokens tokens
-                         :paragraphs paragraphs
-                         :headline headline
-                         :byline byline
-                         :dateline dateline))))))))
+  (do-reuters-texts (path text)
+    (funcall fn text)))
 
 
 ;; SAX parsing of Reuters XML data
@@ -82,8 +74,8 @@
   (with-slots (id date cur-tag) sax
     (:= cur-tag (mkeyw local-name))
     (when (eql :newsitem cur-tag)
-      (:= id (parse-integer (attr "itemid" attributes))
-          date (attr "date" attributes)))))
+      (:= id (parse-integer (xml-attr "itemid" attributes))
+          date (xml-attr "date" attributes)))))
 
 (defmethod sax:characters ((sax reuters-sax) data)
   (with-slots (cur-tag text paragraphs headline byline dateline) sax
@@ -102,8 +94,7 @@
     (let ((text (strjoin #\Newline (reverse paragraphs))))
       (values nil
               text
-              (ncore:tokenize ncore:<word-tokenizer> text)
-              paragraphs
+              (tokenize <full-text-tokenizer> text)
               id
               date
               (when headline

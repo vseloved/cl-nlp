@@ -79,7 +79,7 @@
 
 ;;; temporary
 
-(defun mappend (function &rest lists)
+(defun flat-map (function &rest lists)
   "Apply FUNCTION to respective elements of each LIST, appending all the
 result lists to a single list. FUNCTION must return a list."
   (loop :for results :in (apply #'mapcar function lists)

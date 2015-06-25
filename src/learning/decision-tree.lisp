@@ -103,13 +103,13 @@
                        (uniq vals)))
               (t (values nil
                          (funcall criterion data :idx idx))))
-          (when verbose (format t "~&idx=~A gain=~A~%" idx (float gain)))
+          (when verbose (format *debug-io* "~&idx=~A gain=~A~%" idx (float gain)))
           (when (>= gain best-gain)
             (:= best-idx idx
                 best-gain gain
                 split-point point
                 best-test (if numeric? '<= 'eql))))))
-    (when verbose (format t "~&best-idx=~A gain=~A split-point=~A test=~A~%"
+    (when verbose (format *debug-io* "~&best-idx=~A gain=~A split-point=~A test=~A~%"
                           best-idx (float best-gain) split-point best-test))
     (values best-idx
             split-point

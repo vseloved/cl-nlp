@@ -118,7 +118,7 @@
 
 (defparameter *2char-contractions-regex*
   (re:create-scanner
-   "i['‘’`]m|(?:s?he|it)['‘’`]s|(?:i|you|s?he|we|they)['‘’`]d$"
+   "i['‘’`]m|(?:\\w)['‘’`]s|(?:i|you|s?he|we|they)['‘’`]d$"
    :case-insensitive-mode t)
   "Regex to find 2 character contractions: I'm, he/she/it's, 'd")
 
@@ -155,7 +155,9 @@
                                   (not (open-quote-char-p (char next 0)))
                                   (alphanumericp (char prev (1- (length prev)))))
                              (and (ends-with "." prev)
-                                  (alphanumericp (char cur 0)))))
+                                  (alphanumericp (char cur 0)))
+                             (and (every #`(char= #\' %) prev)
+                                  (every #`(char= #\' %) cur))))
                     (:= (first words) (strcat prev cur)
                         (first spans) (pair (lt (first spans))
                                             (rt cur-span))))
@@ -168,12 +170,18 @@
                         (first spans) (pair (lt (first spans))
                                             (rt (second stail)))
                         skip t))
-                   ;; splitting contractions: I'm, he/she/it's, 'd
+                   ;; splitting posessives and contractions: I'm, 'd, 's
                    ((re:scan *2char-contractions-regex* cur)
                     (push-contractions 2))
                    ;; splitting contractions: 'll, 've, 're, n't
                    ((re:scan *3char-contractions-regex* cur)
                     (push-contractions 3))
+                   ;; splitting trailing '
+                   ((re:scan "\\w+'+$" cur)
+                    (push-contractions (- (length cur)
+                                          (position-if-not #`(eql #\' %)
+                                                           cur :from-end t)
+                                          1)))
                    ;; pass other tokens as is
                    (t (push cur words)
                       (push cur-span spans)))))))
@@ -307,6 +315,42 @@
 (define-lazy-singleton paragraph-splitter
     (make 'doublenewline-paragraph-splitter)
   "Basic paragraph splitter.")
+
+
+;;; Full text tokenization
+
+(defclass full-text-tokenizer ()
+  ()
+  (:documentation
+   "Text tokenizer that tokenizees raw text STR
+    into a paragraph-sentence-token structure."))
+
+(defmethod tokenize ((tokenizer full-text-tokenizer) string)
+  (mapcar (lambda (par)
+            (mapcar #`(mv-bind (words spans) (tokenize <word-tokenizer> %)
+                        (loop :for word :in words
+                           :for (beg end) :in spans
+                           :collect (make-token :word word :beg beg :end end)))
+                    (tokenize <sentence-splitter> par)))
+          (split #\Newline string)))
+
+(define-lazy-singleton full-text-tokenizer
+    (make 'full-text-tokenizer)
+  "Full text tokenizer.")
+
+(defun paragraphs->text (paragraphs)
+  "Get a text string corresponding to a list of lists of tokens PARAGRAPHS."
+  (strjoin #\Newline
+           (mapcar (lambda (par)
+                     (strjoin #\Space
+                              (mapcar (lambda (sent)
+                                        (strjoin #\Space
+                                                 (mapcar #'token-word
+                                                         (if (listp sent)
+                                                             sent
+                                                             (sent-tokens sent)))))
+                                      par)))
+                   paragraphs)))
 
 
 ;;; Helpers

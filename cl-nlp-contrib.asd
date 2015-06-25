@@ -10,14 +10,14 @@
   :maintainer "Vsevolod Dyomkin <vseloved@gmail.com>"
   :license "Apache 2.0"
   :depends-on (#:cl-nlp #:closer-mop
-               #:clsql #:clsql-sqlite3)
+               #:clsql #:clsql-sqlite3
+               #+dev #:should-test)
   :serial t
   :components
   ((:module #:contrib
-            :serial t
             :components
             ((:file "packages")
-             (:file "ms-ngrams")
+             (:file "ms-ngrams" :depends-on ("packages"))
              (:module #:wordnet
                       :serial t
                       :components
@@ -30,12 +30,29 @@
                        (:file "similarity")
                        (:file "sql-wordnet")
                        (:file "wn")))
+             (:module #:lexics
+                      :depends-on (#:wordnet)
+                      :components
+                      ((:file "wordnet")
+                       (:file "wiktionary")))
              (:module #:corpora
+                      :depends-on ("packages")
                       :components
                       ((:file "ptb")
                        (:file "nps-chat")
                        (:file "semcor")
-                       (:file "reuters")))))))
+                       (:file "reuters")
+                       (:file "wikipedia")))))
+   #+dev
+   (:module #:test
+            :components
+            ((:module #:corpora
+                      :components
+                      ((:file "ptb-test")
+                       (:file "nps-chat-test")
+                       (:file "reuters-test")
+                       (:file "wikipedia-test")))))))
+
 
 
 (defmethod asdf:perform :after ((o asdf:load-op)

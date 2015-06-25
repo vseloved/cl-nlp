@@ -22,7 +22,7 @@
 (defmethod train ((model avg-perceptron) data &key (epochs 5) verbose)
   (dotimes (epoch epochs)
     (when verbose
-      (format t "~%~%==== Epoch: ~A ====~%~%" (1+ epoch)))
+      (format *debug-io* "~%~%==== Epoch: ~A ====~%~%" (1+ epoch)))
     (let ((total (length data)) (prev-j 0) (c 0) (n 0))
       (doindex (j sample data)
         (ds-bind (gold . fs) sample
@@ -34,7 +34,7 @@
         (when (and verbose
                    (> (/ (- j prev-j) total) 0.01))
           (setf prev-j j)
-          (format t "~A / ~A = ~5F% - ~2F% ~%"
+          (format *debug-io* "~A / ~A = ~5F% - ~2F% ~%"
                   c n (float (* 100 (/ c n)))
                   (* 100 (/ j total))))
         (unless verbose (princ-progress j total))))))

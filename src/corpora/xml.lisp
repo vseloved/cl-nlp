@@ -1,10 +1,33 @@
-;;; (c) 2014 Vsevolod Dyomkin
+;;; (c) 2014-2015 Vsevolod Dyomkin
 
 (in-package #:nlp.corpora)
 (named-readtables:in-readtable rutils-readtable)
 
 
-(defclass xml-corpus-sax (sax:sax-parser-mixin)
+(defun xml-attr (name attributes)
+  "Shortut XML attribute accessor."
+  (when-it (find name attributes :test 'string=
+                 :key #'sax::standard-attribute-local-name)
+    (sax::standard-attribute-value it)))
+
+(defclass sax-progress-mixin (sax:sax-parser-mixin)
+  ((progress-count :initform 0 :accessor sax-progress-count)
+   (progress-report-rate :initform 1000 :initarg :report-rate
+                         :accessor sax-progress-report-rate)
+   (tracking-tag :initarg :tracking-tag :accessor sax-progress-tracking-tag)))
+
+(defmethod sax:start-document :before ((sax sax-progress-mixin))
+  (:= (sax-progress-count sax) 0))
+
+(defmethod end-element :after ((sax sax-progress-mixin)
+                               namespace-uri local-name qname)
+  (when (and-it (sax-progress-tracking-tag sax)
+                (eql (mkeyw local-name) it)
+                (zerop (/ (:+ (sax-progress-count sax))
+                          (sax-progress-report-rate sax))))
+    (princ ".")))
+
+(defclass xml-corpus-sax (sax-progress-mixin)
   ((token-init :initform 'make-token :initarg :token-init)
    (sentence-class :initform nil :initarg :sentence-class :type sentence)
    (struct-map :initform #h() :initarg :struct-map)
@@ -41,8 +64,8 @@
     (when-it (get# :token struct-map)
       (when tag-matches?
         (push (apply token-init
-                     (mappend #`(list (lt %) (attr (rt %) attributes))
-                              (ht->pairs attr-map)))
+                     (flat-map #`(list (lt %) (xml-attr (rt %) attributes))
+                               (ht->pairs attr-map)))
               cur-sent)))))
 
 (defmethod sax:end-element ((sax xml-corpus-sax) namespace-uri local-name qname)
@@ -74,15 +97,15 @@
       ;; if we have sentence level we ignore paragraph level
       ((get# :sentence struct-map)
        (when tag-matches?
-         (:= raw-text (strcat raw-text #\Space data))
-         (:= cur-sent (let ((toks (ncore:tokenize ncore:<word-tokenizer> data)))
+         (:= raw-text (strcat raw-text #\Space data)
+             cur-sent (let ((toks (ncore:tokenize ncore:<word-tokenizer> data)))
                         (if sentence-class
                             (make sentence-class :tokens toks)
                             toks)))))
       ((get# :paragraph struct-map)
        (when tag-matches?
-         (:= raw-text (strcat raw-text #\Newline data))
-         (:= cur-par (mapcar #`(ncore:tokenize ncore:<word-tokenizer> %)
+         (:= raw-text (strcat raw-text #\Newline data)
+             cur-par (mapcar #`(ncore:tokenize ncore:<word-tokenizer> %)
                              (ncore:tokenize ncore:<sentence-splitter> data))))))))
 
 (defmethod sax:start-document ((sax xml-corpus-sax))
@@ -91,31 +114,12 @@
 
 (defmethod sax:end-document ((sax xml-corpus-sax))
   (with-slots (struct-map sentences paragraphs raw-text) sax
-    (when (in# :token struct-map)
-      (reversef sentences))
-    (when (in# :sentence struct-map)
-      (reversef paragraphs))
+    (if (in# :sentence struct-map)
+        (reversef paragraphs)
+        (:= paragraphs (list sentences)))
     (values nil
             (or raw-text
                 (paragraphs->text paragraphs))
-            sentences
             paragraphs)))
 
 ) ; end of symbol-macrolet
-
-
-;;; util
-
-(defun paragraphs->text (paragraphs)
-  "Get a text string corresponding to a list of lists of tokens PARAGRAPHS."
-  (strjoin #\Newline
-           (mapcar (lambda (par)
-                     (strjoin #\Space
-                              (mapcar (lambda (sent)
-                                        (strjoin #\Space
-                                                 (mapcar #'token-word
-                                                         (if (listp sent)
-                                                             sent
-                                                             (sent-tokens sent)))))
-                                      par)))
-                   paragraphs)))

@@ -16,8 +16,9 @@
       (let ((dt (make 'cart-tree)))
         (train dt (sample data train-len)
                :min-size min-size :idx-count train-rank :verbose verbose)
-        (when verbose (format t "~&Tree:~%~A" (tree-repr dt)))
+        (when verbose (format *debug-io* "."))
         (push dt (forest-trees model)))))
+  (when verbose (terpri *debug-io*))
   model)
 
 (defmethod rank ((model random-forest) fs)

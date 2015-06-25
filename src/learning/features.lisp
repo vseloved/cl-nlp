@@ -26,7 +26,7 @@
   `(list
      ,@(mapcar (lambda (tmpl)
                  (etypecase tmpl
-                   (list `(strcat ,@(rest (mappend #`(list " " %) tmpl))))
+                   (list `(strcat ,@(rest (flat-map #`(list " " %) tmpl))))
                    (string tmpl)))
                fs-templates)))
 

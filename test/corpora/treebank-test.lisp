@@ -1,31 +1,27 @@
-;;; (c) 2013 Vsevolod Dyomkin
+;;; (c) 2013-2015 Vsevolod Dyomkin
 
-(in-package #:ncorp)
+(in-package #:nlp.corpora)
 (named-readtables:in-readtable rutils-readtable)
 
-(defmacro with-tmp-file ((path contents) &body body)
-  `(let ((,path (fmt "/tmp/cl-nlp-~A" (gensym))))
-     (unwind-protect
-          (progn (with-open-file (out ,path :direction :output
-                                      :if-does-not-exist :create)
-                   (princ ,contents out))
-                 ,@body)
-       (ignore-errors (delete-file ,path)))))
-
-
 (deftest read-treebank ()
-  (should be equal '((S (NLP.TAGS::NP-SBJ "I")
+  (should be equal '((S (|``| "\"")
+                        (NLP.TAGS::NP-SBJ "I")
                         (VP "do" "not"
                             (VP "mind"
                                 (S (NLP.TAGS::NP-SBJ "you(r)")
                                    (VP "leaving"
                                        (NLP.TAGS::ADV-TMP "early")))))))
-          (with-tmp-file (f "(S (NP-SBJ I)
+          (with-tmp-file (f "(S (`` \")
+                                (NP-SBJ I)
                                 (VP do not
                                     (VP mind
                                         (S (NP-SBJ you(r))
                                            (VP leaving
                                                (ADV-TMP early))))))")
-	    (mv-bind (nil? tokens-str tokens trees)
-		(read-corpus-file :treebank f)
-	      trees))))
+            (text-trees (read-corpus-file :treebank f))))
+  (should be string=
+          "The Ways and Means Committee will hold a hearing on the bill next Tuesday ."
+          (last1 (split #\Newline
+                        (text-clean (read-corpus-file :treebank
+                                                      (corpus-file "onf-wsj/wsj_2200.parse")))
+                        :remove-empty-subseqs t))))
