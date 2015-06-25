@@ -93,5 +93,5 @@ result lists to a single list. FUNCTION must return a list."
                    ((and depth (zerop depth)) (append x acc))
                    (t (rec (car x)
                            (rec (cdr x) acc depth)
-                           (1- depth))))))
+                           (when depth (1- depth)))))))
     (rec list nil level)))
