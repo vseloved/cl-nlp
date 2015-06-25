@@ -76,6 +76,7 @@
 
            ;; temporary
            #:flat-map
+           #:flatten
            ))
 
 (cl:defpackage #:nlp.core
@@ -217,15 +218,11 @@
   (:nicknames #:nlex)
   (:use #:common-lisp #:rutilsx #:nlp.util #:nlp.core
         #+dev #:should-test)
-  (:export #:stem
-           #:lemma
+  (:export #:stemmize
+           #:lemmatize
 
            #:porter-stemmer
-           #:<porter-stemmer>
-
-           #:wordnet-lemmatizer
-           #:wikt-lemmatizer
-           #:load-wikt-lemma-dict))
+           #:<porter-stemmer>))
 
 (cl:defpackage #:nlp.learning
   (:nicknames #:nlearn)

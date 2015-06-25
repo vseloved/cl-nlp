@@ -20,9 +20,9 @@
              (:file "ms-ngrams" :depends-on ("packages"))
              (:module #:wordnet
                       :serial t
+                      :depends-on ("packages")
                       :components
-                      ((:file "package")
-                       (:file "util")
+                      ((:file "util")
                        (:file "wordnet")
                        (:file "db")
                        (:file "ic")
@@ -30,6 +30,7 @@
                        (:file "similarity")
                        (:file "sql-wordnet")
                        (:file "wn")))
+             #+nil
              (:module #:lexics
                       :depends-on (#:wordnet)
                       :components
@@ -38,20 +39,20 @@
              (:module #:corpora
                       :depends-on ("packages")
                       :components
-                      ((:file "ptb")
+                      ((:file "wikipedia")
+                       (:file "ptb")
                        (:file "nps-chat")
                        (:file "semcor")
-                       (:file "reuters")
-                       (:file "wikipedia")))))
+                       (:file "reuters")))))
    #+dev
    (:module #:test
             :components
             ((:module #:corpora
                       :components
-                      ((:file "ptb-test")
+                      ((:file "wikipedia-test")
+                       (:file "ptb-test")
                        (:file "nps-chat-test")
-                       (:file "reuters-test")
-                       (:file "wikipedia-test")))))))
+                       (:file "reuters-test")))))))
 
 
 

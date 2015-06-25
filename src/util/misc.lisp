@@ -84,3 +84,14 @@
 result lists to a single list. FUNCTION must return a list."
   (loop :for results :in (apply #'mapcar function lists)
      :append results))
+
+(defun flatten (list &optional level)
+  "Flatten possibly nested LIST a given number of LEVELs (or to the end)."
+  (labels ((rec (x acc depth)
+             (cond ((null x) acc)
+                   ((atom x) (cons x acc))
+                   ((and depth (zerop depth)) (append x acc))
+                   (t (rec (car x)
+                           (rec (cdr x) acc depth)
+                           (1- depth))))))
+    (rec list nil level)))
