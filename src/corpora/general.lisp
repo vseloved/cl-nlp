@@ -16,7 +16,7 @@
    - RAW - unprocessed, as it is in the corpus
            (if possible: for instance, for XML corpora ir doesn't make sense)
    - CLEAN - processed, but in plain format (just words)
-   - TOKENIZED - paragpraph-sentence-token 3-level structure"
+   - TOKENIZED - paragraph-sentence-token 3-level structure"
   name
   raw
   clean
