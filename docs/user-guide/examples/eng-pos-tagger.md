@@ -87,7 +87,7 @@ For our task we'll be able to utilize just the `tokens` slot
 of the `ptb-tagged-text` structure, produced with `map-corpus`.
 Let's collect the tag distribution for each word from the WSJ section of the PTB:
 
-    NLP> (let ((words-dist #h(equal))
+    NLP> (let ((words-dist #h(equal)))
            (map-corpus :ptb-tagged (corpus-file "ptb/TAGGED/POS/WSJ")
                        #`(dolist (sent (text-tokens %))
                            (dolist (tok sent)
