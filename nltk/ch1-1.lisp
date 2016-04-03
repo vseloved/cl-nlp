@@ -47,7 +47,7 @@
 
 (defun nltk-text-file (name)
   (merge-pathnames (fmt "nltk/data/~(~A~).txt" name)
-                   nutil:+project-root+))
+                   (asdf:system-definition-pathname 'cl-nlp)))
 
 (defvar *texts* (make-hash-table))
 
