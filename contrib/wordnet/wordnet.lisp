@@ -11,7 +11,7 @@
 
 (defclass sql-wordnet3 (wordnet)
   ((uri :initarg :uri :reader wordnet-uri
-        :initform (merge-pathnames "data/wordnet30.sqlite" +project-root+)))
+        :initform (merge-pathnames "data/wordnet30.sqlite" (asdf:system-definition-pathname 'cl-nlp))))
   (:documentation
    "Interface to Wordnet database version 3."))
 
