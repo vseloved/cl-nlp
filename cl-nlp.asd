@@ -50,12 +50,8 @@
                        (:file "mem-vecs")))
              (:module #:syntax
                       :components
-                      ((:static-file "word-tags.txt")
-                       (:static-file "phrase-tags.txt")
-                       (:static-file "dep-tags.txt")
-                       (:file "tags" :depends-on ("word-tags.txt"
-                                                  "phrase-tags.txt"))
-                       (:file "deps" :depends-on ("dep-tags.txt"))))
+                      ((:file "tags")
+                       (:file "deps")))
              (:module #:corpora
                       :components
                       ((:file "general")
