@@ -350,7 +350,7 @@
 
 (cl:defpackage #:nlp.generation
   (:nicknames #:ngen)
-  (:use #:common-lisp #:rutil #:nlp.util #:nlp.core
+  (:use #:common-lisp #:rutilsx #:nlp.util #:nlp.core
         #+dev #:should-test)
   (:export #:generate-text
            #:text-generator
