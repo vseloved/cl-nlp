@@ -1,7 +1,7 @@
-;;; (c) 2013 Vsevolod Dyomkin
+;;; (c) 2013-2016 Vsevolod Dyomkin
 
 (in-package #:nlp.core)
-(named-readtables:in-readtable rutils-readtable)
+(named-readtables:in-readtable rutilsx-readtable)
 
 
 (defclass language-model ()
@@ -64,31 +64,31 @@
                       (or 4g (error "No fourgrams supplied for LM of order 5"))
                       5g)))))))
 
-(defgeneric perplexity (model test-sentences)
+(defgeneric perplexity (model test-sents)
   (:documentation
-   "Calculate perplexity of the MODEL on the list of TEST-SENTENCES."))
+   "Calculate perplexity of the MODEL on the list of TEST-SENTS."))
 
-(defmethod perplexity ((model language-model) test-sentences)
-  (expt 2 (- (/ (reduce #'+ (mapcar #`(logprob model %) test-sentences))
-                (reduce #'+ (mapcar #'length test-sentences))))))
+(defmethod perplexity ((model language-model) test-sents)
+  (expt 2 (- (/ (reduce '+ (mapcar #`(logprob model %) test-sents))
+                (reduce '+ (mapcar #'length test-sents))))))
 
-(defmethod prob ((lm language-model) (sentence string))
-  (prob lm (tokenize <word-tokenizer> sentence)))
+(defmethod prob ((lm language-model) (sent string))
+  (prob lm (tokenize <word-tokenizer> sent)))
 
-(defmethod prob ((lm language-model) (sentence list))
-  (expt 2 (logprob lm sentence)))
+(defmethod prob ((lm language-model) (sent list))
+  (expt 2 (logprob lm sent)))
 
-(defmethod logprob ((lm language-model) (sentence string))
-  (logprob lm (tokenize <word-tokenizer> sentence)))
+(defmethod logprob ((lm language-model) (sent string))
+  (logprob lm (tokenize <word-tokenizer> sent)))
 
-(defmethod logprob ((model language-model) (sentence list))
-  (unless sentence (return-from logprob nil))
+(defmethod logprob ((model language-model) (sent list))
+  (unless sent (return-from logprob nil))
   (with-slots (order) model
     (let ((rez 0))
       (if (= 1 order)
-          (dolist (word sentence rez)
+          (dolist (word sent rez)
             (incf rez (logprob (get-ngrams 1 model) word)))
-          (let ((s (append (cons "<S>" sentence) (list "</S>"))))
+          (let ((s (append (cons "<S>" sent) (list "</S>"))))
             (if (shorter? s order)
                 (logprob (get-ngrams (length s) model) s)
                 (progn

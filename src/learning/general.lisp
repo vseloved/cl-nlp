@@ -1,7 +1,7 @@
-;;; (c) 2014 Vsevolod Dyomkin
+;;; (c) 2014-2016 Vsevolod Dyomkin
 
 (in-package #:nlp.learning)
-(named-readtables:in-readtable rutils-readtable)
+(named-readtables:in-readtable rutilsx-readtable)
 
 
 (defclass categorical-model ()
@@ -10,24 +10,32 @@
    "A categorical model has some way of distinguishing different categories
     based on the WEIGHTS mapping categories to some models."))
 
-(defgeneric rank (model fs)
+(defgeneric score (model fs class)
   (:documentation
-   "Score all classes of a MODEL in a table for a given feature set FS."))
+   "Score a selected CLASS with a MODEL given current FS."))
 
-(defgeneric classify (model fs)
+(defgeneric rank (model fs &key classes)
   (:documentation
-   "Classify a feature set FS with a MODEL.")
-  (:method (model fs)
-    (keymax (rank model fs))))
+   "Score all or selected CLASSES of a MODEL in a table
+    for a given feature set FS."))
+
+(defgeneric classify (model fs &key classes)
+  (:documentation
+   "Classify a feature set FS with a MODEL.
+    A selected set of CLASSES can be provided.")
+  (:method (model fs &key classes)
+    (keymax (rank model fs :classes classes))))
 
 (defgeneric train (model data &key)
   (:documentation
-   "Train some MODEL with the provided DATA."))
+   "Train some MODEL with the provided DATA.")
+  (:method :after ((model categorical-model) data &key)
+    (rem# nil (m-weights model))))
 
-(defgeneric train1 (model fs gold guess)
+(defgeneric train1 (model gold guess gold-fs &optional guess-fs)
   (:documentation
-   "Perform one step of MODEL training with features FS
-    with GOLD and GUESS variants."))
+   "Perform one step of MODEL training with GOLD and GUESS variants
+    and correspondng GOLD-FS and optionally GUESS-FS features."))
 
 (defgeneric save-model (model &optional path)
   (:documentation
@@ -56,24 +64,27 @@
    "Load MODEL data from PATH (overwriting existing model).
     Keyword arg CLASSES-PACKAGE determines the package where class names
     will be interned (default: keyword).")
-  (:method :around (model path &key)
+  (:method :around (model path &key class-package)
     (format *debug-io* "~&Loading model from file: ~A - " path)
     (with-open-file (in path :element-type 'flex:octet)
       (:= in (flex:make-flexi-stream (gzip-stream:make-gzip-input-stream in)
-                                     :external-format +utf-8+))
-      (call-next-method model in))
+                                     :external-format :utf8))
+      (call-next-method model in :class-package (find-package class-package)))
     (format *debug-io* "done.~%")
     model)
-  (:method ((model categorical-model) in &key)
+  (:method ((model categorical-model) in &key class-package)
     (let ((total (read in))
           (i 0))
       (loop :repeat total :do
-         (let* ((class (read in))
-                (count (read in))
-                (weights (set# class (m-weights model) #h(equal))))
-           (loop :repeat count :do
-              (:= (? weights (read in)) (read in)))
-           (princ-progress (:+ i) total))))))
+        (with ((class (let ((*package* (or class-package *package*)))
+                        (read in)))
+               (count (read in))
+               (weights (set# class (m-weights model) #h(equal))))
+          (loop :repeat count :do
+            (:= (? weights (read in)) (read in)))
+          (princ-progress (:+ i) total))))
+    (rem# nil (m-weights model))
+    model))
 
 (defgeneric accuracy (model gold-fs &key verbose)
   (:documentation

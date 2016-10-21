@@ -1,7 +1,8 @@
-;;; (c) 2014-2015 Vsevolod Dyomkin
+;;; (c) 2014-2016 Vsevolod Dyomkin
 
 (in-package #:nlp.parsing)
-(named-readtables:in-readtable rutils-readtable)
+(named-readtables:in-readtable rutilsx-readtable)
+
 (declaim (inline read-stanford-dep read-conll-dep print-stanford-dep))
 
 
@@ -9,8 +10,6 @@
   (rel nil :type (or symbol null))
   (govr nil :type (or token null))
   (dept nil :type (or token null)))
-
-(defparameter +root+ (make-token :id 0 :word "ROOT"))
 
 (defgeneric print-dep (format dep &optional stream)
   (:documentation
@@ -22,10 +21,10 @@
               (token-word dept) (token-id dept))))
   (:method ((format (eql :conll)) dep &optional (stream *standard-output*))
     (with-slots (rel govr dept) dep
-      (with-slots (id word lemma tag) dept
+      (with-slots (id word lemma pos) dept
         (format stream
                 "~A	~A	~:[_~;~:*~A~]	_	~A	~A~%"
-                id word lemma tag (token-id govr) rel)))))
+                id word lemma pos (token-id govr) rel)))))
 
 (defun print-stanford-dep (dep stream)
   "Print DEP in Stanford dependency format to STREAM."
@@ -52,9 +51,9 @@
 (defun read-conll-dep (str &optional (tokens #h(0 +root+)))
   "Read one CONLL format dependency from STR.
    TOKENS is a cache of already encountered tokens."
-  (ds-bind (id word lemma tag tag2 feats head-id rel &rest rest)
+  (ds-bind (id word lemma pos pos2 feats head-id rel &rest rest)
       (split #\Tab str :remove-empty-subseqs t)
-    (declare (ignore tag2 feats rest))
+    (declare (ignore pos2 feats rest))
     (let ((dept-id (parse-integer id))
           (govr-id (parse-integer head-id)))
       (make-dep :rel (mksym rel :package :dep)
@@ -65,7 +64,7 @@
                                            :word word
                                            :lemma (unless (string= "_" lemma)
                                                     lemma)
-                                           :tag (mksym tag :package :tag)))))))
+                                           :pos (mksym pos :package :tag)))))))
 
 (defgeneric read-deps (format str)
   (:documentation
@@ -113,6 +112,7 @@
                                         (token %)
                                         (list (dep-dept (first %))))))))))
 
+#+nil
 (defun pprint-deps-tree (deps)
   (let ((*package* (find-package :dep)))
     (pprint-tree (maptree #`(etypecase %

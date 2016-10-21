@@ -1,16 +1,16 @@
-;;; (c) 2013-2014 Vsevolod Dyomkin
+;;; (c) 2013-2016 Vsevolod Dyomkin
 
 (in-package #:nlp.deps)
-(named-readtables:in-readtable rutils-readtable)
+(named-readtables:in-readtable rutilsx-readtable)
 
 
-(defun export-dep (str)
-  "Intern and export DEP in package, then return it."
-  (let ((dep (intern str)))
-    (export dep)
-    dep))
+(def-lang-var dep-tags
+    (dict-from-file (lang-file :en "dep-tags.txt")
+                    :test 'eql
+                    :key-transform ^(tag:export-tag % (find-package '#:nlp.deps)))
+  "Dependency labels."
+  :greedy t)
 
-(defparameter *deps* (dict-from-file (src-file "syntax/deps.txt")
-                                     :test 'eql
-                                     :key-transform #'export-dep)
-  "Dependency labels.")
+(defvar +root+ (ncore:make-token :id 0 :word "_ROOT_"))
+
+(tag:export-tag "ROOT" (find-package '#:nlp.deps))

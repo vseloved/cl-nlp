@@ -34,8 +34,7 @@
              (:module #:lexics
                       :depends-on (#:wordnet)
                       :components
-                      ((:file "wordnet")
-                       (:file "wiktionary")))
+                      ((:file "wordnet")))
              (:module #:corpora
                       :depends-on ("packages")
                       :components

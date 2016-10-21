@@ -9,7 +9,7 @@
   (:documentation
    "A greedy averaged perceptron dependency parser."))
 
-(defmethod parse ((parser greedy-ap-depparser) (sentence sentence))
+(defmethod parse ((parser greedy-ap-depparser) (sent sent))
   )
 
 (defmethod extract-fs ((model greedy-ap-depparser) &rest args)

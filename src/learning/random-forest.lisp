@@ -1,7 +1,7 @@
-;;; (c) 2015 Vsevolod Dyomkin
+;;; (c) 2015-2016 Vsevolod Dyomkin
 
 (in-package #:nlp.learning)
-(named-readtables:in-readtable rutils-readtable)
+(named-readtables:in-readtable rutilsx-readtable)
 
 
 (defclass random-forest ()
@@ -21,10 +21,11 @@
   (when verbose (terpri *debug-io*))
   model)
 
-(defmethod rank ((model random-forest) fs)
+(defmethod rank ((model random-forest) fs &key classes)
   (let* ((trees (forest-trees model))
          (w (/ 1 (length trees)))
-         (rez (mapcar #`(classify % fs) trees))
+         (rez (mapcar #`(classify % fs :classes classes)
+                      trees))
          (scores #h()))
     (dolist (class rez)
       (:+ (get# class scores 0) w))

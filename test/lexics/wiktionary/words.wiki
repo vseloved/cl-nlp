@@ -1,0 +1,53 @@
+==English==
+{{wikipedia}}
+
+===Pronunciation===
+* {{audio|en-us-words.ogg|Audio (US)|lang=en}}
+* {{IPA|/wɜːdz/|lang=en}} {{context|UK|lang=en}}
+
+===Noun===
+{{head|en|plural}}
+
+# {{plural of|word|lang=en}}
+#: '''''Words''' have a longer life than deeds.'' — {{w|Pindar}} (translated)
+
+===Verb===
+{{head|en|verb form}}
+
+# {{en-third-person singular of|word}}
+
+===Statistics===
+* {{rank|want|home|whose|235|words|given|hands|turned}}
+
+===Anagrams===
+* [[sword#English|sword]], [[s-word#English|s-word]]
+
+[[ar:words]]
+[[ca:words]]
+[[de:words]]
+[[et:words]]
+[[es:words]]
+[[eo:words]]
+[[fr:words]]
+[[ko:words]]
+[[io:words]]
+[[it:words]]
+[[sw:words]]
+[[ku:words]]
+[[lt:words]]
+[[li:words]]
+[[hu:words]]
+[[mg:words]]
+[[ml:words]]
+[[my:words]]
+[[nl:words]]
+[[ja:words]]
+[[pt:words]]
+[[simple:words]]
+[[fi:words]]
+[[sv:words]]
+[[ta:words]]
+[[th:words]]
+[[chr:words]]
+[[vi:words]]
+[[zh:words]]

@@ -1,7 +1,7 @@
-;;; (c) 2014-2015 Vsevolod Dyomkin
+;;; (c) 2014-2016 Vsevolod Dyomkin
 
 (in-package #:nlp.corpora)
-(named-readtables:in-readtable rutils-readtable)
+(named-readtables:in-readtable rutilsx-readtable)
 
 
 (defun xml-attr (name attributes)
@@ -29,29 +29,29 @@
 
 (defclass xml-corpus-sax (sax-progress-mixin)
   ((token-init :initform 'make-token :initarg :token-init)
-   (sentence-class :initform nil :initarg :sentence-class :type sentence)
+   (sent-class :initform nil :initarg :sent-class :type sent)
    (struct-map :initform #h() :initarg :struct-map)
    (attr-map :initform #h() :initarg :attr-map)
    (xml-tags :initform nil  :accessor sax-xml-tags)
    (cur-sent :initform nil)
    (cur-par :initform nil)
-   (paragraphs :initform nil :accessor sax-paragraphs)
-   (sentences :initform nil :accessor sax-sentences)
+   (parags :initform nil :accessor sax-parags)
+   (sents :initform nil :accessor sax-sents)
    (raw-text :initform nil :accessor sax-raw-text))
   (:documentation
    "Generic XML corpus sax parser distinguishes up to 3 levels:
     paragraph / sentence / token (STRUCT-MAP slot provides the name of tags
     that correspond to each level, or a list of names).
-    SENTENCES collect tokens, PARAGRAPHS are a list of sentences,
+    SENTS collect tokens, PARAGS are a list of sentences,
     and RAW-TEXT contatins the extracted text as a continuous string
-   (it may be either 'restored' from the XML representation,
+    (it may be either 'restored' from the XML representation,
     or aggregated directly from the more general elements (sentence, paragraphs)
     if they are not split into tokens).
     Each read token may have a specific TOKEN-INIT function
     and a number of attributes whose names in the token class
     and in the XML are identified by ATTR-MAP.
-    If SENTENCE-CLASS is setup, tokens will be groupped not into lists
-    but into objects of this class (which should b e a subclass of SENTENCE)."))
+    If SENT-CLASS is setup, tokens will be groupped not into lists
+    but into objects of this class (which should b e a subclass of SENT)."))
 
 
 (symbol-macrolet ((tag-matches? (member (first xml-tags) (mklist it))))
@@ -70,56 +70,58 @@
 
 (defmethod sax:end-element ((sax xml-corpus-sax) namespace-uri local-name qname)
   (declare (ignore namespace-uri local-name qname))
-  (with-slots (struct-map xml-tags cur-sent cur-par sentences paragraphs sentence-class) sax
+  (with-slots (struct-map xml-tags cur-sent cur-parag sents parags sentence-class)
+      sax
     (cond
-      ((and-it (get# :sentence struct-map) tag-matches?)
+      ((and-it (get# :sent struct-map) tag-matches?)
        (when (and (in# :token struct-map)
-                  (not sentence-class))
+                  (not sent-class))
          (reversef cur-sent))
-       (when (in# :paragraph struct-map)
-         (push cur-sent cur-par))
-       (push cur-sent sentences)
+       (when (in# :parag struct-map)
+         (push cur-sent cur-parag))
+       (push cur-sent sents)
        (void cur-sent))
-      ((and-it (get# :paragraph struct-map) tag-matches?)
-       (when (in# :sentence struct-map)
-         (reversef cur-par))
-       (push cur-par paragraphs)
-       (void cur-par)))
+      ((and-it (get# :parag struct-map) tag-matches?)
+       (when (in# :sent struct-map)
+         (reversef cur-parag))
+       (push cur-parag parags)
+       (void cur-parag)))
     (pop xml-tags)))
 
 (defmethod sax:characters ((sax xml-corpus-sax) data)
-  (with-slots (struct-map sentence-class cur-tag cur-sent cur-par raw-text xml-tags) sax
+  (with-slots (struct-map sent-class cur-tag cur-sent cur-parag raw-text xml-tags)
+      sax
     (cond-it
       ;; if we have token level we ignore other levels
       ((get# :token struct-map)
        (when tag-matches?
          (:= (token-word (first cur-sent)) data)))
       ;; if we have sentence level we ignore paragraph level
-      ((get# :sentence struct-map)
+      ((get# :sent struct-map)
        (when tag-matches?
          (:= raw-text (strcat raw-text #\Space data)
              cur-sent (let ((toks (ncore:tokenize ncore:<word-tokenizer> data)))
-                        (if sentence-class
-                            (make sentence-class :tokens toks)
+                        (if sent-class
+                            (make sent-class :tokens toks)
                             toks)))))
-      ((get# :paragraph struct-map)
+      ((get# :parag struct-map)
        (when tag-matches?
          (:= raw-text (strcat raw-text #\Newline data)
-             cur-par (mapcar #`(ncore:tokenize ncore:<word-tokenizer> %)
-                             (ncore:tokenize ncore:<sentence-splitter> data))))))))
+             cur-par (mapcar ^(ncore:tokenize ncore:<word-tokenizer> %)
+                             (ncore:tokenize ncore:<sent-splitter> data))))))))
 
 (defmethod sax:start-document ((sax xml-corpus-sax))
   ;; do nothing
   )
 
 (defmethod sax:end-document ((sax xml-corpus-sax))
-  (with-slots (struct-map sentences paragraphs raw-text) sax
+  (with-slots (struct-map sents parags raw-text) sax
     (if (in# :sentence struct-map)
-        (reversef paragraphs)
-        (:= paragraphs (list sentences)))
+        (reversef parags)
+        (:= parags (list sents)))
     (values nil
             (or raw-text
-                (paragraphs->text paragraphs))
-            paragraphs)))
+                (parags->text parags))
+            parags)))
 
 ) ; end of symbol-macrolet

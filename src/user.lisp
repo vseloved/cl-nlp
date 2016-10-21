@@ -1,8 +1,10 @@
-;;; (c) 2013-2014 Vsevolod Dyomkin
+;;; (c) 2013-2016 Vsevolod Dyomkin
 
 (in-package #:nlp-user)
-(named-readtables:in-readtable rutils-readtable)
+(named-readtables:in-readtable rutilsx-readtable)
 
+
+;;; end-user utilies
 
 (defun grep (word string &key (width 25) pass-newlines limit)
   "Print all (or LIMIT) WORD occurances in STRING with the surrounding

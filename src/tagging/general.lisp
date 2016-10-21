@@ -4,9 +4,11 @@
 (named-readtables:in-readtable rutils-readtable)
 
 
-(defgeneric tag (model sentence)
+(defgeneric tag (model sent)
   (:documentation
-   "Tag a SENTENCE with the algorithm specific to MODEL."))
+   "Tag a SENTence with the algorithm specific to MODEL."))
 
 (defclass tagger (categorical-model)
-  ())
+  ()
+  (:documentation
+   "A tagger adds tags to sentence tokens."))

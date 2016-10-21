@@ -1,7 +1,7 @@
-;;; (c) 2013 Vsevolod Dyomkin
+;;; (c) 2013-2016 Vsevolod Dyomkin
 
 (in-package #:nlp.util)
-(named-readtables:in-readtable rutils-readtable)
+(named-readtables:in-readtable rutilsx-readtable)
 
 
 (defparameter +inf most-positive-fixnum)
@@ -71,3 +71,14 @@
                  (map 'list fn xs ys)
                  (map 'list fn xs))
           :initial-value 0))
+
+(defun frobenius-norm (m)
+  "Frobenius norm of matrix M."
+  (let ((rez 0))
+    (dotimes (i (array-dimension m 0))
+      (dotimes (j (array-dimension m 1))
+        (:+ rez (expt (aref m i j) 2))))))
+
+(defun ~= (x y &key (epsilon 0.01))
+  "Approximately equality between X & Y to the margin EPSILON."
+  (< (abs (- x y)) epsilon))

@@ -1,7 +1,7 @@
-;;; (c) 2013-2015 Vsevolod Dyomkin
+;;; (c) 2013-2016 Vsevolod Dyomkin
 
 (in-package #:nlp.corpora)
-(named-readtables:in-readtable rutils-readtable)
+(named-readtables:in-readtable rutilsx-readtable)
 
 
 (defmethod read-corpus-file ((type (eql :brown)) file &key)
@@ -15,15 +15,15 @@
         (dolist (sent (split #\Newline par :remove-empty-subseqs t))
           (let (cur-sent)
             (loop :for (beg end) :on (re:all-matches "[^\\s]+" text) :by #'cddr :do
-               (let* ((/-pos (position #\/ text :start beg :end end :from-end t))
-                      (word (slice text beg /-pos))
-                      (tag (slice text (1+ /-pos) end)))
+               (let* ((split (position #\/ text :start beg :end end :from-end t))
+                      (word (slice text beg split))
+                      (pos (slice text (1+ split) end)))
                  (when (member word '("``" "''") :test #'string=)
                    (:= word "\""
                        end (1- end)))
                  (push (make-token :beg (- beg offset)
-                                   :end (- end (:+ offset (1+ (length tag))))
-                                   :word word :tag tag)
+                                   :end (- end (:+ offset (1+ (length pos))))
+                                   :word word :pos pos)
                        cur-sent)))
             (push (reverse cur-sent) cur-par)))
         (push (reverse cur-par) tokenized)))

@@ -1,7 +1,7 @@
-;;; (c) 2013-2015 Vsevolod Dyomkin
+;;; (c) 2013-2016 Vsevolod Dyomkin
 
 (in-package #:nlp.corpora)
-(named-readtables:in-readtable rutils-readtable)
+(named-readtables:in-readtable rutilsx-readtable)
 
 
 (defstruct (treebank-text (:include text) (:conc-name text-))
@@ -31,7 +31,7 @@
                                  :beg pos
                                  :end (1- (:+ pos (1+ (length word))))
                                  :word word
-                                 :tag (first subtree))
+                                 :pos (first subtree))
                                 toks))))
                     (reverse toks))
          :into sents
@@ -42,8 +42,8 @@
          (return (make-treebank-text
                   :name (pathname-name file)
                   :clean (strjoin #\Newline
-                                  (mapcar #`(strjoin #\Space
-                                                     (mapcar #'token-word %))
+                                  (mapcar ^(strjoin #\Space
+                                                    (mapcar 'token-word %))
                                           sents))
                   :tokenized (list sents)
                   :trees trees))))))
@@ -92,7 +92,7 @@
 
 (defun remove-dummy-tokens (sent)
   "Remove tokens tagged as -NONE- from list of tokens SENT."
-  (remove-if #`(eql 'tag:-NONE- (token-tag %))
+  (remove-if ^(eql 'tag:-NONE- (token-pos %))
              sent))
 
 (defun clean-up-tree (tree)

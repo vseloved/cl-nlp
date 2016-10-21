@@ -1,7 +1,7 @@
-;;; (c) 2013 Vsevolod Dyomkin
+;;; (c) 2013-2016 Vsevolod Dyomkin
 
 (in-package #:nlp.generation)
-(named-readtables:in-readtable rutils-readtable)
+(named-readtables:in-readtable rutilsx-readtable)
 
 
 (defgeneric generate-text (generator data length &key)
@@ -31,11 +31,11 @@
 
 (defmethod generate-text ((generator markov-chain-generator)
                           (transitions hash-table)
-                          length &key skip-paragraphs &allow-other-keys)
+                          length &key skip-parags &allow-other-keys)
   "Generate text of LENGTH with a markov model of some MARKOV-ORDER described
    by the table TRANSITIONS of transition probabilities between reverse prefixes
    of MARKOV-ORDER length and words.
-   Unless SKIP-PARAGRAPHS is set, the text may include newlines."
+   Unless SKIP-PARAGS is set, the text may include newlines."
   (let* ((order (markov-order generator))
          (initial-prefix (if (> order 1)
                              (cons "¶" (make-list (1- order)))
@@ -54,7 +54,7 @@
                           (incf i)))))
           (when (<= (decf r prob) 0)
             (if (string= "¶" word)
-                (if skip-paragraphs
+                (if skip-parags
                     (decf i)  ; don't count newline if we don't include it
                     (push +newline+ rez))
                 (push word rez))
@@ -100,5 +100,5 @@
     (reverse rez)))
 
 
-(define-lazy-singleton mark-v-shaney (make 'markov-chain-generator :order 2)
+(def-lang-var mark-v-shaney (make 'markov-chain-generator :order 2)
   "The infamous Mark V. Shaney.")

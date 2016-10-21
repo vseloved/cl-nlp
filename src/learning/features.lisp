@@ -1,7 +1,7 @@
-;;; (c) 2014 Vsevolod Dyomkin
+;;; (c) 2014-2016 Vsevolod Dyomkin
 
 (in-package #:nlp.learning)
-(named-readtables:in-readtable rutils-readtable)
+(named-readtables:in-readtable rutilsx-readtable)
 
 
 (defgeneric extract-fs (model &rest args)
@@ -10,10 +10,10 @@
 
 (defgeneric extract-gold (model data)
   (:documentation
-   "Extract from data a list of gold values and corresponding features
-    for MODEL."))
+   "Extract from data a list of pairs of gold values
+    and corresponding features for MODEL."))
 
-(defgeneric ensure-f-init (model f &rest cs)
+(defgeneric ensure-fs-init (model f &rest cs)
   (:documentation
    "Ensure that all the necessary tables are stup for feature F and classes CS
     in the MODEL."))
@@ -21,16 +21,16 @@
 
 ;;; utils
 
+(defvar *strpool* #h(equal)
+        "String pool for features.")
+
 (defmacro make-fs (&rest fs-templates)
   "Return a list features based on FS-TEMPLATES."
   `(list
      ,@(mapcar (lambda (tmpl)
-                 (etypecase tmpl
-                   (list `(strcat ,@(rest (flat-map #`(list " " %) tmpl))))
-                   (string tmpl)))
+                 (let ((str (etypecase tmpl
+                              (list `(strcat ,@(rest (flat-map #`(list " " %)
+                                                               tmpl))))
+                              (string tmpl))))
+                   (getset# str *strpool* str)))
                fs-templates)))
-
-(defun fs-idx (f fs)
-  "Return an index for feature F in the index table FS or add it to the index."
-  (or (get# f fs)
-      (set# f fs (ht-count fs))))

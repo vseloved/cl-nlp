@@ -1,55 +1,111 @@
-;;; (c) 2015 Vsevolod Dyomkin
+;;; (c) 2015-2016 Vsevolod Dyomkin
 
 (in-package #:nlp.lexics)
-(named-readtables:in-readtable rutils-readtable)
+(named-readtables:in-readtable rutilsx-readtable)
 
-
-(defclass lemmatizer () ())
 
 (defclass wikt-lemmatizer (lemmatizer)
-  ((dict :initarg :dict :accessor lemma-dict)))
+  ((dict :initarg :dict :accessor lemmatizer-dict)))
 
 (defmethod lemmatize ((lemmatizer wikt-lemmatizer) word &optional tag)
-  (with-slots (dict) lemmatizer
-    (or (? dict tag word)
-        (? dict nil word)
-        word)))
+  (or (? @lemmatizer.dict tag word)
+      (? @lemmatizer.dict nil word)
+      word))
 
 (defun extract-wikt-lemma-dict (path)
   (cxml:parse path (make 'wikt-sax)))
 
-(defclass wikt-sax (sax-with-progress)
-  ((fn :initarg :fn)
+(defclass wikt-sax (ncorp::sax-progress-mixin)
+  ((lang :initarg :lang :initform :en)
+   (fn :initarg :fn)
    (texts :initform nil)
    (titles :initform nil)
    (cur-tag :initform nil)
    (cur-text :initform nil)
-   (cur-title :initform nil)
+   (word :initform nil)
    (skip :initform nil)
    (pos-tags :initform #h(equal))
    (word-forms :initform #h(equal))))
 
+(defmethod sax:end-document ((sax wikt-sax))
+  sax)
+
 (defmethod sax:start-element ((sax wikt-sax)
                               namespace-uri local-name qname attributes)
-  (with-slots (cur-tag skip) sax
-    (:= skip nil
-        cur-tag (mkeyw local-name))))
-
+  (:= @sax.skip nil
+      @sax.cur-text nil
+      @sax.cur-tag (mkeyw local-name)))
+  
 (defmethod sax:characters ((sax wikt-sax) data)
-  (with-slots (cur-tag cur-title cur-text skip) sax
-    (case cur-tag
-      (:title (push data cur-title))
-      (:text
-       (if (starts-with "#redirect" data :test 'string-equal)
-           (:= skip t)
-           (push data cur-text))))))
+  (case @sax.cur-tag
+    (:title (let ((title (string-trim +white-chars+ data)))
+              (unless (blankp title)
+                (:= @sax.word title))))
+    (:text
+     (if (or (in# @sax.word @sax.pos-tags)
+             (starts-with "#redirect" data :test 'string-equal)
+             (find #\Space @sax.word)
+             (find #\_ @sax.word))
+         (:= @sax.skip t)
+         (push data @sax.cur-text)))))
+
+(defpar *tag-names*
+    #h(equal
+       "Noun" "NN"
+       "Adjective" "JJ"
+       "Adverb" "RB"
+       "Verb" "VB"))
+
+(defpar *dict* #h(equal))
 
 (defmethod sax:end-element ((sax wikt-sax) namespace-uri local-name qname)
-  (with-slots (cur-tag cur-title cur-text fn skip pos-tags word-forms) sax
+  (with-slots (cur-tag cur-text fn skip) sax
     (when (eql :text cur-tag)
       (unless skip
-        (when-it (search "form of|" cur-text :test 'string=)
-          (print (slice cur-text it 100)))))))
+        (with ((text (strjoin #\Space (reverse cur-text)))
+               (by-lang (re:split "==\\w+==[^=]" text))
+               (langs (mapcar ^(lang-iso (substr % 2 -3))
+                              (re:all-matches-as-strings "==(\\w+)==[^=]"
+                                                         text))))
+          (when (or (null (length langs))
+                    (member @sax.lang langs))
+            (when (> (length by-lang) (length langs))
+              (push nil langs))
+;            (print @sax.word)
+            (let ((cur-text (? by-lang (or (position @sax.lang langs)
+                                          0))))
+              (re:do-matches (beg end "===\\w+===[^=]" cur-text)
+                (with ((section (slice cur-text (+ beg 3) (- end 4)))
+                       (base-tag (? *tag-names* section)))
+                  (when base-tag
+                    (with ((beg (1+ end))
+                           (end (re:scan "[^=]====\\w" cur-text :start beg)))
+                      (if-it (search " of|" cur-text
+                                     :test 'string= :start2 beg :end2 end)
+                             (loop :for (qual letter)
+                                   :in '(("plural" #\S)
+                                         ("third-person singular" #\Z)
+                                         ("present participle" #\G)
+                                         ("past participle" #\N)
+                                         ("simple past" #\D)
+                                         ("past" #\D)
+                                         ("comparative" #\R)
+                                         ("superlative" #\S)) :do
+                               (when-it (search qual cur-text :test 'string=
+                                                :start2 beg :end2 end)
+                                 (let ((pos (mkeyw (strcat base-tag letter))))
+                                   (push pos (? @sax.pos-tags @sax.word))
+                                   (:= (? @sax.word-forms
+                                          (list (slice cur-text
+                                                       (+ it 4)
+                                                       (position #\} cur-text
+                                                                 :start (+ it 4)))
+                                                base-tag
+                                                pos))
+                                       @sax.word))
+                                 (return)))
+                             (push (mkeyw base-tag)
+                                   (? @sax.pos-tags @sax.word))))))))))))))
 
         ;; (let* ((text (strjoin #\Space (reverse cur-text)))
         ;;        (beg (+ 10 (or (re:scan "==English==" text) -10)))

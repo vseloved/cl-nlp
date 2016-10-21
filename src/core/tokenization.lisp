@@ -1,30 +1,8 @@
-;;; (c) 2013-2015 Vsevolod Dyomkin
+;;; (c) 2013-2016 Vsevolod Dyomkin
 
 (in-package #:nlp.core)
-(named-readtables:in-readtable rutils-readtable)
+(named-readtables:in-readtable rutilsx-readtable)
 
-
-(defstruct (token (:print-object (lambda (token stream)
-                                   (with-slots (id word tag beg end) token
-                                       (format stream "<~A~@[/~A~]~@[:~A~]~@[ ~A~]>"
-                                               word tag
-                                               id
-                                               (when beg
-                                                 (if end
-                                                     (fmt "~A..~A" beg end)
-                                                     beg)))))))
-  "A corpus token with id or postition and possibly tag.
-   Also may contain word lemma."
-  id
-  beg
-  end
-  word
-  lemma
-  tag)
-
-(defclass sentence ()
-  ((tokens :initarg :tokens :accessor sent-tokens))
-  (:documentation "Basically, a sentence is a list of tokens."))
 
 (defgeneric tokenize (tokenizer string)
   (:documentation
@@ -89,44 +67,21 @@
      :finally (return (values words
                               spans))))
 
-(define-lazy-singleton word-chunker
-    (make 'regex-word-tokenizer :regex (re:create-scanner "[^\\s]+"))
-  "Dumb word tokenizer, that will not split punctuation from words.")
-
-(define-lazy-singleton basic-word-tokenizer (make 'regex-word-tokenizer)
-  "Basic word tokenizer.")
-
-
 (defclass postprocessing-regex-word-tokenizer (regex-word-tokenizer)
   ((regex :accessor tokenizer-regex :initarg :regex
-          :initform
-          (re:create-scanner
-           (strcat ;; urls
-                   "\\w+://\\S+"
-                   ;; decimals
-                   "|[+-]?[0-9](?:[0-9,.]*[0-9])?"
-                   ;; regular words
-                   "|[\\w@](?:[\\w'’`@-][\\w']|[\\w'][\\w@'’`-])*[\\w']?"
-                   ;; punctuation & special symbols
-                   "|[\"#$%&*+,/:;<=>@^`~…\\(\\)⟨⟩{}\\[\\|\\]‒–—―«»“”‘’'¶]"
-                   ;; closing punctuation
-                   "|[.!?]+"
-                   ;; multiple dashes
-                   "|-+"))))
+          :initform (regex-from-file "en/word-tok-rules.txt"))
+   (2char-contractions-regex
+    :initarg :2char-contractions-regex
+    :initform (re:create-scanner
+              "i['‘’`]m|(?:\\w)['‘’`]s|(?:i|you|s?he|we|they)['‘’`]d$"
+              :case-insensitive-mode t))
+    (3char-contractions-regex
+     :initarg :3char-contractions-regex
+     :initform (re:create-scanner
+                "(?:i|you|s?he|we|they)['‘’`](?:ll|[vr]e)|n['‘’`]t$"
+               :case-insensitive-mode t)))
   (:documentation
    "Regex-based word tokenizer."))
-
-(defparameter *2char-contractions-regex*
-  (re:create-scanner
-   "i['‘’`]m|(?:\\w)['‘’`]s|(?:i|you|s?he|we|they)['‘’`]d$"
-   :case-insensitive-mode t)
-  "Regex to find 2 character contractions: I'm, he/she/it's, 'd")
-
-(defparameter *3char-contractions-regex*
-  (re:create-scanner
-   "(?:i|you|s?he|we|they)['‘’`](?:ll|[vr]e)|n['‘’`]t$"
-   :case-insensitive-mode t)
-  "Regex to find 3 character contractions: 'll, 're, 've, n't")
 
 (defmethod tokenize :around ((tokenizer postprocessing-regex-word-tokenizer)
                              string)
@@ -137,7 +92,9 @@
              (let ((cur (first wtail))
                    (cur-span (first stail))
                    (prev (first words))
-                   (next (second wtail)))
+                   (next (second wtail))
+                   (2char-regex @tokenizer.2char-contractios-regex)
+                   (3char-regex @tokenizer.3char-contractios-regex))
                (macrolet ((push-contractions (char-length)
                             `(let* ((next cur-span)
                                     (split-pos (- (length cur) ,char-length))
@@ -171,10 +128,10 @@
                                             (rt (second stail)))
                         skip t))
                    ;; splitting posessives and contractions: I'm, 'd, 's
-                   ((re:scan *2char-contractions-regex* cur)
+                   ((re:scan 2char-regex cur)
                     (push-contractions 2))
                    ;; splitting contractions: 'll, 've, 're, n't
-                   ((re:scan *3char-contractions-regex* cur)
+                   ((re:scan 3char-regex cur)
                     (push-contractions 3))
                    ;; splitting trailing '
                    ((re:scan "\\w+'+$" cur)
@@ -188,10 +145,15 @@
       (values (reverse words)
               (reverse spans)))))
 
-(define-lazy-singleton word-tokenizer
-    (make 'postprocessing-regex-word-tokenizer)
-  "Default word tokenizer.")
+(def-lang-var word-chunker (make 'regex-word-tokenizer
+                                     :regex (re:create-scanner "[^\\s]+"))
+  "Dumb word tokenizer, that will not split punctuation from words.")
 
+(def-lang-var basic-word-tokenizer (make 'regex-word-tokenizer)
+  "Basic word tokenizer.")
+
+(def-lang-var word-tokenizer (make 'postprocessing-regex-word-tokenizer)
+  "Default word tokenizer.")
 
 ;; (defclass treebank-word-tokenizer (tokenizer)
 ;;   ()
@@ -259,52 +221,70 @@
 ;;     (setf text (strcat string " ")))
 ;;   (tokenize <word-chunker> string))
 
+;; (defmacro re-setf (var &body body)
+;;   "For each clause in BODY wrap it in `(setf var (clause arg1 var args))`."
+;;   `(progn
+;;      ,@(mapcar (lambda (clause)
+;;                  `(setf ,var (,(first clause)
+;;                               ,@(when-it (second clause) (list it))
+;;                               ,var
+;;                               ,@(when-it (second clause) (nthcdr 2 clause)))))
+;;                body)))
+
+
 ;;; Sentence splitting
 
-(defclass baseline-sentence-tokenizer (tokenizer)
-  ()
+(defclass baseline-sent-tokenizer (tokenizer)
+  ((abbrevs-with-dot :initarg :abbrevs-with-dot
+                     :initform (list-from-file
+                                (data-file "en/abbrevs-with-dot.txt")))
+   (sent-end-chars :initarg :sent-end-chars
+                   :initform '(#\. #\? #\! #\… #\¶ #\»)))
   (:documentation
    "Basic tokenizer for sentence splitting."))
 
-(defvar +abbrevs-with-dot+
-  (list-from-file (data-file "abbrevs-with-dot.txt"))
-  "Widely-used abbreviations ending in dot.")
-
-(defmethod tokenize ((tokenizer baseline-sentence-tokenizer) string)
+(defmethod tokenize ((tokenizer baseline-sent-tokenizer) string)
   (mv-bind (words word-spans)
       (tokenize (make 'regex-word-tokenizer :regex "[^\\s]+")
                 (substitute #\¶ #\Newline string))
     (let ((beg 0)
-          sentences spans)
+          (sent-end-chars @tokenizer.sent-end-chars)
+          (abbrevs-with-dot @tokenizer.abbrevs-with-dot)
+          sents spans)
       (loop :for ws :on words :and ss :on word-spans :do
          (let ((word (first ws))
                (span (first ss)))
            (when (or (null (rest ws))
                      (and (member (char word (1- (length word)))
-                                  '(#\. #\? #\! #\¶))
-                          (not (member word +abbrevs-with-dot+
-                                       :test #'string-equal))
-                          (and-it (second ws)
-                                  (upper-case-p (char it 0)))))
-             (push (slice string beg (rt span)) sentences)
+                                  sent-end-chars)
+                          (notevery #'upper-case-p
+                                    (slice word 0
+                                           (position-if ^(member % sent-end-chars)
+                                                        word)))
+                          (or (not (char= (char word (1- (length word))) #\.))
+                              (not (or (starts-with "(" word)
+                                       (member word abbrevs-with-dot
+                                               :test 'string=))))
+                          (upper-case-p (char (second ws) 0))))
+             (push (slice string beg (rt span)) sents)
              (push (pair beg (rt span)) spans)
              (:= beg (lt (second ss))))))
-      (values (reverse sentences)
+      (values (reverse sents)
               (reverse spans)))))
 
-(define-lazy-singleton sentence-splitter (make 'baseline-sentence-tokenizer)
+(def-lang-var sent-splitter (make 'baseline-sent-tokenizer)
   "Basic sentence splitter.")
 
 
 ;;; Paragraph splitting
 
-(defclass doublenewline-paragraph-splitter ()
+(defclass doublenewline-parag-splitter ()
   ()
   (:documentation
    "Paragraph tokenizer that splits text on double newlines
     and removes single newlines."))
 
-(defmethod tokenize ((tokenizer doublenewline-paragraph-splitter) string)
+(defmethod tokenize ((tokenizer doublenewline-parag-splitter) string)
   (let ((newline-regex (re:create-scanner (fmt "(?:~C|[~C~C]{1,2})"
                                                #\Newline #\Return #\Linefeed))))
     (mapcar #`(fmt "~{~A ~}" %)
@@ -312,8 +292,7 @@
                                (re:split newline-regex string)
                                :remove-empty-subseqs t))))
 
-(define-lazy-singleton paragraph-splitter
-    (make 'doublenewline-paragraph-splitter)
+(def-lang-var parag-splitter (make 'doublenewline-parag-splitter)
   "Basic paragraph splitter.")
 
 
@@ -326,41 +305,26 @@
     into a paragraph-sentence-token structure."))
 
 (defmethod tokenize ((tokenizer full-text-tokenizer) string)
-  (mapcar (lambda (par)
+  (mapcar (lambda (parag)
             (mapcar #`(mv-bind (words spans) (tokenize <word-tokenizer> %)
                         (loop :for word :in words
                            :for (beg end) :in spans
                            :collect (make-token :word word :beg beg :end end)))
-                    (tokenize <sentence-splitter> par)))
+                    (tokenize <sent-splitter> parag)))
           (split #\Newline string)))
 
-(define-lazy-singleton full-text-tokenizer
-    (make 'full-text-tokenizer)
+(def-lang-var full-text-tokenizer (make 'full-text-tokenizer)
   "Full text tokenizer.")
 
-(defun paragraphs->text (paragraphs)
+(defun parags->text (parags)
   "Get a text string corresponding to a list of lists of tokens PARAGRAPHS."
   (strjoin #\Newline
-           (mapcar (lambda (par)
+           (mapcar (lambda (parag)
                      (strjoin #\Space
-                              (mapcar (lambda (sent)
-                                        (strjoin #\Space
-                                                 (mapcar #'token-word
-                                                         (if (listp sent)
-                                                             sent
-                                                             (sent-tokens sent)))))
-                                      par)))
-                   paragraphs)))
-
-
-;;; Helpers
-
-(defmacro re-setf (var &body body)
-  "For each clause in BODY wrap it in `(setf var (clause arg1 var args))`."
-  `(progn
-     ,@(mapcar (lambda (clause)
-                 `(setf ,var (,(first clause)
-                               ,@(when-it (second clause) (list it))
-                               ,var
-                               ,@(when-it (second clause) (nthcdr 2 clause)))))
-               body)))
+                              (mapcar ^(strjoin #\Space
+                                                (mapcar 'token-word
+                                                        (if (listp %)
+                                                            %
+                                                            (sent-tokens %))))
+                                      parag)))
+                   parags)))

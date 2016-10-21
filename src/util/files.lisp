@@ -19,6 +19,11 @@
   (asdf:system-relative-pathname 'cl-nlp
                                  (strcat "src/" filename)))
 
+(defun lang-file (lang filename)
+  "File in lang/ subdir of cl-nlp."
+  (asdf:system-relative-pathname 'cl-nlp
+                                 (fmt "langs/~(~A~)/~A/" lang filename)))
+
 (defun corpus-file (filename)
   "File in corpora/ subdir of cl-nlp."
   (asdf:system-relative-pathname 'cl-nlp
@@ -28,6 +33,8 @@
   "File in test/ subdir of cl-nlp."
   (asdf:system-relative-pathname 'cl-nlp
                                  (strcat "test/" filename)))
+
+
 
 ;;; writing
 
@@ -58,15 +65,27 @@
                  ,@body)
        (ignore-errors (delete-file ,path)))))
 
+
 ;;; reading
+
+(defmacro dolines* ((line file) &body body)
+  "Archive-aware DOLINES."
+  (cond ((string-equal "gz" (pathname-type file))
+         `(gzip-stream:with-open-gzip-file (in file)
+            (let ((in (flex:make-flexi-stream in :external-format :utf-8)))
+              (loop :for line := (read-line in nil) :while line :do
+                    ,@body))))
+        ;; TODO ((string-equal "bz2" (pathname-type file)) :bzip)
+        (t `(dolines (,line ,file)
+              ,@body))))
 
 (defun list-from-file (file)
   "Load the contents of FILE into a list of strings for each trimmed line."
-  (format *debug-io* "~&Reading list from file: ~A - " file)
+  (format *debug-io* "~&Reading list from file ~A:" file)
   (let (rez)
     (dolines (line file)
       (push (string-trim +white-chars+ line) rez))
-    (format *debug-io* "done.~%")
+    (format *debug-io* " done.~%")
     (reverse rez)))
 
 (defun dict-from-file (file &key (separator " ") (test 'equal)
@@ -78,9 +97,11 @@
    they are applied before setting a respected value
    in the resulting hash-table.
    If the same key is read several times a warning will be sugnalled."
-  (format *debug-io* "~&Reading dict from file: ~A - " file)
-  (let ((dict (make-hash-table :test test)))
+  (format *debug-io* "~&Reading dict from file~A:" file)
+  (let ((dict (make-hash-table :test test))
+        (count 0))
     (dolines (line file)
+      (when (zerop (rem (:+ count) 10000)) (format *debug-io* "."))
       (let* ((split-pos (search separator line))
              (k (funcall key-transform (slice line 0 split-pos)))
              (v (funcall val-transform (slice line (+ split-pos
@@ -89,8 +110,15 @@
           (warn "Key: ~A has been already in dict with value: ~A. New value: ~A"
                 k it v))
         (set# k dict v)))
-    (format *debug-io* "done.~%")
+    (format *debug-io* " done. (Read ~A words).~%" count)
     dict))
+
+(defun regex-from-file (file)
+  "Create a regex scanner as an alternation of regexes
+   written in each of the FILE's lines."
+  (re:create-scanner
+   (strjoin #\| (split #\Newline (read-file file)
+                       :remove-empty-subseqs t))))
 
 
 ;;; walking
@@ -216,5 +244,5 @@
              (let ((,entry (zip::read-entry-object ,zipstream ,external-format)))
                (set# (zip:zipfile-entry-name ,entry) ,entries ,entry)))
            (do-zip-entries (,name ,stream ,zip
-                              :external-format ,external-format :raw ,raw)
+                                  :external-format ,external-format :raw ,raw)
              ,@body))))))

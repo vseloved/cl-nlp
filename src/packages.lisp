@@ -1,4 +1,5 @@
-;;; (c) 2013-2015 Vsevolod Dyomkin
+;;; (c) 2013-2016 Vsevolod Dyomkin
+
 
 (cl:defpackage #:nlp.util
   (:nicknames #:nutil)
@@ -39,19 +40,19 @@
            #:corpus-file
            #:data-file
            #:model-file
+           #:lang-file
            #:src-file
            #:test-file
 
+           #:dolines*
+           #:dofiles
            #:with-tmp-file
            #:write-bin-file
+           #:write-tsv
 
            #:write-dict
            #:list-from-file
            #:dict-from-file
-
-           #:dofiles
-
-           #:write-tsv
 
            #:download
            #:download-file
@@ -64,26 +65,54 @@
 
            #:argmax
            #:keymax
+           #:~=
+           #:sum
+           #:frobenius-norm
            #:bin-search
            #:dot
-
-           #:define-lazy-singleton
 
            #:pprint-tree
            #:princ-progress
 
            #:+inf
 
-           ;; temporary
-           #:flat-map
-           #:flatten
+           #:s!
+
+           #:make-cfd
            ))
 
 (cl:defpackage #:nlp.core
   (:nicknames #:ncore)
   (:use #:common-lisp #:rutilsx #:nlp.util
         #+dev #:should-test)
-  (:export #:ngrams
+  (:export #:+iso-639-1+
+           #:*lang-profiles*
+           #:iso-lang
+           #:lang-iso
+           #:in-lang
+           #:def-lang-var
+
+           #:id
+           #:word
+           #:pos
+           #:lemma
+           #:beg
+           #:end
+
+           #:token
+           #:token-id
+           #:token-word
+           #:token-lemma
+           #:token-beg
+           #:token-end
+           #:token-pos
+           #:make-token
+
+           #:sent
+           #:make-sent
+           #:sent-tokens
+           
+           #:ngrams
            #:ngrams-eq
            #:ngrams-order
            #:ngrams-count
@@ -127,57 +156,29 @@
            #:tokenizer
            #:regex-word-tokenizer
            #:postprocessing-regex-word-tokenizer
-           #:baseline-sentence-tokenizer
+           #:baseline-sent-tokenizer
            #:full-text-tokenizer
-           #:<word-chnuker>
+           #:doublenewline-parag-splitter
+           #:parags->text
+           #:<word-chunker>
            #:<basic-word-tokenizer>
            #:<word-tokenizer>
-           #:<sentence-splitter>
+           #:<sent-splitter>
            #:<full-text-tokenizer>
-
-           #:paragraphs->text
-
-           #:token
-           #:token-id
-           #:token-word
-           #:token-lemma
-           #:token-beg
-           #:token-end
-           #:token-tag
-           #:make-token
-           #:sentence
-           #:sent-tokens
-
-           #:doublenewline-paragraph-splitter
-           #:<paragraph-splitter>
+           #:<parag-splitter>
 
            #:find-collocations
 
            #:normalize
+           #:denormalize
            #:*number-regex*
            #:*url-regex*
            #:*email-regex*
-
-           #:make-cfd
-           ))
-
-(cl:defpackage #:nlp.tags
-  (:nicknames #:tag)
-  (:use #:common-lisp #:rutil #:nutil)
-  (:export #:*word-tags*
-           #:*phrase-tags*
-           ))
-
-(cl:defpackage #:nlp.deps
-  (:nicknames #:dep)
-  (:use #:common-lisp #:rutil #:nutil)
-  (:export #:*deps*
-           #:+ROOT+
            ))
 
 (cl:defpackage #:nlp.corpora
   (:nicknames #:ncorp)
-  (:use #:common-lisp #:rutilsx #:nutil #:nlp.core #:tag
+  (:use #:common-lisp #:rutilsx #:nutil #:nlp.core
         #+dev #:should-test)
   (:export #:corpus
            #:make-corpus
@@ -208,8 +209,6 @@
            #:xml-attr
 
            #:make-corpus-from-dir
-           #:remove-dummy-tokens
-           #:clean-up-tree
 
            #:+brown-corpus+
            ))
@@ -218,17 +217,42 @@
   (:nicknames #:nlex)
   (:use #:common-lisp #:rutilsx #:nlp.util #:nlp.core
         #+dev #:should-test)
-  (:export #:stemmize
-           #:lemmatize
+  (:export #:dict
+           #:<dict>
+           
+           #:lookup
+           #:pos-tags
+
+           #:stemmer
+           #:stem
 
            #:porter-stemmer
-           #:<porter-stemmer>))
+           #:<porter-stemmer>
+
+           #:lemmatizer
+           #:lemmatizer-dict
+           #:lemmatize
+           #:morph
+
+           #:mem-dict
+           #:load-mem-dict))
+
+(cl:defpackage #:nlp.embeddings
+  (:nicknames #:nemb)
+  (:use #:common-lisp #:rutilsx #:nlp.util #:nlp.core
+        #+dev #:should-test)
+  (:export #:2vec
+           #:vecs
+           #:load-vecs
+           #:<glove>))
 
 (cl:defpackage #:nlp.learning
   (:nicknames #:nlearn)
   (:use #:common-lisp #:rutilsx #:nlp.util #:nlp.core
         #+dev #:should-test)
   (:export #:init-model
+           #:score
+           #:rank
            #:classify
            #:train
            #:train1
@@ -244,8 +268,8 @@
            #:load-model
 
            ;; Features
-           #:ensure-f-init
            #:extract-gold
+           #:ensure-fs-init
            #:extract-fs
            #:make-fs
 
@@ -253,45 +277,49 @@
            #:categorical-model
            #:m-weights
 
-           ;; Perceptron Models
+           ;; Perceptron models
            #:perceptron
            #:avg-perceptron
-           #:greedy-ap
+           #:training-perceptron
+
+           ;; Decision tree models
            ))
 
 (cl:defpackage #:nlp.tagging
   (:nicknames #:ntag)
-  (:use #:common-lisp #:rutilsx #:nutil #:ncore #:nlearn #:tag
+  (:use #:common-lisp #:rutilsx #:nutil #:ncore #:nlearn
         #+dev #:should-test)
   (:export #:tag
            #:tagger
-           #:tgr-single-tag-words
-           #:greedy-ap-dict-tagger
+           #:tagger-dict
+           #:tagger-single-pos-words
+           #:greedy-ap-dict-postagger
+           #:<pos-tagger>
            ))
 
 (cl:defpackage #:nlp.parsing
   (:nicknames #:nparse)
-  (:use #:common-lisp #:rutilsx #:nutil #:ncore #:tag
+  (:use #:common-lisp #:rutilsx #:nutil #:ncore #:nlearn
         #+dev #:should-test)
+  (:shadow #:merge)
   (:export #:parse
+           #:parser
 
-           #:conparser
-           #:depparser
+           #:oracle
+           #:ranking-oracle
+           #:better-oracle
+           #:best-oracle
 
            #:dep
            #:dep-rel
            #:dep-govr
            #:dep-dept
+           #:make-dep
 
-           #:pretagged
-           #:lexicalized
-           #:markovized
-
-           #:cfg
-           #:pcfg
-
-           #:cky-parser
-           #:pretagged-cky-parser
+           #:parsed-sent
+           #:sent-tree
+           #:sent-deps
+           #:sent-amr
 
            #:grammar-ts
            #:grammar-nts
@@ -302,6 +330,22 @@
            #:grammar-root-rules
            #:grammar-iurules
            #:grammar-ibrules
+
+           #:pprint-tags
+           #:pprint-tree
+           #:pprint-deps
+           #:pprint-deps+tags
+           #:pprint-syntax
+
+           #:stack-buffer-parser
+           #:parser-actions
+           #:def-sb-action
+           
+           #:depparser
+           ;; #:greedy-sb-depparser
+
+           ;; #:amrparser
+           ;; #:greedy-sb-amrparser
            ))
 
 (cl:defpackage #:nlp.generation
@@ -309,31 +353,111 @@
   (:use #:common-lisp #:rutil #:nlp.util #:nlp.core
         #+dev #:should-test)
   (:export #:generate-text
-
            #:text-generator
 
            ;; Markov Chain Generators
            #:markov-chain-generator
            #:mark-v-shaney-generator
-           #:<mark-v-shaney>
            #:markov-order
+           #:<mark-v-shaney>
            ))
 
 (cl:defpackage #:nlp-user
   (:nicknames #:nlp)
   (:use #:common-lisp #:rutilsx
-        #:nlp.util #:nlp.corpora #:nlp.core #:nlp.generation #:tag
+        #:nlp.util #:nlp.corpora #:nlp.core #:nlp.lexics
+        #:nlp.generation #:nlp.learning #:nlp.tagging #:nlp.parsing
         #+dev #:should-test)
-  (:export #:grep
+  (:export ;; chars
+           #:newline-char-p
+           #:+white-chars+
+           #:white-char-p
+           #:+period-chars+
+           #:period-char-p
+           #:+punct-chars+
+           #:punct-char-p
+           #:+quote-chars+
+           #:quote-char-p
+           #:+open-quote-chars+
+           #:open-quote-char-p
+           #:+close-quote-chars+
+           #:close-quote-char-p
+
+           ;; langs
+           #:iso-lang
+           #:lang-iso
+           #:in-lang
+           #:def-lang-var
+           
+           ;; tokens
+           #:tokenize
+           #:parags->text
+           #:<word-chunker>
+           #:<basic-word-tokenizer>
+           #:<word-tokenizer>
+           #:<sent-splitter>
+           #:<full-text-tokenizer>
+           #:<parag-splitter>
+           
+           ;; lexics
+           #:known?
+           #:pos-tags
+           #:stem
+           #:lemmatize
+           #:morph
+           #:<porter-stemmer>
+           #:<wikt-lemmatizer>
+
+           ;; tagging
+           #:tag
+           #:<pos-tagger>
+           ;; #:<ner-tagger>
+
+           ;; parsing
+           #:parse
+           ;; #:<const-parser>
+           #:<dep-parser>
+           ;; #:<amr-parser>
+           
+           ;; util
+           #:grep
            #:tabulate
            #:plot
+
+           ;; conditions
+           #:cl-nlp-error
+           #:not-implemented-error
            ))
 
-(rutils:re-export-symbols '#:nutil    '#:nlp-user)
-(rutils:re-export-symbols '#:ncorp    '#:nlp-user)
-(rutils:re-export-symbols '#:ncore    '#:nlp-user)
-(rutils:re-export-symbols '#:nlex     '#:nlp-user)
-(rutils:re-export-symbols '#:nlearn   '#:nlp-user)
-(rutils:re-export-symbols '#:ngen     '#:nlp-user)
-(rutils:re-export-symbols '#:ntag     '#:nlp-user)
-(rutils:re-export-symbols '#:nparse   '#:nlp-user)
+;; (rutils:re-export-symbols '#:nutil    '#:nlp-user)
+;; (rutils:re-export-symbols '#:ncorp    '#:nlp-user)
+;; (rutils:re-export-symbols '#:ncore    '#:nlp-user)
+;; (rutils:re-export-symbols '#:nlex     '#:nlp-user)
+;; (rutils:re-export-symbols '#:nlearn   '#:nlp-user)
+;; (rutils:re-export-symbols '#:ngen     '#:nlp-user)
+;; (rutils:re-export-symbols '#:ntag     '#:nlp-user)
+;; (rutils:re-export-symbols '#:nparse   '#:nlp-user)
+
+
+;; special namespaces
+
+(cl:defpackage #:nlp.tags
+  (:nicknames #:tag)
+  (:use #:common-lisp #:rutilsx #:nutil #:ncore)
+  (:export #:<word-tags>
+           #:<phrase-tags>
+           #:export-tag
+           ))
+
+(cl:defpackage #:nlp.deps
+  (:nicknames #:dep)
+  (:use #:common-lisp #:rutilsx #:nutil #:ncore)
+  (:export #:<dep-tags>
+           #:+root+
+           ))
+
+;; (cl:defpackage #:nlp.amr
+;;   (:nicknames #:amr)
+;;   (:use #:common-lisp #:rutil #:nutil #:ncore)
+;;   (:export #:<amr-tags>
+;;            ))

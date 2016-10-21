@@ -1,23 +1,23 @@
-;;; (c) 2014 Vsevolod Dyomkin
+;;; (c) 2014-2016 Vsevolod Dyomkin
 
 (in-package #:nlp.tagging)
-(named-readtables:in-readtable rutils-readtable)
+(named-readtables:in-readtable rutilsx-readtable)
 
 
-(defun build-single-tag-words-dict (sents &key ignore-case?
+(defun build-single-pos-words-dict (sents &key ignore-case?
                                     (freq-threshold 20) (ambiguity-threshold 0.97))
-  (let ((tagdict (make-hash-table :test (if ignore-case? 'equalp 'equal))))
+  (let ((posdict (make-hash-table :test (if ignore-case? 'equalp 'equal))))
     (dolist (sent sents)
       (dolist (tok sent)
-        (with-accessors ((tag token-tag) (word token-word)) tok
-          (let ((tagcounts (or (get# word tagdict)
-                               (set# word tagdict #h()))))
-            (:+ (get# tag tagcounts 0))))))
-    (dotable (word tags-weights tagdict)
-      (mv-bind (argmax max) (argmax 'rt (ht->pairs tags-weights))
-        (let ((total (reduce '+ (ht-vals tags-weights))))
+        (with-accessors ((pos token-pos) (word token-word)) tok
+          (let ((poscounts (or (get# word posdict)
+                               (set# word posdict #h()))))
+            (:+ (get# pos poscounts 0))))))
+    (dotable (word pos-weights posdict)
+      (mv-bind (argmax max) (argmax 'rt (ht->pairs pos-weights))
+        (let ((total (reduce '+ (ht-vals pos-weights))))
           (if (and (> total freq-threshold)
                    (> (/ max total) ambiguity-threshold))
-              (set# word tagdict (lt argmax))
-              (rem# word tagdict)))))
-    tagdict))
+              (set# word posdict (lt argmax))
+              (rem# word posdict)))))
+    posdict))

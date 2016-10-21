@@ -1,7 +1,7 @@
-;;; (c) 2013-2015 Vsevolod Dyomkin
+;;; (c) 2013-2016 Vsevolod Dyomkin
 
 (in-package #:nlp.corpora)
-(named-readtables:in-readtable rutils-readtable)
+(named-readtables:in-readtable rutilsx-readtable)
 
 
 (defun make-corpus-from-dir (name dir &key ext (test 'identity))
@@ -22,7 +22,7 @@
 
 ;;; pre-defined corpora
 
-(defparameter +brown-corpus+
+(defvar +brown-corpus+
   (let ((dir (corpus-file "brown/")))
     (format *debug-io* "~&Reading Brown corpus from: ~A - " dir)
     (read-corpus :brown dir)

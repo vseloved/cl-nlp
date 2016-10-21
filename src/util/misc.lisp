@@ -1,7 +1,9 @@
-;;; (c) 2013 Vsevolod Dyomkin
+;;; (c) 2013-2016 Vsevolod Dyomkin
 
 (in-package #:nlp.util)
-(named-readtables:in-readtable rutils-readtable)
+(named-readtables:in-readtable rutilsx-readtable)
+
+(declaim (inline filler))
 
 
 ;;; Some aliasing
@@ -20,19 +22,6 @@
 
 ;;; Various functions and macros
 
-(defmacro define-lazy-singleton (name init &optional docstring)
-  "Define a function NAME, that will return a singleton object,
-   initialized lazily with INIT on first call.
-   Also define a symbol macro <NAME> that will expand to (NAME)."
-  (with-gensyms (singleton)
-    `(let (,singleton)
-       (defun ,name ()
-         ,docstring
-         (or ,singleton
-             (setf ,singleton ,init)))
-       (define-symbol-macro ,(mksym name :format "<~A>") (,name)))))
-
-(declaim (inline filler))
 (defun filler (n &optional (fill-char #\Space))
   "Produce an N-element filler string of FILL-CHAR's."
   (if (plusp n)
@@ -49,11 +38,11 @@
     (loop :repeat (1- n) :do (setf tail (cdr tail)))
     (null tail)))
 
-(defun uniq (list &key raw (eq-test 'equal))
+(defun uniq (list &key raw (test 'equal))
   "Return only unique elements from LIST either as a new list
    or as hash-table if RAW is set.
-   EQ-TEST should be EQUAL or EQUALP."
-  (let ((uniqs (make-hash-table :test eq-test)))
+   TEST should be a hash-table test."
+  (let ((uniqs (make-hash-table :test test)))
     (dolist (elt list)
       (set# elt uniqs t))
     (if raw uniqs (ht-keys uniqs))))
@@ -76,22 +65,7 @@
       (decode-universal-time (get-universal-time))
     (fmt "~A~2,'0D~2,'0D~2,'0D~2,'0D~2,'0D" year month day hour min sec)))
 
-
-;;; temporary
-
-(defun flat-map (function &rest lists)
-  "Apply FUNCTION to respective elements of each LIST, appending all the
-result lists to a single list. FUNCTION must return a list."
-  (loop :for results :in (apply #'mapcar function lists)
-     :append results))
-
-(defun flatten (list &optional level)
-  "Flatten possibly nested LIST a given number of LEVELs (or to the end)."
-  (labels ((rec (x acc depth)
-             (cond ((null x) acc)
-                   ((atom x) (cons x acc))
-                   ((and depth (zerop depth)) (append x acc))
-                   (t (rec (car x)
-                           (rec (cdr x) acc depth)
-                           (when depth (1- depth)))))))
-    (rec list nil level)))
+(defgeneric s! (obj)
+  (:documentation
+   "Get a string from an object")
+  (:method (obj) (string obj)))

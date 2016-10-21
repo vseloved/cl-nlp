@@ -1,7 +1,7 @@
-;;; (c) 2013-2014 Vsevolod Dyomkin
+;;; (c) 2013-2016 Vsevolod Dyomkin
 
 (asdf:defsystem #:cl-nlp
-  :version "0.0.13"
+  :version (:read-file-line "version.txt" :at 0)
   :description "NLP toolkit for Common Lisp"
   :author "Vsevolod Dyomkin <vseloved@gmail.com>"
   :maintainer "Vsevolod Dyomkin <vseloved@gmail.com>"
@@ -9,7 +9,6 @@
   :depends-on (#:rutilsx #:cl-fad #:cl-ppcre
                #:cxml #:drakma #:flexi-streams
                #:zip #:archive #:chipz #:gzip-stream
-               ;; #:cgn
                #+dev #:should-test)
   :serial t
   :components
@@ -25,45 +24,56 @@
                        (:file "files")
                        (:file "words")
                        (:file "trees")
-                       (:file "math")))
-             (:module #:lexics
-                      :components
-                      ((:file "general")))
-             (:module #:syntax
-                      :components
-                      ((:static-file "word-tags.txt")
-                       (:static-file "phrase-tags.txt")
-                       (:static-file "deps.txt")
-                       (:file "tags" :depends-on ("word-tags.txt"
-                                                  "phrase-tags.txt"))
-                       (:file "deps" :depends-on ("deps.txt"))))
+                       (:file "math")
+                       (:file "cond-freq-dist")))
              (:module #:core
                       :serial t
                       :components
                       ((:file "general")
+                       (:file "lang")
                        (:file "stats")
                        (:file "normalization")
                        (:file "tokenization")
                        (:file "ngrams")
                        (:file "language-models")
-                       (:file "indexing")
-                       (:file "cond-freq-dist")))
+                       (:file "indexing")))
+             (:module #:lexics
+                      :serial t
+                      :components
+                      ((:file "general")
+                       (:file "porter")
+                       (:file "dict-lemmatizer")))
+             (:module #:embeddings
+                      :serial t
+                      :components
+                      ((:file "general")
+                       (:file "mem-vecs")))
+             (:module #:syntax
+                      :components
+                      ((:static-file "word-tags.txt")
+                       (:static-file "phrase-tags.txt")
+                       (:static-file "dep-tags.txt")
+                       (:file "tags" :depends-on ("word-tags.txt"
+                                                  "phrase-tags.txt"))
+                       (:file "deps" :depends-on ("dep-tags.txt"))))
              (:module #:corpora
                       :components
                       ((:file "general")
                        (:file "brown" :depends-on ("general"))
                        (:file "xml" :depends-on ("general"))
                        (:file "treebank" :depends-on ("general"))
-                       (:file "user" :depends-on ("brown" "xml" "treebank"))))
+                       (:file "amrbank" :depends-on ("general"))
+                       (:file "user" :depends-on ("brown" "xml" "treebank"
+                                                  "amrbank"))))
              (:module #:learning
                       :components
                       ((:file "general")
                        (:file "features" :depends-on ("general"))
                        (:file "perceptron" :depends-on ("features"))
                        (:file "decision-tree" :depends-on ("features"))
-                       (:file "random-forest" :depends-on ("decision-tree"))))
+                       (:file "random-forest" :depends-on ("decision-tree"))
+                       (:file "boosted-trees" :depends-on ("decision-tree"))))
              (:module #:generation
-                      :serial t
                       :components
                       ((:file "markov-chain")))
              (:module #:tagging
@@ -71,14 +81,15 @@
                       :components
                       ((:file "general")
                        (:file "dicts")
-                       (:file "greedy-ap")))
+                       (:file "pos")))
              (:module #:parsing
                       :serial t
                       :components
                       ((:file "general")
                        (:file "tree-util")
                        (:file "grammars")
-                       (:file "greedy-ap")))
+                       (:file "dependency")
+                       (:file "stack-buffer")))
              (:file "user")))
    #+dev
    (:module #:test
@@ -86,6 +97,9 @@
             ((:module #:util
                       :components
                       ((:file "trees-test")))
+             (:module #:lexics
+                      :components
+                      ((:file "porter-test")))
              (:module #:core
                       :components
                       ((:file "tokenization-test")))
@@ -100,7 +114,11 @@
                        (:file "decision-tree-test")))
              (:module #:tagging
                       :components
-                      ((:file "greedy-ap-test")))
+                      ((:file "pos-test")))
+             (:module #:parsing
+              #+nil :components
+              #+nil ((:file "dep-test")
+                     (:file "amr-test")))
              (:module #:user
                       :components
                       ((:file "user-test")))
