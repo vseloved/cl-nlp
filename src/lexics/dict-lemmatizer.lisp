@@ -42,8 +42,8 @@
                                 (values (argmax 'identity it
                                                 :key ^(precedence lemmatizer
                                                                   (? % 0 0)))
-                                        t))
-                               (t (get# word @lemmatizer.forms))))))
+                                        t)))
+                             (get# word @lemmatizer.forms))))
           (if present?
               ;; there is a known word form for the requested tag
               (apply 'values word-tag)
