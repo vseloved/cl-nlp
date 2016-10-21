@@ -8,7 +8,7 @@
   "Information content mapping.")
 
 (defun load-ic (&key (path (merge-pathnames "data/wordnet_ic.zip"
-                                            +project-root+))
+                                            (asdf:system-definition-pathname 'cl-nlp)))
                      (filename-pattern "ic-[a-z]+")
                      (initial-value 0))
   (let ((rez (make-hash-table :test 'equal))

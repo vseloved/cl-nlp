@@ -87,9 +87,9 @@ For our task we'll be able to utilize just the `tokens` slot
 of the `ptb-tagged-text` structure, produced with `map-corpus`.
 Let's collect the tag distribution for each word from the WSJ section of the PTB:
 
-    NLP> (let ((words-dist #h(equal))
+    NLP> (let ((words-dist #h(equal)))
            (map-corpus :ptb-tagged (corpus-file "ptb/TAGGED/POS/WSJ")
-                       #`(dolist (sent (text-tokens %))
+                       #`(dolist (sent (text-tokenized %))
                            (dolist (tok sent)
                              (unless (in# (token-word tok) words-dist)
                                (:= (get# (token-word tok) words-dist) #h()))
@@ -112,7 +112,7 @@ Let's do the same with its data:
 
     NLP> (let ((words-dist #h(equal)))
            (map-corpus :treebank (corpus-file "ontonotes/")
-                       #`(dolist (sent (text-tokens %))
+                       #`(dolist (sent (text-tokenized %))
                            (dolist (tok sent)
                              (with-accessors ((tag token-tag) (word token-word)) tok
                                (unless (eql tag 'tag:-NONE-)
@@ -138,7 +138,7 @@ And what about the total volume?
     NLP> (let ((total1 0)
                (total 0))
           (map-corpus :treebank "ontonotes"
-                      #`(dolist (sent (text-tokens %))
+                      #`(dolist (sent (text-tokenized %))
                           (dolist (tok sent)
                             (unless (eql (token-tag tok) 'tag:-NONE-)
                               (:+ total)
@@ -468,7 +468,7 @@ Here's a test we need:
 
     (defun extract-sents (text)
       (mapcar #`(make 'ncore:sentence :tokens (ncorp:remove-dummy-tokens %))
-              (ncore:text-tokens text)))
+              (ncore:text-tokenized text)))
 
     (defvar *tagger* (load-model (make 'greedy-ap-tagger)
                                  (models-file "pos-tagging/onf.zip")

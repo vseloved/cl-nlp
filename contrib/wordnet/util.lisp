@@ -9,7 +9,7 @@
 (defmethod download ((what (eql :wordnet))
                      &key (url "http://sourceforge.net/projects/wnsql/files/wnsql-1.0.1/wordnet30-sqlite-1.0.1.zip/download")
                           (dir "data/"))
-  (let* ((dir (merge-pathnames dir +project-root+))
+  (let* ((dir (merge-pathnames dir (asdf:system-definition-pathname 'cl-nlp)))
          (archive (download-file url dir)))
     (format t "Downloading Wordnet from:~A to:~A~%It may take some time...~%"
             url dir)
@@ -24,7 +24,7 @@
 (defmethod download ((what (eql :wordnet-ic))
                      &key (url "http://nltk.org/nltk_data/packages/corpora/wordnet_ic.zip")
                           (dir "data/"))
-  (let ((dir (merge-pathnames dir +project-root+)))
+  (let ((dir (merge-pathnames dir (asdf:system-definition-pathname 'cl-nlp))))
     (format t "Downloading Wordnet IC from:~A to:~A~%It may take some time...~%"
             url dir)
     (download-file url dir)))
