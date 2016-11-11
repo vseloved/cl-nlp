@@ -10,6 +10,12 @@
    "A categorical model has some way of distinguishing different categories
     based on the WEIGHTS mapping categories to some models."))
 
+(defclass ensemble-model ()
+  ()
+  (:documentation
+   "An ensemble model aggregates the results of many weak classifiers."))
+
+
 (defgeneric score (model fs class)
   (:documentation
    "Score a selected CLASS with a MODEL given current FS."))
@@ -37,17 +43,17 @@
    "Perform one step of MODEL training with GOLD and GUESS variants
     and correspondng GOLD-FS and optionally GUESS-FS features."))
 
-(defgeneric save-model (model &optional path)
+(defgeneric save-model (model path)
   (:documentation
    "Save MODEL data into PATH (which will be overwritten).")
-  (:method :around (model &optional path)
+  (:method :around ((model categorical-model) path)
     (with-open-file (out path :direction :output :element-type 'flex:octet
                          :if-does-not-exist :create)
       (:= out (flex:make-flexi-stream (gzip-stream:make-gzip-output-stream out)
                                       :external-format +utf-8+))
       (call-next-method model out)
       path))
-  (:method ((model categorical-model) &optional out)
+  (:method ((model categorical-model) (out stream))
     (let* ((weights (m-weights model))
            (total (reduce '+ (mapcar #'ht-count (vals weights))))
            (i 0))
@@ -64,7 +70,7 @@
    "Load MODEL data from PATH (overwriting existing model).
     Keyword arg CLASSES-PACKAGE determines the package where class names
     will be interned (default: keyword).")
-  (:method :around (model path &key class-package)
+  (:method :around ((model categorical-model) path &key class-package)
     (format *debug-io* "~&Loading model from file: ~A - " path)
     (with-open-file (in path :element-type 'flex:octet)
       (:= in (flex:make-flexi-stream (gzip-stream:make-gzip-input-stream in)
@@ -100,6 +106,11 @@
         (:+ total)
         (unless verbose (princ-progress total len)))
       (* 100.0 (/ matched total)))))
+
+(defgeneric feature-importance (model)
+  (:documentation
+   "Display MODEL's feature importance."))
+
 
 ;; (defun precision (model gold-corpus &key verbose)
 ;;   (let ((matched 0) (total 0) (len (length gold-corpus)))

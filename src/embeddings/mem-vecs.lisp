@@ -25,10 +25,9 @@
 (defun read-word (stream &optional return)
   (loop :for char := (read-char stream nil)
         :until (or (null char)
-                    (eql #\Space char))
+                   (member char '(#\Space #\Tab)))
         :collect char :into word
-        :finally (read-char stream)
-                 (when return
+        :finally (when return
                    (return (coerce (reverse word) 'string)))))
   
 (defmethod 2vec ((vecs lazy-mem-vecs) word &key normalize)
@@ -57,7 +56,8 @@
           (in (open file :external-format :utf8)))
       (:= @vecs.understream in)
       (loop :for line := (read-line in nil) :while line :do
-        (let ((word (slice line 0 (position #\Space line))))
+        (let ((word (slice line 0 (position-if ^(member % '(#\Space #\Tab))
+                                               line))))
           (:= (? dict word) off)
           (:= off (file-position in))))
       (:= @vecs.dict dict)

@@ -281,7 +281,7 @@
 
 (macrolet ((init-for-pretagged-cky ()
              `(doindex (i token sentence)
-                (let ((k (get# (token-tag token) nts->idx)))
+                (let ((k (get# (token-pos token) nts->idx)))
                   (setf (@ *pi* i i k) 0.0
                         (@ *bp* i i k) (cons k i))))))
 

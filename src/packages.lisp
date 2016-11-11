@@ -43,6 +43,7 @@
            #:lang-file
            #:src-file
            #:test-file
+           #:regex-from-file
 
            #:dolines*
            #:dofiles
@@ -250,7 +251,9 @@
   (:nicknames #:nlearn)
   (:use #:common-lisp #:rutilsx #:nlp.util #:nlp.core
         #+dev #:should-test)
-  (:export #:init-model
+  (:export #:%=
+
+           #:init-model
            #:score
            #:rank
            #:classify
@@ -283,6 +286,9 @@
            #:training-perceptron
 
            ;; Decision tree models
+           #:decision-tree
+           #:c4.5-tree
+           #:cart-tree
            ))
 
 (cl:defpackage #:nlp.tagging
@@ -418,6 +424,10 @@
            ;; #:<const-parser>
            #:<dep-parser>
            ;; #:<amr-parser>
+
+           ;; learning
+           #:save-model
+           #:load-model
            
            ;; util
            #:grep

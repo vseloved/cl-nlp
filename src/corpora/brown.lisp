@@ -30,7 +30,7 @@
     (reversef tokenized)
     (make-text :name (pathname-name file)
                :raw text
-               :clean (paragraphs->text tokenized)
+               :clean (parags->text tokenized)
                :tokenized tokenized)))
 
 (defmethod read-corpus ((type (eql :brown)) path &key (ext ""))

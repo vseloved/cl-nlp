@@ -1,13 +1,7 @@
-;;; (c) 2015 Vsevolod Dyomkin
+;;; (c) 2015-2016 Vsevolod Dyomkin
 
 (in-package #:nlearn)
 (named-readtables:in-readtable rutils-readtable)
-
-
-(defparameter *epsilon* 0.01)
-
-(defun ~= (x y)
-  (< (abs (- x y)) *epsilon*))
 
 
 (defparameter *golf-data*
@@ -43,7 +37,7 @@ rain    |      71     |    80    | true  | Don't Play
                                                       :test 'string=)
                                               nil)
                                              ((digit-char-p (char item 0))
-                                              (parse-integer item))
+                                              (float (parse-integer item)))
                                              (t (mkeyw item))))
                                    (split #\| line))))
                   (push (pair (coerce (butlast cur) 'vector) (last1 cur))
@@ -79,7 +73,7 @@ rain    |      71     |    80    | true  | Don't Play
                                       (#(1 2) t))
                                      ((#(1 2) nil)
                                       (#(1 2) nil)))))
-  (should be = 2/5 (gini-split-idx '(((#(1 2) t))
+  (should be = 0.4 (gini-split-idx '(((#(1 2) t))
                                      ((#(1 2) t)
                                       (#(1 2) t)
                                       (#(1 2) nil)
@@ -87,28 +81,28 @@ rain    |      71     |    80    | true  | Don't Play
 
 (deftest c4.5-train ()
   (should be equal
-          '(case (elt % 0)
-            (:rain (case (elt % 3)
-                     (nil t)
-                     (t nil)))
-            (:overcast t)
+          '(case (? % 0)
+            (:rain (case (? % 3)
+                     (nil (pair t 1))
+                     (t (pair nil 1))))
+            (:overcast (pair t 1))
             (:sunny
-             (if (<= (elt % 2) 70)
-                 t
-                 nil)))
+             (if (%= <= 2 70.0)
+                 (pair t 1)
+                 (pair nil 1))))
           (tree-repr (train (make 'c4.5-tree) (car *golf-data*)))))
 
 (deftest cart-train ()
   (should be equal
-          '(if (eql (elt % 0) :overcast)
-               t
-               (if (<= (elt % 1) 75)
-                   (if (<= (elt % 1) 65)
-                       nil
-                       (if (<= (elt % 1) 70)
-                           t
-                           (if (<= (elt % 1) 72)
-                               nil
-                               t)))
-                   nil))
+          '(if (%= eql 0 :overcast)
+               (pair t 1)
+               (if (%= <= 1 75.0)
+                   (if (%= <= 1 65.0)
+                       (pair nil 1)
+                       (if (%= <= 1 70.0)
+                           (pair t 1)
+                           (if (%= <= 1 72.0)
+                               (pair nil 1)
+                               (pair t 1))))
+                   (pair nil 1)))
           (tree-repr (train (make 'cart-tree) (car *golf-data*)))))

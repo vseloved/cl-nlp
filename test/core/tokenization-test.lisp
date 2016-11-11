@@ -1,5 +1,5 @@
 (in-package #:nlp.core)
-(named-readtables:in-readtable rutils-readtable)
+(named-readtables:in-readtable rutilsx-readtable)
 
 ;;; @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
 ;;; These tests are referenced from
@@ -10,7 +10,7 @@
 ;;; string tokens.
 ;;; @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
 
-(defparameter *word-tokenization-tests*
+(defvar *word-tokenization-tests*
   (dict-from-file (test-file "core/word-tests.txt")
                   :separator "[>>>]"
                   :val-transform #`(split-sequence #\Space %)))
@@ -39,10 +39,23 @@
                         "Alas, it has not rained today. When, do you think, will it rain again?")
             tokens)))
 
-(deftest sentence-tokenizer ()
+(deftest sent-tokenizer ()
   (should be equal
-            '("Good muffins cost $3.88  in New York." "Please buy me  two of them." "Thanks.")
-            (multiple-value-bind (tokens spans)
-                (tokenize <sentence-splitter>
-                          "Good muffins cost $3.88  in New York.  Please buy me  two of them.    Thanks.")
-              tokens)))
+          '("Good muffins cost $3.88  in New York."
+            "Please buy me  two of them."
+            "Thanks.")
+          (with ((tokens spans
+                         (tokenize <sent-splitter>
+                                   "Good muffins cost $3.88  in New York.   Please buy me  two of them.    Thanks.")))
+            tokens)))
+
+
+;; (dolist (group (split "" (split #\Newline
+;;                                 (read-file "~/prj/asu-labs/ner-uk/doc/sent-tokenization.txt"))
+;;                       :test 'string= :remove-empty-subseqs t))
+;;   (with ((ncore::+abbrevs-with-dot+ +uk-abbrevs+)
+;;          (sents (split #\Newline (string-trim +white-chars+ (atomize group))))
+;;          (rez (tokenize <sent-splitter> (strjoin #\Space sents))))
+;;     (unless (equalp sents rez)
+;;       (print (list sents rez))))
+;;   (terpri))

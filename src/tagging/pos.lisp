@@ -12,7 +12,7 @@
    "A greedy averaged perceptron tagger with single-pos words dictionary lookup."))
 
 (def-lang-var pos-tagger (load-model (make 'greedy-ap-dict-postagger)
-                                     (model-file "pos-tagging/wsj.zip")
+                                     (model-file "pos-tagging/wsj.gz")
                                      :class-package '#:nlp.tags)
   "Pos tagger.")
 
@@ -143,7 +143,7 @@
 
 ;;; loading/saving
 
-(defmethod save-model :after ((model greedy-ap-dict-postagger) &optional out)
+(defmethod save-model :after ((model greedy-ap-dict-postagger) (out stream))
   (with-slots (single-pos-words dict) model
     (let ((total (+ (ht-count single-pos-words) (ht-count dict)))
           (i 0))

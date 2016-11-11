@@ -191,6 +191,14 @@
                                                :encoding :utf-8))
                       :file-write-date (get-universal-time)))
 
+(defun zip-add-text-file (zip name data)
+  "Add DATA as a text file named NAME to the zip archive ZIP."
+  (zip:write-zipentry zip name
+                      (flex:make-in-memory-input-stream
+                       (babel:string-to-octets data
+                                               :encoding :utf-8))
+                      :file-write-date (get-universal-time)))
+
 (defmacro do-zip-entries ((name stream zip &key (external-format :utf-8) raw)
                           &body body)
   "An encoding-aware version of ZIP:DO-ZIPFILE-ENTRIES that provides access

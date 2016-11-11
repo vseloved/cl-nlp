@@ -1,7 +1,7 @@
-;;; (c) 2015 Vsevolod Dyomkin
+;;; (c) 2015-206 Vsevolod Dyomkin
 
 (in-package #:nlp.corpora)
-(named-readtables:in-readtable rutils-readtable)
+(named-readtables:in-readtable rutilsx-readtable)
 
 (defun make-token-blah (&rest args &key word tag &allow-other-keys)
   (declare (ignore args))
@@ -19,8 +19,8 @@
                                        (make 'xml-corpus-sax
                                              :token-init 'make-token-blah
                                              :struct-map #h(:token '(:wf :punc)
-                                                            :sentence :s
-                                                            :paragraph :p)
+                                                            :sent :s
+                                                            :parag :p)
                                              :attr-map #h(:tag "pos"
                                                           :cmd "cmd"
                                                           :lemma "lemma"

@@ -12,5 +12,5 @@
   (:documentation
    "Context-free grammar is a tuple of <TERMINALS, NONTERMINALS, ROOT, RULES>."))
 
-;; (defmethod parse ((model cfg) (sentence list))
+;; (defmethod parse ((model cfg) (sent list))
 ;;   )

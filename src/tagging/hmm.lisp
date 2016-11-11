@@ -63,10 +63,10 @@
          :emission-lm-class emission-lm-class))
 
 
-(defmethod tag ((model hmm-tagger) (sentence list))
-  "Tag the tokenized SENTENCE using a Viterbi algorithm for HMMs."
+(defmethod tag ((model hmm-tagger) (sent list))
+  "Tag the tokenized SENT using a Viterbi algorithm for HMMs."
   (with-slots (order tags (tps transition-lm) (eps emission-lm)) model
-    (let* ((len (length sentence))
+    (let* ((len (length sent))
            (all-tags (list* nil +stop-tag+ tags))
            (matrix-dims (make-list (1- order)
                                    :initial-element (+ (length tags) 2)))
@@ -123,7 +123,7 @@
                    (values (butlast argmax)
                            max))))
         ;; running the oprimization algorithm
-        (doindex (i w sentence)
+        (doindex (i w sent)
           (dolist (tag tags)
             (viterbi-step i tag (cond-prob eps (list tag w))))
           (setf pi0 pi1
