@@ -87,17 +87,14 @@
            #:ms-ngrams-catalog))
 
 (cl:defpackage #:nlp.contrib.corpora
-  (:use #:common-lisp #:rutil #:rutilsx #:nlp
+  (:use #:common-lisp #:rutil #:rutilsx #:nlp #:ncore #:ncorp #:nutil
         #+dev #:should-test)
   (:export #:ptb-tagged-text
            #:reuters-text
            #:semcor-token))
 
 (cl:defpackage #:nlp.lexics
-  (:use #:common-lisp #:rutil #:nlp.util #:nlp.core #:nlp.lexics
+  (:use #:common-lisp #:rutil #:nlp.util #:nlp.core #:nlp.lexics #:ncorp #:nutil
         #+dev #:should-test)
   (:export #:wordnet-lemmatizer
-           #:<wordnet-lemmatizer>
-           #:wikt-lemmatizer
-           #:<wikt-lemmatizer>
-           #:load-wikt-lemma-dict))
+           #:<wordnet-lemmatizer>))

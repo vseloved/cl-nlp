@@ -1,7 +1,7 @@
-;;; (c) 2013-2015 Vsevolod Dyomkin
+;;; (c) 2013-2016 Vsevolod Dyomkin
 
 (in-package #:nlp.contrib.corpora)
-(named-readtables:in-readtable rutils-readtable)
+(named-readtables:in-readtable rutilsx-readtable)
 
 
 (defstruct (ptb-tagged-text (:include text))
@@ -45,7 +45,7 @@
         (push (reverse cur-par) pars)))
     (reversef pars)
     (make-ptb-tagged-text :name (pathname-name file)
-                          :clean (paragraphs->text pars)
+                          :clean (parags->text pars)
                           :tokenized pars
                           :nps (reverse nps))))
 
@@ -58,7 +58,7 @@
 
 (defmethod map-corpus ((type (eql :ptb-tagged)) path fn &key (ext "POS"))
   (dofiles (file path :ext ext)
-    (funcall fn (read-corpus-file :ptb-tagged path))))
+    (call fn (read-corpus-file :ptb-tagged file))))
 
 
 ;;; util
@@ -66,4 +66,4 @@
 (defun make-tagged-token (str)
   (let ((/-pos (position #\/ str :from-end t)))
     (make-token :word (slice str 0 /-pos)
-                :tag (mksym (slice str (1+ /-pos))))))
+                :pos (mksym (slice str (1+ /-pos))))))

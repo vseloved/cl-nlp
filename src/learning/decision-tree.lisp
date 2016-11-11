@@ -61,7 +61,7 @@
                            :max-depth (tree-max-depth model)
                            :idxs idxs :idx-count idx-count
                            :verbose verbose))
-         (depth (dtree-depth tree)))
+         (depth (cart-depth tree)))
     (:= @model.repr tree
         @model.classes classes)
     (:= @model.decision-fn (eval (if (> depth *dtree-max-depth*)
