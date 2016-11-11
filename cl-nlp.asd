@@ -9,6 +9,7 @@
   :depends-on (#:rutilsx #:cl-fad #:cl-ppcre
                #:cxml #:drakma #:flexi-streams
                #:zip #:archive #:chipz #:gzip-stream
+               #:eager-futures2
                #+dev #:should-test)
   :serial t
   :components
