@@ -102,7 +102,7 @@
            (if (equal gold guess)
                (:+ matched)
                (when verbose
-                 (format *debug-io* "~A ~A ~A~%" guess gold fs))))
+                 (format *debug-io* "guess: ~A   gold: ~A    fs: ~A~%" guess gold fs))))
         (:+ total)
         (unless verbose (princ-progress total len)))
       (* 100.0 (/ matched total)))))

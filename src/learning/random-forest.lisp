@@ -33,11 +33,10 @@
     rez))
 
 (defmethod train ((model random-forest) data
-                  &key (n 10) verbose threads)
+                  &key (n 10) verbose threads fast)
   (when threads (eager-future2:advise-thread-pool-size threads))
   (let ((train-len (* 2/3 (length data)))
-        (train-rank (/ (sqrt (length (? (lt data) 0)))
-                       2))  ; also possible 1/2x & 2x
+        (train-rank (sqrt (length (? (lt data) 0)))) ; also possible 1/2x & 2x
         (*random-state* @model.random-state)
         oobs
         futures)
@@ -47,9 +46,8 @@
                        :max-depth (tree-max-depth model)))
              (sample (sample data train-len))
              (rez (call (if threads 'eager-future2:pcall 'call)
-                        ^(train dt sample
-                                :idx-count train-rank
-                                :verbose verbose)))
+                        ^(train dt sample :idx-count train-rank
+                                :verbose verbose :fast fast)))
              (sample (uniq sample :raw t))
              (oob nil))
         (if threads

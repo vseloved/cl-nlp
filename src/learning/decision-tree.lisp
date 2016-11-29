@@ -37,14 +37,15 @@
     (pairs->ht rez)))
 
 (defmethod train ((model c4.5-tree) data
-                  &key classes verbose idx-count
-                       (idxs (range 0 (length (lt (first data))))))
+                  &key idx-count (idxs (range 0 (length (lt (first data)))))
+                       classes verbose fast)
   (let ((tree (tree-train 'info-gain data
                           :binary nil
                           :min-size (tree-min-size model)
                           :max-depth (tree-max-depth model)
                           :idxs idxs :idx-count idx-count
-                          :verbose verbose)))
+                          :verbose verbose
+                          :fast fast)))
     (:= @model.repr tree
         @model.classes classes)
     (:= @model.decision-fn (eval `(lambda (%) ,tree))
@@ -53,14 +54,15 @@
     model))
 
 (defmethod train ((model cart-tree) data
-                  &key classes verbose idx-count
-                       (idxs (range 0 (length (lt (first data))))))
+                  &key idx-count (idxs (range 0 (length (lt (first data)))))
+                       classes verbose fast)
   (with ((tree (tree-train ^(- 1 (gini-split-idx %)) data
                            :binary t
                            :min-size (tree-min-size model)
                            :max-depth (tree-max-depth model)
                            :idxs idxs :idx-count idx-count
-                           :verbose verbose))
+                           :verbose verbose
+                           :fast fast))
          (depth (cart-depth tree)))
     (:= @model.repr tree
         @model.classes classes)
@@ -160,7 +162,7 @@
 (defun cart-fn (cart &key debug)
   "Generate a decision function for a CART decision tree."
   (with (((fs ops vals) (cart->vecs cart)))
-    (%cart-fn fs ops vals :debug t)))
+    (%cart-fn fs ops vals :debug debug)))
 
 (defun %cart-fn (fs ops vals &key debug)
   "Generate a decision function for a CART decision tree."
@@ -174,7 +176,7 @@
                           (rez (call it cur val)))
                      (when debug (print-dtree-debug-info idx cur it val rez))
                      (:= i (+ (* i 2)
-                               (if rez 1 2))))
+                              (if rez 1 2))))
                    (progn
                      (when debug (:= *dtree-debug* t))
                      (return (? vals i))))))))
@@ -194,7 +196,7 @@
            (with (((_ op f val) (second tree)))
              (:= (? ops i) op
                  (? fs i) f
-                 (? vals i) (second val)))
+                 (? vals i) val))
            (push-queue (pair (third tree) (+ (* 2 i) 1)) q)
            (push-queue (pair (fourth tree) (+ (* 2 i) 2)) q))
           (pair
@@ -233,6 +235,7 @@
                         (idxs (range 0 (length (lt (first data)))))
                         idx-count  ; for RF classifier to sample dimensions
                         binary
+                        (fast t)
                         verbose)
   "Train a decision tree from DATA using a CRITERION function."
   (format *debug-io* ".")
@@ -249,15 +252,22 @@
      (normed-dist data))
     ;; general case
     (t (with ((idx binary? split-point test
-                   (split-idx criterion data
-                              (if idx-count
-                                  (sample idxs idx-count :with-replacement? nil)
-                                  idxs)
-                              :binary binary :verbose verbose)))
+                   (if fast
+                       (fast-bin-split-idx criterion data
+                                           (if idx-count
+                                               (sample idxs idx-count
+                                                       :with-replacement? nil)
+                                               idxs)
+                                           :verbose verbose)
+                       (split-idx criterion data
+                                  (if idx-count
+                                      (sample idxs idx-count :with-replacement? nil)
+                                      idxs)
+                                  :binary binary :verbose verbose))))
          (cond ((null idx)
                 (normed-dist data))
                (binary?
-                `(if (%= ,test ,idx ',split-point)
+                `(if (%= ,test ,idx ,split-point)
                      ,@(mapcar (lambda (side)
                                  (tree-train criterion side
                                              :depth (1+ depth)
@@ -265,6 +275,7 @@
                                              :idxs idxs
                                              :idx-count idx-count
                                              :min-size min-size
+                                             :fast fast
                                              :binary binary
                                              :verbose verbose))
                                (split-at split-point data idx :test test :key 'lt))))
@@ -281,6 +292,7 @@
                                                       :idxs idxs
                                                       :idx-count idx-count
                                                       :min-size min-size
+                                                      :fast fast
                                                       :verbose verbose)))
                                      (ht->pairs (partition-by idx data)))
                         ;; putting T case (if present) last
@@ -347,10 +359,87 @@
                 best-test (if numeric? '<= 'eql))))))
     (unless (> (ht-count (uniq gains :raw t)) 1)
       (void best-idx))
-    (when verbose (format *debug-io* "~&best-idx=~A gain=~A split-point=~A test=~A~%"
-                          best-idx (float best-gain) split-point best-test))
+    (when verbose
+      (with (((left right) (split-at split-point data best-idx
+                                     :test best-test :key 'lt)))
+        (format *debug-io* "~&best-idx=~A gain=~A split-point=~A test=~A split=~$/~$~%"
+                best-idx (float best-gain) split-point best-test
+                (float (/ (length left) (length data)))
+                (float (/ (length right) (length data))))))
     (values best-idx
             binary?
+            split-point
+            best-test
+            best-gain)))
+
+(defun fast-bin-split-idx (criterion data idxs &key verbose)
+  "Determine the dimension of IDXS that fits the DATA best
+   according to CRITERION.
+   Also return as other values:
+   - is there a binary split?
+   - split point
+   - split test (<= or eql)
+   - gain score"
+  (let ((best-gain 0)
+        best-idx
+        best-test
+        gains
+        split-point
+        numeric?)
+    (dolist (idx idxs)
+      (flet ((@idx (item)
+               (? (lt item) idx)))
+        (with ((numeric? (typep (@idx (first data)) '(or float ratio)))
+               (point gain
+                      (if numeric?
+                          (with ((sorted (safe-sort (coerce data 'vector) '<
+                                                    :key #'@idx))
+                                 (beg 0)                                 
+                                 (end (length sorted))
+                                 (m (floor (- end beg) 2))
+                                 (mg (call criterion
+                                           (list (slice sorted 0 m)
+                                                 (slice sorted m)))))
+                            (dotimes (i (floor (log (length sorted) 2)))
+                              (with ((l (floor (- end beg) 4))
+                                     (r (+ l m))
+                                     ((lg rg) (mapcar ^(call criterion %)
+                                                      (list
+                                                       (list (slice sorted 0 l)
+                                                             (slice sorted l))
+                                                       (list (slice sorted 0 r)
+                                                             (slice sorted r))))))
+                                (cond ((< mg (min lg rg))
+                                       (return))
+                                      ((< lg rg)
+                                       (:= end m))
+                                      (t
+                                       (:= beg m)))))
+                            (values (@idx (? sorted m))
+                                    mg))
+                          (argmax ^(call criterion (split-at % data idx :key 'lt))
+                                  (uniq data :test 'eql)))))
+            (when verbose (format *debug-io* "~&idx=~A gain=~A~%" idx (float gain)))
+            (push gain gains)
+            (when (> gain best-gain)
+              (:= best-idx idx
+                  best-gain gain
+                  split-point point
+                  best-test (if numeric? '<= 'eql))))))
+    ;; (unless (> (ht-count (uniq gains :raw t)) 1)
+    ;;   (void best-idx))
+    (with (((&optional left right) (when best-idx
+                                     (split-at split-point data best-idx
+                                               :test best-test :key 'lt))))
+      (unless (and left right)
+        (void best-idx))
+      (when verbose
+        (format *debug-io* "~&best-idx=~A gain=~A split-point=~A test=~A split=~$/~$~%"
+                best-idx (float best-gain) split-point best-test
+                (when best-idx (float (/ (length left) (length data))))
+                (when best-idx (float (/ (length right) (length data)))))))
+    (values best-idx
+            t
             split-point
             best-test
             best-gain)))
@@ -397,7 +486,7 @@
             (len2 (length data2))
             (len (+ len1 len2)))
        (+ (* (/ len1 len) (gini-idx data1))
-           (* (/ len2 len) (gini-idx data2)))))))
+          (* (/ len2 len) (gini-idx data2)))))))
 
 
 ;;; entropy calculations
@@ -451,16 +540,19 @@
            ,rez))
       `(,test (? % ',idx) ,val)))
 
-(defun partition-by (idx-or-fn list)
-  "Partition a LIST in 2 either using a test function or a dimension
+(defun partition-by (idx-or-fn seq)
+  "Partition a SEQ in 2 either using a test function or a dimension
    given in IDX-OR-FN."
   (let ((fn (if (or (functionp idx-or-fn)
                     (symbolp idx-or-fn))
                 idx-or-fn
                 ^(? (lt %) idx-or-fn)))
         (rez #h(equal)))
-    (dolist (item list)
-      (push item (get# (call fn item) rez)))
+    (etypecase seq
+      (list (dolist (item seq)
+              (push item (? rez (call fn item)))))
+      (vector (dovec (item seq)
+                (push item (? rez (call fn item))))))
     rez))
 
 (defun sample (data n &key (with-replacement? t))
