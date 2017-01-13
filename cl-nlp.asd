@@ -1,4 +1,4 @@
-;;; (c) 2013-2016 Vsevolod Dyomkin
+;;; (c) 2013-2017 Vsevolod Dyomkin
 
 (asdf:defsystem #:cl-nlp
   :version (:read-file-line "version.txt" :at 0)
@@ -9,7 +9,7 @@
   :depends-on (#:rutilsx #:cl-fad #:cl-ppcre
                #:cxml #:drakma #:flexi-streams
                #:zip #:archive #:chipz #:gzip-stream
-               #:eager-future2
+               #:eager-future2 #:mgl-mat
                #+dev #:should-test)
   :serial t
   :components

@@ -8,7 +8,7 @@ building on staff from [nlp.corpora](../src/corpora/README.md).
 ## Provided corpus readers
 
 - Wikipedia (`:wikipedia`)
-- Penn Treebank taggeg representation (`:ptb-tagged`)
+- Penn Treebank tagged representation (`:ptb-tagged`)
 - NPS Chat Corpus (`:nps-chat`)
 - Semcor corpus (`:semcor`)
 - Reuters RCV1 corpus format (`:reuters-rcv1`)

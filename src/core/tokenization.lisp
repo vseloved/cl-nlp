@@ -124,7 +124,9 @@
                          (string= ":" cur)
                          (digit-char-p (char prev (1- (length prev))))
                          (digit-char-p (char next 0)))
-                    (:= (first words) (strcat prev cur next)
+                    (:= (first words) (slice string
+                                             (lt (first spans))
+                                             (rt (second stail)))
                         (first spans) (pair (lt (first spans))
                                             (rt (second stail)))
                         skip t))

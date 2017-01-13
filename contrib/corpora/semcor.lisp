@@ -1,7 +1,7 @@
-;;; (c) 2014-2015 Vsevolod Dyomkin
+;;; (c) 2014-2016 Vsevolod Dyomkin
 
 (in-package #:nlp.contrib.corpora)
-(named-readtables:in-readtable rutils-readtable)
+(named-readtables:in-readtable rutilsx-readtable)
 
 
 (defstruct (semcor-token (:include token))

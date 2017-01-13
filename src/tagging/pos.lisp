@@ -1,4 +1,4 @@
-;;; (c) 2014-2016 Vsevolod Dyomkin
+;;; (c) 2014-2017 Vsevolod Dyomkin
 
 (in-package #:nlp.tagging)
 (named-readtables:in-readtable rutilsx-readtable)
@@ -75,7 +75,7 @@
       (with-postagger-init (model sent)
         (doindex (i token (sent-tokens sent))
           (let ((fs (extract-fs model i (token-word token) ctx prev prev2)))
-            (push (pair (token-pos token) fs)
+            (push (make-sample :fs fs :gold (token-pos token))
                   rez)
             (:= prev2 prev
                 prev (classify model fs)))))
@@ -121,10 +121,16 @@
 
 (defmethod normalize ((model tagger) (word string))
   (cond-it
-    ((re:scan *number-regex* word) (make-string (length word)
-                                                :initial-element #\0))
-    ((re:scan *email-regex* word) :!email)
-    ((re:scan *url-regex* word) :!url)
+    ((re:scan *number-regex* word) (case (length word)
+                                     (1 "0")
+                                     (2 "00")
+                                     (3 "00h")
+                                     (4 "00k")
+                                     ((5 6) "0kk")
+                                     (7 "00m")
+                                     (otherwise "00+")))
+    ((re:scan *email-regex* word) "@__")
+    ((re:scan *url-regex* word) "@@@")
     #+nil ((in# word (tagger-dict model)) (string-downcase word))
     #+nil ((position #\- word :start 1 :from-end t)
      (let ((suffix (slice word (1+ it))))

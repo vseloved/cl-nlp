@@ -83,11 +83,10 @@
                                  :for ,v :in ,row :do
                               (when-it (find (mksym ,k) ,keys)
                                 (push (cons it ,v) ,cache-key)))
-                           (or (get# ,cache-key *cache*)
-                               (set# ,cache-key *cache*
-                                     (apply #'make-instance ,class
-                                            (mapcan #`(list (mkeyw %) %%)
-                                                    ,slots ,row))))))
+                           (getset# ,cache-key *cache*
+                                    (apply #'make-instance ,class
+                                           (mapcan #`(list (mkeyw %) %%)
+                                                   ,slots ,row)))))
                        ,rez))
              ,rez)))))
 

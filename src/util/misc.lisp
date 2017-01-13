@@ -38,13 +38,16 @@
     (loop :repeat (1- n) :do (setf tail (cdr tail)))
     (null tail)))
 
-(defun uniq (list &key raw (test 'equal))
-  "Return only unique elements from LIST either as a new list
+(defun uniq (seq &key raw (test 'equal))
+  "Return only unique elements from SEQ either as a new list
    or as hash-table if RAW is set.
    TEST should be a hash-table test."
   (let ((uniqs (make-hash-table :test test)))
-    (dolist (elt list)
-      (set# elt uniqs t))
+    (etypecase seq
+      (list (dolist (elt seq)
+              (:= (? uniqs elt) t)))
+      (vector (dovec (elt seq)
+                (:= (? uniqs elt) t))))
     (if raw uniqs (ht-keys uniqs))))
 
 (defun equal-when-present (obj specimen)

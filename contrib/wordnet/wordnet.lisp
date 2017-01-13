@@ -15,5 +15,5 @@
   (:documentation
    "Interface to Wordnet database version 3."))
 
-(define-lazy-singleton wordnet (make 'sql-wordnet3)
+(def-lang-var wordnet (make 'sql-wordnet3)
   "Interface to Wordnet database version 3.")

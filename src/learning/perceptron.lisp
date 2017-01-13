@@ -1,4 +1,4 @@
-;;; (c) 2014-2016 Vsevolod Dyomkin
+;;; (c) 2014-2017 Vsevolod Dyomkin
 
 (in-package #:nlp.learning)
 (named-readtables:in-readtable rutilsx-readtable)
@@ -51,12 +51,11 @@
 
 (defmethod train ((model avg-perceptron) data &key (epochs 5) verbose)
   (training-perceptron (sample data epochs verbose c n)
-    (with-pair (gold fs) sample
-      (let ((guess (classify model fs)))
-        (train1 model gold guess fs)
-        (when verbose
-          (:+ c (if (eql gold guess) 1 0))
-          (:+ n)))))
+    (let ((guess (classify model @sample.fs)))
+      (train1 model @sample.gold guess @sample.fs)
+      (when verbose
+        (:+ c (if (eql @sample.gold guess) 1 0))
+        (:+ n))))
   model)
 
 (defmethod train :after ((model avg-perceptron) data &key)
@@ -69,7 +68,8 @@
               (rem# f cur-weights)
               (rem# f (? totals class))
               (rem# f (? timestamps class)))
-            (set# f cur-weights (/ (? totals class f) step)))))))
+            (set# f cur-weights (/ (? totals class f) step))))))
+  model)
 
 (defmethod train1 ((model perceptron) gold guess gold-fs &optional guess-fs)
   (:+ (ap-step model))

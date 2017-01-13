@@ -1,8 +1,11 @@
-;;; (c) 2014-2016 Vsevolod Dyomkin
+;;; (c) 2014-2017 Vsevolod Dyomkin
 
 (in-package #:nlp.learning)
 (named-readtables:in-readtable rutilsx-readtable)
 
+
+(defstruct sample
+  fs gold)
 
 (defclass categorical-model ()
   ((weights :initarg :weights :initform #h() :accessor m-weights))
@@ -53,15 +56,15 @@
                                       :external-format +utf-8+))
       (call-next-method model out)
       path))
-  (:method ((model categorical-model) (out stream))
+  (:method ((model categorical-model) out)
     (let* ((weights (m-weights model))
-           (total (reduce '+ (mapcar #'ht-count (vals weights))))
+           (total (reduce '+ (mapcar 'ht-count (vals weights))))
            (i 0))
       (format out "~A~%" (ht-count weights))
       (dotable (c fw weights)
         (format out "~S ~A~%" c (ht-count fw))
         (dotable (f w fw)
-          (format out "~S ~A " (string f) w)
+          (format out "~S ~A " (string f) (float w))
           (princ-progress (:+ i) total))
         (terpri out)))))
 
@@ -96,15 +99,19 @@
   (:documentation
    "Measure MODEL's performance on GOLD-FS gold resultx features.")
   (:method (model gold-fs &key verbose)
-    (let ((matched 0) (total 0) (len (length gold-fs)))
-      (loop :for (gold fs) :in gold-fs :do
-         (let ((guess (classify model fs)))
-           (if (equal gold guess)
-               (:+ matched)
-               (when verbose
-                 (format *debug-io* "guess: ~A   gold: ~A    fs: ~A~%" guess gold fs))))
-        (:+ total)
-        (unless verbose (princ-progress total len)))
+    (let ((matched 0)
+          (total 0)
+          (len (length gold-fs)))
+      (map nil
+           ^(let ((guess (classify model @%.fs)))
+              (if (equal @%.gold guess)
+                  (:+ matched)
+                  (when verbose
+                    (format *debug-io* "guess: ~A   gold: ~A    fs: ~A~%"
+                            guess @%.gold @%.fs)))
+              (:+ total)
+              (unless verbose (princ-progress total len)))
+           gold-fs)
       (* 100.0 (/ matched total)))))
 
 (defgeneric feature-importance (model)

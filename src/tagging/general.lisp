@@ -8,7 +8,7 @@
   (:documentation
    "Tag a SENTence with the algorithm specific to MODEL."))
 
-(defclass tagger (categorical-model)
+(defclass tagger ()
   ()
   (:documentation
    "A tagger adds tags to sentence tokens."))

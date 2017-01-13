@@ -6,7 +6,8 @@
 
 (defparameter +inf most-positive-fixnum)
 
-(defun argmax (fn vals &key (test #'>) (key #'identity) (min 0))
+(defun argmax (fn vals
+                  &key (test #'>) (key #'identity) (min (- most-positive-fixnum)))
   "Return the val from VALS which is the argument for maximum value of FN under TEST.
    If KEY is provided it's applied to VAL before feeding it to FN.
    Also, MIN can be provided to correspond with the TEST fucntion (default: 0).
@@ -22,7 +23,8 @@
     (values arg
             max)))
 
-(defun keymax (ht &key (test #'>) (key #'identity) (min 0))
+(defun keymax (ht
+               &key (test #'>) (key #'identity) (min (- most-positive-fixnum)))
   "Return the key corresponding to the maximum of hash-table HT under TEST.
    If KEY is provided it's applied to VAL before feeding it to FN.
    Also, MIN can be provided to correspond with the TEST fucntion (default: 0).

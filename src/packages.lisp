@@ -1,5 +1,4 @@
-;;; (c) 2013-2016 Vsevolod Dyomkin
-
+;;; (c) 2013-2017 Vsevolod Dyomkin
 
 (cl:defpackage #:nlp.util
   (:nicknames #:nutil)
@@ -70,7 +69,6 @@
            #:sum
            #:frobenius-norm
            #:bin-search
-           #:dot
 
            #:pprint-tree
            #:princ-progress
@@ -249,10 +247,15 @@
 
 (cl:defpackage #:nlp.learning
   (:nicknames #:nlearn)
-  (:use #:common-lisp #:rutilsx #:nlp.util #:nlp.core
+  (:use #:common-lisp #:rutilsx #:nlp.util #:nlp.core #:mgl-mat
         #+dev #:should-test)
   (:export #:%=
 
+           #:sample
+           #:make-sample
+           #:sample-fs
+           #:sample-gold
+           
            #:init-model
            #:score
            #:rank
@@ -449,7 +452,7 @@
 ;; (rutils:re-export-symbols '#:nparse   '#:nlp-user)
 
 
-;; special namespaces
+;;; special namespaces
 
 (cl:defpackage #:nlp.tags
   (:nicknames #:tag)
@@ -471,3 +474,8 @@
 ;;   (:use #:common-lisp #:rutil #:nutil #:ncore)
 ;;   (:export #:<amr-tags>
 ;;            ))
+
+
+;;; renamings
+
+(rename-package "MGL-MAT" "MGL-MAT" '("MAT"))
