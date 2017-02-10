@@ -10,10 +10,27 @@
   (:documentation
    "Word vectors access point."))
 
-(defgeneric 2vec (vecs word &key normalize)
+(defmethod normalize ((form vecs) word)
+  word)
+
+(defgeneric 2vec (vecs word)
   (:documentation
    "Return a vector representation of the WORD according to VECS.")
-  (:method :around (vecs word &key normalize)
-    (call-next-method vecs (if normalize
-                               (normalize vecs word)
-                               word))))
+  (:method :around (vecs word)
+    (call-next-method vecs (normalize vecs word))))
+
+
+(defmethod normalize ((form vecs) word)
+  (cond-it
+    ((re:scan *number-regex* word) (case (length word)
+                                     (1 "0")
+                                     (2 "00")
+                                     (3 "00h")
+                                     (4 "00k")
+                                     ((5 6) "0kk")
+                                     (7 "00m")
+                                     (otherwise "00+")))
+    ((re:scan *email-regex* word) "@__")
+    ((re:scan *url-regex* word) "@@@")
+    ((> (length word) 30) nil)
+    (t (string-downcase word))))

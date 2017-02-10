@@ -90,7 +90,7 @@
                (count (read in))
                (weights (set# class (m-weights model) #h(equal))))
           (loop :repeat count :do
-            (:= (? weights (read in)) (read in)))
+            (setf (? weights (read in)) (read in)))
           (princ-progress (:+ i) total))))
     (rem# nil (m-weights model))
     model))
@@ -117,6 +117,31 @@
 (defgeneric feature-importance (model)
   (:documentation
    "Display MODEL's feature importance."))
+
+(defun conf-mat (model gold-fs &key (verbose t))
+  (let ((rez #h())
+        (cc 0))
+    (map nil ^(prog1 (:+ (get# (classify model @%.fs)
+                               (getset# @%.gold rez #h())
+                               0))
+                (when (zerop (rem (:+ cc) 1000)) (princ ".")))
+         gold-fs)
+    (when verbose
+      (dolist (row (sort (ht->pairs rez) '>
+                         :key ^(sum 'just (vals (rt %)))))
+        (with (((cat counts) row)
+               (total (sum 'just (vals counts))))
+          (format t "~(~A~) (~A): ~$%  |"
+                  cat total
+                  (float (/ (get# cat counts 0) total 0.01)))
+          (dolist (entry (sort (ht->pairs counts) '> :key 'rt))
+            (unless (eql (lt entry) cat)
+              (format t "  ~$% ~(~A~)"
+                      (float (/ (rt entry) total 0.01))
+                      (lt entry))))
+          (terpri))))
+    rez))
+
 
 
 ;; (defun precision (model gold-corpus &key verbose)

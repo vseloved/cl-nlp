@@ -89,7 +89,10 @@
            #:iso-lang
            #:lang-iso
            #:in-lang
+           #:init-lang
+           #:with-lang
            #:def-lang-var
+           #:def-lang-profile
 
            #:id
            #:word
@@ -163,8 +166,8 @@
            #:<basic-word-tokenizer>
            #:<word-tokenizer>
            #:<sent-splitter>
-           #:<full-text-tokenizer>
-           #:<parag-splitter>
+           #:*full-text-tokenizer*
+           #:*parag-splitter*
 
            #:find-collocations
 
@@ -217,8 +220,7 @@
   (:use #:common-lisp #:rutilsx #:nlp.util #:nlp.core
         #+dev #:should-test)
   (:export #:dict
-           #:<dict>
-           
+
            #:lookup
            #:pos-tags
 
@@ -232,6 +234,8 @@
            #:lemmatizer-dict
            #:lemmatize
            #:morph
+           #:<dict-lemmatizer>
+           #:<wikt-lemmatizer>
 
            #:mem-dict
            #:load-mem-dict))
@@ -242,8 +246,11 @@
         #+dev #:should-test)
   (:export #:2vec
            #:vecs
-           #:load-vecs
-           #:<glove>))
+           #:mem-vecs
+           #:lazy-mem-vecs
+           
+           #:init-vecs
+           #:load-vecs))
 
 (cl:defpackage #:nlp.learning
   (:nicknames #:nlearn)
@@ -269,6 +276,7 @@
            #:recall
            #:f1
            #:f_
+           #:conf-mat
 
            #:save-model
            #:load-model
@@ -396,7 +404,9 @@
            #:iso-lang
            #:lang-iso
            #:in-lang
+           #:init-lang
            #:def-lang-var
+           #:def-lang-profile
            
            ;; tokens
            #:tokenize
@@ -405,8 +415,8 @@
            #:<basic-word-tokenizer>
            #:<word-tokenizer>
            #:<sent-splitter>
-           #:<full-text-tokenizer>
-           #:<parag-splitter>
+           #:*full-text-tokenizer*
+           #:*parag-splitter*
            
            ;; lexics
            #:known?
@@ -415,6 +425,7 @@
            #:lemmatize
            #:morph
            #:<porter-stemmer>
+           #:<dict-lemmatizer>
            #:<wikt-lemmatizer>
 
            ;; tagging

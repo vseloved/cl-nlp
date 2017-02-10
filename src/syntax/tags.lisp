@@ -1,4 +1,4 @@
-;;; (c) 2013-2016 Vsevolod Dyomkin
+;;; (c) 2013-2017 Vsevolod Dyomkin
 
 (in-package #:nlp.tags)
 (named-readtables:in-readtable rutils-readtable)
@@ -6,7 +6,7 @@
 
 (defun export-tag (str &optional (package (find-package :nlp.tags)))
   "Intern and export STR in package, then return it."
-  (let ((tag (intern str)))
+  (let ((tag (intern str package)))
     (export tag package)
     tag))
 

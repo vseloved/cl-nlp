@@ -1,18 +1,20 @@
-;;; (c) 2016 Vsevolod Dyomkin
+;;; (c) 2016-2017 Vsevolod Dyomkin
 
 (in-package #:nlp.core)
 (named-readtables:in-readtable rutilsx-readtable)
 
 
-(defprofile :uk
+(def-lang-profile :uk
   :word-tags (dict-from-file (lang-file :uk "word-tags.txt")
-                             :test 'eql :key-transform 'export-tag)
-  :dict (load-dict (lang-file :uk "dict.txt.gz"))
+                             :test 'eql :key-transform 'tag:export-tag)
   :word-tokenizer
   (make 'regex-word-tokenizer
         :regex (regex-from-file (lang-file :uk "word-tok-rules.txt")))
-  :sentence-splitter
-  (make 'baseline-sentence-tokenizer
+  :sent-splitter
+  (make 'baseline-sent-tokenizer
         :abbrevs-with-dot (list-from-file
-                           (lang-file :uk "abbrevs-with-dot.txt"))))
-
+                           (lang-file :uk "abbrevs-with-dot.txt")))
+  :dict-lemmatizer
+  (gzip-stream:with-open-gzip-file (in (lang-file :uk "dict.txt.gz"))
+    (nlex:load-mem-dict (flex:make-flexi-stream in :external-format :utf-8))))
+                            

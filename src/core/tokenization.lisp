@@ -298,7 +298,7 @@
                                (re:split newline-regex string)
                                :remove-empty-subseqs t))))
 
-(def-lang-var parag-splitter (make 'doublenewline-parag-splitter)
+(defvar *parag-splitter* (make 'doublenewline-parag-splitter)
   "Basic paragraph splitter.")
 
 
@@ -319,7 +319,7 @@
                     (tokenize <sent-splitter> parag)))
           (split #\Newline string)))
 
-(def-lang-var full-text-tokenizer (make 'full-text-tokenizer)
+(defvar *full-text-tokenizer* (make 'full-text-tokenizer)
   "Full text tokenizer.")
 
 (defun parags->text (parags)

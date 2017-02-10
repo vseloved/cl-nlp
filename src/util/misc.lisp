@@ -72,3 +72,25 @@
   (:documentation
    "Get a string from an object")
   (:method (obj) (string obj)))
+
+
+;;; Progress
+
+(defvar *progress-gensyms* nil)
+
+(defun clear-progress-gensyms ()
+  (void *progress-gensyms*))
+
+(defmacro progress-bar (&key (count 100) total)
+  (once-only (total count)
+    (let ((cc (gensym)))
+      `(if (boundp ',cc)
+           (when (zerop (rem (handler-bind ((warning 'muffle-warning))
+                               (:+ ,cc))
+                             (if ,total
+                                 (:= ,count (ceiling ,total 100))
+                                 ,count)))
+             (princ "."))
+           (progn
+             (push ',cc *progress-gensyms*)
+             (defparameter ,cc 0))))))

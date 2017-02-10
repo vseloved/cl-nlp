@@ -1,4 +1,4 @@
-;;; (c) 2013 Vsevolod Dyomkin
+;;; (c) 2013-2017 Vsevolod Dyomkin
 
 (in-package #:nlp.util)
 (named-readtables:in-readtable rutils-readtable)
@@ -22,7 +22,9 @@
 (defun lang-file (lang filename)
   "File in lang/ subdir of cl-nlp."
   (asdf:system-relative-pathname 'cl-nlp
-                                 (fmt "langs/~(~A~)/~A/" lang filename)))
+                                 (fmt "langs/~(~A~)/~A~@[/~]"
+                                      lang filename
+                                      (null (pathname-type filename)))))
 
 (defun corpus-file (filename)
   "File in corpora/ subdir of cl-nlp."

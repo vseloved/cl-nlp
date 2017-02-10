@@ -1,4 +1,4 @@
-;;; (c) 2015-2016 Vsevolod Dyomkin
+;;; (c) 2015-2017 Vsevolod Dyomkin
 
 (in-package #:nlp.lexics)
 (named-readtables:in-readtable rutilsx-readtable)
@@ -14,6 +14,13 @@
 
 (defun extract-wikt-lemma-dict (path)
   (cxml:parse path (make 'wikt-sax)))
+
+(def-lang-var wikt-lemmatizer
+    (load-mem-dict (lang-file :en "wikt-dict.txt"))
+  "Lemmatizer based on Wiktionary data.")
+
+
+;;; SAX processing
 
 (defclass wikt-sax (ncorp::sax-progress-mixin)
   ((lang :initarg :lang :initform :en)

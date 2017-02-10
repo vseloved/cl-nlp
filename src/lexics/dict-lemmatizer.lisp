@@ -1,4 +1,4 @@
-;;; (c) 2016 Vsevolod Dyomkin
+;;; (c) 2016-2017 Vsevolod Dyomkin
 
 (in-package #:nlp.lexics)
 (named-readtables:in-readtable rutilsx-readtable)
@@ -51,29 +51,39 @@
               (values word
                       (first tags)))))))
 
-(defun load-mem-dict (file)
-  "Load new mem-dict from FILE."
-  (format *debug-io* "~&Reading mem-dict from file ~A:" file)
+(defun load-mem-dict (in)
+  "Load new mem-dict from IN."
+  (format *debug-io* "~&Reading mem-dict from ~A:" in)
   (with ((dict (make 'mem-dict))
          ((words forms) @ dict)
          (cur nil)
-         (count 0))
-    (dolines (line file)
-      (when (zerop (rem (:+ count) 10000)) (format *debug-io* "."))
-      (with (((word tag) (split #\Space line :remove-empty-subseqs t))
-             (tags (mapcar ^(mksym % :package :tag)
-                           (split #\: tag))))
-        (push tags (? words word))
-        (if (char= #\Space (? line 0))
-            (:= (? forms word) (if-it (? forms word)
-                                      (cons cur it)
-                                      cur)
-                (? forms (word/pos word (rt cur))) cur
-                (? forms (word/pos word (? (rt cur) 0))) cur
-                (? forms (word/pos (lt cur) tags)) (pair word tags))
-            (:= cur (pair word tags)))))
+         (count 0)
+         (stream (if (streamp in)
+                     in
+                     (open in))))
+    (unwind-protect
+         (loop :for line := (read-line stream nil) :while line :do
+           (when (zerop (rem (:+ count) 10000)) (format *debug-io* "."))
+           (with (((word tag) (split #\Space line :remove-empty-subseqs t))
+                  (tags (mapcar ^(mksym % :package :tag)
+                                (split #\: tag))))
+             (push tags (? words word))
+             (if (char= #\Space (? line 0))
+                 (:= (? forms word) (if-it (? forms word)
+                                           (cons cur it)
+                                           cur)
+                     (? forms (word/pos word (rt cur))) cur
+                     (? forms (word/pos word (? (rt cur) 0))) cur
+                     (? forms (word/pos (lt cur) tags)) (pair word tags))
+                 (:= cur (pair word tags)))))
+      (unless (streamp in)
+        (close in)))
     (format *debug-io* " done. (Read ~A words).~%" count)
     dict))
+
+
+(def-lang-var dict-lemmatizer nil
+  "Lemmatizer based on arbitrary dictionary in CL-NLP format.")
 
 
 ;;; util

@@ -51,6 +51,7 @@
         word
         (lemmatize lemmatizer (lemmatize lemmatizer word) pos))))
 
+
 ;;; utilities
 
 (defun word/pos (word &optional pos)

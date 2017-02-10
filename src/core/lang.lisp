@@ -6,21 +6,21 @@
 
 ;;; Language-dependent context
 
-(defparameter *lang-ctx-vars* ()
+(defvar *lang-ctx-vars* ()
   "A list of global language-dependent variables.")
 
-(defparameter *lang-profiles* #h()
+(defvar *lang-profiles* #h()
   "A table of known language-dependent variables values per lang.")
 
-(defun defprofile (lang &rest vars-forms)
+(defmacro def-lang-profile (lang &rest vars-forms)
   "Define profile for language LANG with "
   (with-gensyms (ctx var form)
     `(let ((,ctx #h()))
-       (loop :for (,var ,form) :on ,vars-forms :by 'cddr :do
+       (loop :for (,var ,form) :on (list ,@vars-forms) :by #'cddr :do
          (let ((,var (mkeyw ,var)))
-           (if (in# ',var *lang-ctx-vars*)
-               (:= (? ,ctx ',var) ,form)
-               (warn "Unknown language variable: ~A" ',var))))
+           (if (member ,var *lang-ctx-vars*)
+               (:= (? ,ctx ,var) ,form)
+               (warn "Unknown language variable: ~A" ,var))))
        (:= (? *lang-profiles* ,lang) ,ctx))))
 
 (defmacro def-lang-var (name init docstring &key greedy)
@@ -39,7 +39,7 @@
                (setf ,var ,init)))
          (define-symbol-macro ,(mksym name :format "<~A>") (,fn))
          ,(when greedy `(,fn))
-         (push ',var *lang-ctx-vars*)))))
+         (pushnew (mkeyw ',name) *lang-ctx-vars*)))))
 
 (defun in-lang (lang)
   "Switch current lang to LANG if the appropriate language profile is defined."
@@ -47,16 +47,16 @@
     (if ctx
         (dolist (ctx-var *lang-ctx-vars*)
           (when-it (? ctx ctx-var)
-            (:= (slot-value (mksym ctx-var :format "*~A*")) it)))
+            (:= (symbol-value (mksym ctx-var :format "*~A*")) it)))
         (error "No language profile for: ~A (~A)" lang (iso-lang lang)))))
 
 (defmacro with-lang ((lang) &body body)
   "Execute BODY in the constant of current lang set to LANG
    if the appropriate language profile is defined."
-  `(when-it (? *lang-profiles* ,lang)
-     (let (,@(flat-map (lambda (var)
+  (when-it (? *lang-profiles* lang)
+    `(let (,@(flat-map (lambda (var)
                          (when-it (? it var)
-                           `((,(mksym var :format "*~A*") it))))
+                           `((,(mksym var :format "*~A*") ,it))))
                        *lang-ctx-vars*))
        ,@body)))
 
@@ -275,4 +275,4 @@
 (defun init-lang (lang)
   "Load language profile and other necessary data for LANG.
    The initialization data should be defined in the file langs/LANG/LANG.lisp."
-  (load (lang-file (fmt "~(~A~).lisp" lang))))
+  (load (lang-file lang (fmt "~(~A~).lisp" lang))))
