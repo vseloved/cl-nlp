@@ -45,10 +45,10 @@ expect to bleed on the bleeding edge.
 Otherwise, if you want to contribute to developing the toolkit, you're very welcome.
 Here are a few write-ups to give you the sense of the project and to help get started:
 
-- [Writing a POS tagger with CL-NLP](doc/tagger-example.md)
+- [Writing a POS tagger with CL-NLP](docs/user-guide/examples/eng-pos-tagger.md)
 - [NLTK series](http://lisp-univ-etc.blogspot.com/search/label/nltk) -
   to be continued, by the way...
-- [CL-NLP Style Guide](doc/style-guide.md)
+- [CL-NLP Style Guide](docs/user-guide/getting-started.md#coding-style-guidelines)
 
 You'll also, probably, need to track the latest version of [RUTILS][RUTILS] from git.
 
