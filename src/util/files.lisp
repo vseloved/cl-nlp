@@ -106,8 +106,9 @@
       (when (zerop (rem (:+ count) 10000)) (format *debug-io* "."))
       (let* ((split-pos (search separator line))
              (k (funcall key-transform (slice line 0 split-pos)))
-             (v (funcall val-transform (slice line (+ split-pos
-                                                      (length separator))))))
+             (v (funcall val-transform (when split-pos
+                                         (slice line (+ split-pos
+                                                         (length separator)))))))
         (when-it (get# k dict)
           (warn "Key: ~A has been already in dict with value: ~A. New value: ~A"
                 k it v))

@@ -57,3 +57,9 @@
 (defun word/pos (word &optional pos)
   "Stringify WORD with its POS tag."
   (fmt "~A~@[/~{~A~^:~}~]" word (mklist pos)))
+
+(defun base-pos (pos)
+  ""
+  (let ((postr (symbol-name pos)))
+    (mksym (slice postr 0 (min 2 (length postr)))
+           :package (symbol-package pos))))

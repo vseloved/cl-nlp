@@ -77,7 +77,7 @@
                      (? forms (word/pos (lt cur) tags)) (pair word tags))
                  (:= cur (pair word tags)))))
       (unless (streamp in)
-        (close in)))
+        (close stream)))
     (format *debug-io* " done. (Read ~A words).~%" count)
     dict))
 

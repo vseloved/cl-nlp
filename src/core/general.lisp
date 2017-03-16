@@ -28,3 +28,7 @@
 (defclass sent ()
   ((tokens :initarg :tokens :accessor sent-tokens))
   (:documentation "Basically, a sentence is a list of tokens."))
+
+(defmethod print-object ((obj sent) out)
+  (print-unreadable-object (obj out :identity t)
+    (format out "SENT: ~{~A~^ ~}" @obj.tokens)))

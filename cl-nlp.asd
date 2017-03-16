@@ -18,7 +18,7 @@
             :serial t
             :components
             ((:file "packages")
-             (:module "util"
+             (:module #:util
                       :serial t
                       :components
                       ((:file "misc")
@@ -44,7 +44,8 @@
                       :components
                       ((:file "general")
                        (:file "porter")
-                       (:file "dict-lemmatizer")))
+                       (:file "dict-lemmatizer")
+                       (:file "wiktionary")))
              (:module #:embeddings
                       :serial t
                       :components

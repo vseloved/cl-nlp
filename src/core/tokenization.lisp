@@ -1,4 +1,4 @@
-;;; (c) 2013-2016 Vsevolod Dyomkin
+;;; (c) 2013-2017 Vsevolod Dyomkin
 
 (in-package #:nlp.core)
 (named-readtables:in-readtable rutilsx-readtable)
@@ -290,13 +290,21 @@
    "Paragraph tokenizer that splits text on double newlines
     and removes single newlines."))
 
-(defmethod tokenize ((tokenizer doublenewline-parag-splitter) string)
-  (let ((newline-regex (re:create-scanner (fmt "(?:~C|[~C~C]{1,2})"
-                                               #\Newline #\Return #\Linefeed))))
-    (mapcar #`(fmt "~{~A ~}" %)
-            (split-sequence-if #'blankp
-                               (re:split newline-regex string)
-                               :remove-empty-subseqs t))))
+(let ((newline-regex (re:create-scanner (fmt "(?:~C|[~C~C]{1,2})"
+                                             #\Newline #\Return #\Linefeed))))
+  (defmethod tokenize ((tokenizer doublenewline-parag-splitter) string)
+    (let ((off 0)
+          ps ss)
+      (re:do-matches (beg end newline-regex string)
+        (unless (= off beg)
+          (push (slice string off beg) ps)
+          (push (pair off beg) ss))
+        (:= off end))
+      (unless (= off (1- (length string)))
+        (push (slice string off) ps)
+        (push (pair off (length string)) ss))
+      (values (reverse ps)
+              (reverse ss)))))
 
 (defvar *parag-splitter* (make 'doublenewline-parag-splitter)
   "Basic paragraph splitter.")
