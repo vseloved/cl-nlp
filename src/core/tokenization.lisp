@@ -290,8 +290,9 @@
    "Paragraph tokenizer that splits text on double newlines
     and removes single newlines."))
 
-(let ((newline-regex (re:create-scanner (fmt "(?:~C|[~C~C]{1,2})"
-                                             #\Newline #\Return #\Linefeed))))
+(let ((newline-regex (re:create-scanner (fmt "(?:~C{2}|~C{2}|~C{2}|[~C~C]{2})"
+                                             #\Newline #\Return #\Linefeed
+                                             #\Return #\Linefeed))))
   (defmethod tokenize ((tokenizer doublenewline-parag-splitter) string)
     (let ((off 0)
           ps ss)

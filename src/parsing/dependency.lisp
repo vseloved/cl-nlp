@@ -1,4 +1,4 @@
-;;; (c) 2014-2016 Vsevolod Dyomkin
+;;; (c) 2014-2017 Vsevolod Dyomkin
 
 (in-package #:nlp.parsing)
 (named-readtables:in-readtable rutilsx-readtable)
@@ -8,23 +8,19 @@
 
 (defstruct (dep (:print-object print-stanford-dep))
   (rel nil :type (or symbol null))
-  (govr nil :type (or token null))
-  (dept nil :type (or token null)))
+  (head nil :type (or token null))
+  (child nil :type (or token null)))
 
 (defgeneric print-dep (format dep &optional stream)
   (:documentation
    "FORMAT may be :stanford, :conll, and, maybe some other.")
   (:method ((format (eql :stanford)) dep &optional (stream *standard-output*))
-    (with-slots (rel govr dept) dep
-      (format stream "~(~A~)(~A-~A, ~A-~A)" rel
-              (token-word govr) (token-id govr)
-              (token-word dept) (token-id dept))))
+      (format stream "~(~A~)(~A-~A, ~A-~A)"
+              @dep.rel @dep.head.word @dep.head.id @dep.child.word @dep.child.id))
   (:method ((format (eql :conll)) dep &optional (stream *standard-output*))
-    (with-slots (rel govr dept) dep
-      (with-slots (id word lemma pos) dept
-        (format stream
-                "~A	~A	~:[_~;~:*~A~]	_	~A	~A~%"
-                id word lemma pos (token-id govr) rel)))))
+    (format stream "~A	~A	~:[_~;~:*~A~]	_	~A	~A~%"
+            @dep.child.id @dep.child.word @dep.child.lemma @dep.child.pos
+            @dep.head.id @dep.rel)))
 
 (defun print-stanford-dep (dep stream)
   "Print DEP in Stanford dependency format to STREAM."
@@ -36,17 +32,17 @@
   (let* ((split1 (position #\( str))
          (split2 (position #\, str))
          (split3 (position #\) str))
-         (govr (split #\- (string-trim +white-chars+
+         (head (split #\- (string-trim +white-chars+
                                        (slice str (1+ split1) split2))))
-         (govr-idx (parse-integer (second govr)))
-         (dept (split #\- (string-trim +white-chars+
+         (head-idx (parse-integer (second head)))
+         (child (split #\- (string-trim +white-chars+
                                        (slice str (1+ split2) (1- split3)))))
-         (dept-idx (parse-integer (second dept))))
+         (child-idx (parse-integer (second child))))
     (make-dep :rel (mksym (slice str 0 split1) :package :deps)
-              :govr (getset# govr-idx tokens
-                             (make-token :id govr-idx :word (first govr)))
-              :dept (getset# dept-idx tokens
-                             (make-token :id dept-idx :word (first dept))))))
+              :head (getset# head-idx tokens
+                             (make-token :id head-idx :word (first head)))
+              :child (getset# child-idx tokens
+                              (make-token :id child-idx :word (first child))))))
 
 (defun read-conll-dep (str &optional (tokens #h(0 +root+)))
   "Read one CONLL format dependency from STR.
@@ -54,17 +50,17 @@
   (ds-bind (id word lemma pos pos2 feats head-id rel &rest rest)
       (split #\Tab str :remove-empty-subseqs t)
     (declare (ignore pos2 feats rest))
-    (let ((dept-id (parse-integer id))
-          (govr-id (parse-integer head-id)))
+    (let ((child-id (parse-integer id))
+          (head-id (parse-integer head-id)))
       (make-dep :rel (mksym rel :package :dep)
-                :govr (or (? tokens govr-id)
-                          (make-token :id govr-id))
-                :dept (getset# dept-id tokens
-                               (make-token :id dept-id
-                                           :word word
-                                           :lemma (unless (string= "_" lemma)
-                                                    lemma)
-                                           :pos (mksym pos :package :tag)))))))
+                :head (or (? tokens head-id)
+                          (make-token :id head-id))
+                :child (getset# child-id tokens
+                                (make-token :id child-id
+                                            :word word
+                                            :lemma (unless (string= "_" lemma)
+                                                     lemma)
+                                            :pos (mksym pos :package :tag)))))))
 
 (defgeneric read-deps (format str)
   (:documentation
@@ -91,8 +87,8 @@
              (progn
                (when deps
                  (dolist (dep deps)
-                   (:= (dep-govr dep)
-                       (? tokens (token-id (dep-govr dep)))))
+                   (:= (dep-head dep)
+                       (? tokens (token-id (dep-head dep)))))
                  (push (reverse deps) all-deps))
                (:= tokens #h(0 +root+))
                (void deps))
@@ -101,16 +97,15 @@
 
 (defun deps->tree (deps &optional dep)
   (when deps
-    (unless dep (:= dep (find 'dep:root deps :key #'dep-rel)))
-    (with-slots (dept) dep
-      (cons dep
-            (sort (cons dept
-                        (mapcar #`(deps->tree deps %)
-                                (remove-if-not #`(eql dept %) deps
-                                               :key 'dep-govr)))
-                  '< :key #`(token-id (etypecase %
-                                        (token %)
-                                        (list (dep-dept (first %))))))))))
+    (unless dep (:= dep (find 'dep:root deps :key 'dep-rel)))
+    (cons dep
+          (sort (cons @dep.child
+                      (mapcar ^(deps->tree deps %)
+                              (keep-if ^(eql @dep.child %) deps
+                                       :key 'dep-head)))
+                '< :key #`(token-id (etypecase %
+                                      (token %)
+                                      (list @%.child#0)))))))
 
 #+nil
 (defun pprint-deps-tree (deps)

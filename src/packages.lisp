@@ -329,8 +329,8 @@
 
            #:dep
            #:dep-rel
-           #:dep-govr
-           #:dep-dept
+           #:dep-head
+           #:dep-child
            #:make-dep
 
            #:parsed-sent

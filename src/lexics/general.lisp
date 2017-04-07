@@ -60,6 +60,7 @@
 
 (defun base-pos (pos)
   ""
-  (let ((postr (symbol-name pos)))
-    (mksym (slice postr 0 (min 2 (length postr)))
-           :package (symbol-package pos))))
+  (when pos
+    (let ((postr (symbol-name pos)))
+      (mksym (slice postr 0 (min 2 (length postr)))
+             :package (symbol-package pos)))))
