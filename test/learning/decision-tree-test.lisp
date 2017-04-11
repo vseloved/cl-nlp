@@ -104,5 +104,5 @@ rain    |      71     |    80    | true  | Don't Play
                            (if (%= <= 1 72.0)
                                (pair nil 1.0)
                                (pair t 1.0))))
-                   (pair nil 1)))
+                   (pair nil 1.0)))
           (tree-repr (train (make 'cart-tree) (car *golf-data*)))))
