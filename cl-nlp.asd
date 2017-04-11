@@ -82,7 +82,7 @@
                       :components
                       ((:file "general")
                        (:file "tree-util")
-                       (:file "pprint"))
+                       (:file "pprint")
                        (:file "grammars")
                        (:file "dependency")
                        (:file "stack-buffer")))
