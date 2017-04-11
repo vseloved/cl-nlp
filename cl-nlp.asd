@@ -92,7 +92,7 @@
             :components
             ((:module #:util
                       :components
-                      ((:file "trees-test")))
+                      (#+nil (:file "trees-test")))
              (:module #:lexics
                       :components
                       ((:file "porter-test")))

@@ -26,7 +26,7 @@
   "Print DEP in Stanford dependency format to STREAM."
   (print-dep :stanford dep stream))
 
-(defun read-stanford-dep (str &optional (toks #h(0 +root+)))
+(defun read-stanford-dep (str &optional (toks #h(0 dep:+root+)))
   "Read one Stanford format dependency from STR.
    TOKS is a cache of already encountered tokens."
   (let* ((split1 (position #\( str))
@@ -44,11 +44,11 @@
               :child (getset# child-idx toks
                               (make-tok :id child-idx :word (first child))))))
 
-(defun read-conll-dep (str &optional (toks #h(0 +root+)))
+(defun read-conll-dep (str &optional (toks #h(0 dep:+root+)))
   "Read one CONLL format dependency from STR.
    TOKS is a cache of already encountered tokens."
-  (ds-bind (id word lemma pos pos2 feats head-id rel &rest rest)
-      (split #\Tab str :remove-empty-subseqs t)
+  (with (((id word lemma pos pos2 feats head-id rel &rest rest)
+          (split #\Tab str :remove-empty-subseqs t)))
     (declare (ignore pos2 feats rest))
     (let ((child-id (parse-integer id))
           (head-id (parse-integer head-id)))
@@ -68,20 +68,22 @@
     Returns a list of list of dependencies for each sentence.")
   (:method (format (str string))
     (with-input-from-string (in str)
-      (call-next-method format in)))
+      (read-deps format in)))
   (:method ((format (eql :stanford)) (str stream))
     (let (toks all-deps deps)
       (loop :for line := (read-line str nil) :while line :do
          (if (blankp line)
              (progn
-               (:= toks #h(0 +root+))
+               (:= toks #h(0 dep:+root+))
                (when deps (push (reverse deps) all-deps))
                (void deps))
-             (push (read-stanford-dep line toks) deps)))
+             (push (read-stanford-dep line toks) deps))
+            :finally (push (reverse deps) all-deps))
       (reverse all-deps)))
   (:method ((format (eql :conll)) (str stream))
-    (let ((toks #h(0 +root+))
-          all-deps deps)
+    (let ((toks #h(0 dep:+root+))
+          all-deps
+          deps)
       (loop :for line := (read-line str nil) :while line :do
          (if (blankp line)
              (progn
@@ -90,14 +92,15 @@
                    (:= (dep-head dep)
                        (? toks (tok-id (dep-head dep)))))
                  (push (reverse deps) all-deps))
-               (:= toks #h(0 +root+))
+               (:= toks #h(0 dep:+root+))
                (void deps))
-             (push (read-conll-dep line toks) deps)))
+             (push (read-conll-dep line toks) deps))
+            :finally (push (reverse deps) all-deps))
       (reverse all-deps))))
 
 (defun deps->tree (deps &optional dep)
   (when deps
-    (unless dep (:= dep (find 'dep:root deps :key 'dep-rel)))
+    (unless dep (:= dep (find 'dep:+root+ deps :key 'dep-rel)))
     (cons dep
           (sort (cons @dep.child
                       (mapcar ^(deps->tree deps %)
