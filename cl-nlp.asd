@@ -82,10 +82,10 @@
                       :components
                       ((:file "general")
                        (:file "tree-util")
-                       (:file "pprint")
                        (:file "grammars")
                        (:file "dependency")
-                       (:file "stack-buffer")))
+                       (:file "stack-buffer")
+                       (:file "pprint")))
              (:file "user")))
    #+dev
    (:module #:test
