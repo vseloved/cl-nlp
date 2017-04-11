@@ -111,9 +111,9 @@
                       :components
                       ((:file "pos-test")))
              (:module #:parsing
-              #+nil :components
-              #+nil ((:file "dep-test")
-                     (:file "amr-test")))
+              :components
+              ((:file "deps-test")
+               #+nil (:file "amr-test")))
              (:module #:user
                       :components
                       ((:file "user-test")))

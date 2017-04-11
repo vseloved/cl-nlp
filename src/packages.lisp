@@ -255,7 +255,7 @@
 
 (cl:defpackage #:nlp.learning
   (:nicknames #:nlearn)
-  (:use #:common-lisp #:rutilsx #:nlp.util #:nlp.core #:mgl-mat
+  (:use #:common-lisp #:rutilsx #:nlp.util #:nlp.core
         #+dev #:should-test)
   (:export #:%=
 

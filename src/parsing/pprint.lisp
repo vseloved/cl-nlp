@@ -5,7 +5,7 @@
 
 
 (defun annotate-spans (tree &key (space 1) (idx 0))
-  (let* ((str (str (first (mklist tree))))
+  (let* ((str (ss (first (mklist tree))))
          (len (length str))
          (max-height 0)
          (spans-heights (mapcar #`(multiple-value-list
@@ -133,7 +133,7 @@
   (with (((left right) (sort (list @dep.child @dep.head) '<
                              :key 'tok-id))
          (d (- (tok-dist sent left right space extra-space)
-               (length (str @dep.rel))
+               (length (ss @dep.rel))
                4)))
     (format out "`~A ~(~A~) ~A'"
             (filler (floor d 2) line-char)
@@ -173,26 +173,26 @@
         (:= root dep)
         (return)))
     (labels ((rec (cur-dep deps)
-               (let ((cur-id @cur-dep.child.token-id))
+               (let ((cur-id @cur-dep.child.id))
                  (dolist (dep (sort (remove-if-not ^(eql @cur-dep.child @%.head)
                                                    deps)
-                                    '< :key #`(abs (- cur-id @%.child.token-id))))
+                                    '< :key #`(abs (- cur-id @%.child.id))))
                    (rec dep (remove dep deps))
-                 (let* ((gid @dep.head.token-id)
-                        (minid (min gid @dep.child.token-id))
-                        (maxid (max gid @dep.child.token-id))
+                 (let* ((gid @dep.head.id)
+                        (minid (min gid @dep.child.id))
+                        (maxid (max gid @dep.child.id))
                         (mintok (? sent minid))
                         (maxtok (? sent maxid))
                         (d (tok-dist sent mintok maxtok space extra-space))
-                        (min-d (+ 4 (length (str @dep.rel))
+                        (min-d (+ 4 (length (ss @dep.rel))
                                   ;; short head word needs additional space
                                   (max 0 (ceiling (- (if (= gid maxid) 4 5)
-                                                     (length (str (? sent gid))))
+                                                     (length (ss (? sent gid))))
                                                   2)))))
                    (when (< d min-d)
                      (:+ (get# (1- maxid) extra-space 0) (- min-d d)))))
                  (unless (eql 'dep:ROOT @cur-dep.rel)
-                   (let* ((head-id @cur-dep.head.token-id)
+                   (let* ((head-id @cur-dep.head.id)
                           (minid (min cur-id head-id))
                           (maxid (max cur-id head-id))
                           (level (reduce 'max
@@ -209,7 +209,7 @@
       (rec root (remove root deps)))
     (:= depth (reduce 'max (loop :for i :from 0 :below (1- (length sent))
                               :collect (length (? levels i)))))
-    (:= (? mid @root.child.token-id) depth)
+    (:= (? mid @root.child.id) depth)
     (dotimes (i (length levels))
       (reversef (? levels i)))
       (values
@@ -218,23 +218,23 @@
                 (with-output-to-string (out)
                   (doindex (i tok sent)
                     (format out "~A~A"
-                            (str tok)
+                            (ss tok)
                             (filler (+ space (get# i extra-space 0))))))
                 ;; arrows
                 (with-output-to-string (out)
-                  (write-string (filler (- (floor (length (str (? sent 0))) 2) 3))
+                  (write-string (filler (- (floor (length (ss (? sent 0))) 2) 3))
                                 out)
                   (dolist (tok sent)
                     (format-connectors
                      out tok sent space extra-space
-                     (if (? left @tok.token-id) con-char #\Space)
+                     (if (? left @tok.id) con-char #\Space)
                      (if use-unicode-chars #\↑ #\^)
-                     (if (? right @tok.token-id) con-char #\Space)))))
+                     (if (? right @tok.id) con-char #\Space)))))
                ;; rels
                (maptimes depth
                          (lambda (level)
                            (with-output-to-string (out)
-                             (write-string (filler (floor (length (str (? sent 0)))
+                             (write-string (filler (floor (length (ss (? sent 0)))
                                                           2))
                                            out)
                              (iter (:with i := 0)
@@ -244,8 +244,8 @@
                                           (progn
                                             (format-rel out line-char sent it
                                                         space extra-space)
-                                            (:= i (max @it.child.token-id
-                                                       @it.head.token-id))
+                                            (:= i (max @it.child.tok-id
+                                                       @it.head.tok-id))
                                             (format out " ~A "
                                                     (if (and-it (? mid i)
                                                                 (= it (1- level)))
@@ -264,13 +264,13 @@
                                             (:+ i)))))))
                ;; root
                (list (fmt "~Aroot~%"
-                          (filler (if (zerop @root.child.token-id)
-                                      (- (floor (length (str @root.child)) 2) 3)
+                          (filler (if (zerop @root.child.id)
+                                      (- (floor (length (ss @root.child)) 2) 3)
                                       (tok-dist sent (? sent 0) @root.child
                                                 space extra-space))))))
        extra-space)))
 
-;;;
+;;; pprint
 
 (defun pprint-tree (tree
                     &key (space 1) (stream *standard-output*) use-unicode-chars)
@@ -327,11 +327,11 @@
   (let ((offset 0)
         (id 0))
     (mapcar ^(with (((word &optional tag) (split #\_ %)))
-               (prog1 (make-token :word word
-                                  :pos (when tag (mksym tag :package 'tag))
-                                  :beg offset
-                                  :end (+ offset (length word))
-                                  :id id)
+               (prog1 (make-tok :word word
+                                :pos (when tag (mksym tag :package 'tag))
+                                :beg offset
+                                :end (+ offset (length word))
+                                :id id)
                  (:+ offset (1+ (length word)))
                  (:+ id)))
             words)))
@@ -340,7 +340,7 @@
 (defun deps (sent deps)
   (mapcar ^(make-dep
             :rel (mksym (first %) :package 'dep)
-            :head (if (= -1 (second %)) +ROOT+ (? sent (second %)))
+            :head (if (= -1 (second %)) dep:+root+ (? sent (second %)))
             :child (? sent (third %)))
           deps))
 
