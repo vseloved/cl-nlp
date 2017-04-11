@@ -13,20 +13,15 @@
   (should be eql dep:+root+
          (dep-head (read-stanford-dep "root ( ROOT-0 , test-4 )"))))
 
-(defun read-dep-from-string (str)
-  (? (read-deps :conll str) 0 0))
-
 (deftest read-conll-dep ()
   (should be equalp
          (make-dep :rel 'dep::NMOD
                    :child (make-tok :id 1 :word "Pricing"
                                    :lemma "pricing" :pos 'tag:NN)
                    :head (make-tok :id 2))
-         (read-dep-from-string
-          "1	Pricing	pricing	NN	_	_	2	NMOD"))
+         (read-conll-dep "1	Pricing	pricing	NN	_	_	2	NMOD"))
   (should be equalp
           (make-dep :rel 'dep::NMOD
                     :child (make-tok :id 1 :word "Pricing" :pos 'tag:NN)
                     :head (make-tok :id 2))
-          (read-dep-from-string
-           "1	Pricing	_	NN	_	_	2	NMOD")))
+          (read-conll-dep "1	Pricing	_	NN	_	_	2	NMOD")))

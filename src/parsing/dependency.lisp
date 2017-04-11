@@ -29,20 +29,23 @@
 (defun read-stanford-dep (str &optional (toks #h(0 dep:+root+)))
   "Read one Stanford format dependency from STR.
    TOKS is a cache of already encountered tokens."
-  (let* ((split1 (position #\( str))
-         (split2 (position #\, str))
-         (split3 (position #\) str))
-         (head (split #\- (string-trim +white-chars+
-                                       (slice str (1+ split1) split2))))
-         (head-idx (parse-integer (second head)))
-         (child (split #\- (string-trim +white-chars+
-                                       (slice str (1+ split2) (1- split3)))))
-         (child-idx (parse-integer (second child))))
-    (make-dep :rel (mksym (slice str 0 split1) :package :deps)
-              :head (getset# head-idx toks
-                             (make-tok :id head-idx :word (first head)))
-              :child (getset# child-idx toks
-                              (make-tok :id child-idx :word (first child))))))
+  (with ((split1 (position #\( str))
+         (split2 (position #\Space str
+                           :start (position #\Space str :start (1+ split1)
+                                                        :test-not 'eql)))
+         (split3 (position #\) str :from-end t))
+         ((head head-id) (split #\- (string-trim +white-chars+
+                                                 (slice str (1+ split1) split2))))
+         (head-id (parse-integer head-id :junk-allowed t))
+         ((child child-id) (split #\- (string-trim +white-chars+
+                                                   (slice str (1+ split2)
+                                                          split3))))
+         (child-id (parse-integer child-id)))
+    (make-dep :rel (mksym (slice str 0 split1) :package :dep)
+              :head (getset# head-id toks
+                             (make-tok :id head-id :word head))
+              :child (getset# child-id toks
+                              (make-tok :id child-id :word child)))))
 
 (defun read-conll-dep (str &optional (toks #h(0 dep:+root+)))
   "Read one CONLL format dependency from STR.
