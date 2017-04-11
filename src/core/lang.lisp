@@ -1,10 +1,13 @@
-;;; (c) 2016 Vsevolod Dyomkin
+;;; (c) 2016-2017 Vsevolod Dyomkin
 
 (in-package #:nlp.core)
 (named-readtables:in-readtable rutilsx-readtable)
 
 
 ;;; Language-dependent context
+
+(defvar *lang* :en
+  "Current language.")
 
 (defvar *lang-ctx-vars* ()
   "A list of global language-dependent variables.")
@@ -23,11 +26,11 @@
                (warn "Unknown language variable: ~A" ,var))))
        (:= (? *lang-profiles* ,lang) ,ctx))))
 
-(defmacro def-lang-var (name init docstring &key greedy)
+(defmacro def-lang-var (name init docstring &key eager)
   "Define a function NAME, that will return a singleton object,
    initialized lazily with INIT on first call.
    Also define a symbol macro <NAME> that will expand to (ACCESS-NAME).
-   When GREEDY will initialize the variable at definition time."
+   When EAGER will initialize the variable at definition time."
   (with-gensyms (singleton)
     (let ((var (mksym name :format "*~A*"))
           (fn (mksym name :format "ACCESS-~A")))
@@ -36,32 +39,52 @@
          (defun ,fn ()
            ,docstring
            (or ,var
-               (setf ,var ,init)))
+               (:= ,var ,init)))
          (define-symbol-macro ,(mksym name :format "<~A>") (,fn))
-         ,(when greedy `(,fn))
+         ,(when eager `(,fn))
          (pushnew (mkeyw ',name) *lang-ctx-vars*)))))
+
+(defun init-lang (lang)
+  "Load language profile and other necessary data for LANG.
+   The initialization data should be defined in the file langs/LANG/LANG.lisp."
+  (load (lang-file lang (fmt "~(~A~).lisp" lang))))
 
 (defun in-lang (lang)
   "Switch current lang to LANG if the appropriate language profile is defined."
   (let ((ctx (? *lang-profiles* lang)))
     (if ctx
-        (dolist (ctx-var *lang-ctx-vars*)
-          (when-it (? ctx ctx-var)
-            (:= (symbol-value (mksym ctx-var :format "*~A*")) it)))
+        (progn (:= *lang* lang)
+               (dolist (ctx-var *lang-ctx-vars*)
+                 (when-it (? ctx ctx-var)
+                   (:= (symbol-value (mksym ctx-var :format "*~A*")) it))))
         (error "No language profile for: ~A (~A)" lang (iso-lang lang)))))
 
 (defmacro with-lang ((lang) &body body)
   "Execute BODY in the constant of current lang set to LANG
    if the appropriate language profile is defined."
-  (when-it (? *lang-profiles* lang)
-    `(let (,@(flat-map (lambda (var)
-                         (when-it (? it var)
-                           `((,(mksym var :format "*~A*") ,it))))
-                       *lang-ctx-vars*))
-       ,@body)))
+  (once-only (lang)
+    `(if-it (? *lang-profiles* ,lang)
+            (let ((*lang* ,lang)
+                  ,@(flat-map (lambda (var)
+                                (when-it (? it var)
+                                  `((,(mksym var :format "*~A*") ,it))))
+                              *lang-ctx-vars*))
+              ,@body)
+            (error "No language profile for: ~A (~A)" ,lang (iso-lang ,lang)))))
 
 
 ;;; Language ISO codes
+
+(defun iso-lang (iso)
+  "Language name for its ISO code."
+  (? +iso-639-1+ iso))
+
+(defun lang-iso (lang)
+  "Iso code of LANG."
+  (dotable (iso language +iso-639-1+)
+    (when (some ^(string-equal lang %)
+                (split #\/ language))
+      (return iso))))
 
 (defparameter +iso-639-1+
   #h(:aa "Afar"
@@ -260,19 +283,3 @@
      :zh "Chinese"
      :zu "Zulu")
   "ISO 639-1 language names.")
-
-(defun iso-lang (iso)
-  "Language name for its ISO code."
-  (? +iso-639-1+ iso))
-
-(defun lang-iso (lang)
-  "Iso code of LANG."
-  (dotable (iso language +iso-639-1+)
-    (when (some ^(string-equal lang %)
-                (split #\/ language))
-      (return iso))))
-
-(defun init-lang (lang)
-  "Load language profile and other necessary data for LANG.
-   The initialization data should be defined in the file langs/LANG/LANG.lisp."
-  (load (lang-file lang (fmt "~(~A~).lisp" lang))))

@@ -14,14 +14,14 @@
 
 (defmethod score ((model perceptron) class fs)
   (let ((rez 0)
-        (weights (get# class (m-weights model) #h())))
+        (weights (get# class @model.weights #h())))
     (dolist (f fs)
       (:+ rez (get# f weights 0))) ;(1- (random 2.0)))))
     rez))
 
 (defmethod rank ((model perceptron) fs &key classes)
   (let ((scores #h()))
-    (dotable (class weights (m-weights model))
+    (dotable (class weights @model.weights)
       (when (or (null classes)
                 (member class classes))
         (dolist (f fs)
@@ -31,7 +31,7 @@
 
 ;;; training
 
-(defmacro training-perceptron ((sample data epochs verbose c n) &body body)
+(defmacro training-perceptron ((ex data epochs verbose c n) &body body)
   "Common scaffold for training different perceptron models."
   (with-gensyms (j prev-j total epoch)
     `(dotimes (,epoch ,epochs)
@@ -42,7 +42,7 @@
              (,data (copy-seq ,data)))
          (when ,verbose
            (format *debug-io* "~%~%==== Epoch: ~A ====~%~%" (1+ ,epoch)))
-         (doindex (,j ,sample ,data)
+         (doindex (,j ,ex ,data)
            ,@body
            (when (and ,verbose
                       (> (/ (- ,j ,prev-j) ,total) 0.01))
@@ -54,11 +54,11 @@
          (:= ,data (nshuffle ,data))))))
 
 (defmethod train ((model avg-perceptron) data &key (epochs 5) verbose)
-  (training-perceptron (sample data epochs verbose c n)
-    (let ((guess (classify model @sample.fs)))
-      (train1 model @sample.gold guess @sample.fs)
+  (training-perceptron (ex data epochs verbose c n)
+    (let ((guess (classify model @ex.fs)))
+      (train1 model @ex.gold guess @ex.fs)
       (when verbose
-        (:+ c (if (eql @sample.gold guess) 1 0))
+        (:+ c (if (eql @ex.gold guess) 1 0))
         (:+ n))))
   model)
 

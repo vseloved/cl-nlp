@@ -1,4 +1,4 @@
-;;; (c) 2013-2016 Vsevolod Dyomkin
+;;; (c) 2013-2017 Vsevolod Dyomkin
 
 (in-package #:nlp.contrib.corpora)
 (named-readtables:in-readtable rutilsx-readtable)
@@ -13,15 +13,15 @@
   (let ((*package* (find-package :tag))
         pars nps)
     (dolist (par (remove-if
-                   #`(starts-with "*x*" %) ; remove headers from Brown corpus files
+                   ^(starts-with "*x*" %) ; remove headers from Brown corpus files
                    (mapcar (lambda (par)
-                             (mapcar #`(strjoin #\Space %)
+                             (mapcar ^(strjoin #\Space %)
                                      par))
-                           (mapcar #`(split-if #'blankp
-                                               (split #\Newline %))
-                                   (remove-if #'blankp
+                           (mapcar ^(split-if 'blankp
+                                              (split #\Newline %))
+                                   (remove-if 'blankp
                                               (mapcar
-                                               #`(string-trim +white-chars+ %)
+                                               ^(string-trim +white-chars+ %)
                                                (re:split "={38}"
                                                          (read-file file))))))))
       (let (cur-par cur-par-nps)
@@ -53,7 +53,7 @@
   (let ((rez (make-corpus :desc "Penn Treebank Tagged")))
     (dofiles (file path :ext ext)
       (push (read-corpus-file :ptb-tagged path)
-            (corpus-texts rez)))
+            @rez.texts))
     rez))
 
 (defmethod map-corpus ((type (eql :ptb-tagged)) path fn &key (ext "POS"))
@@ -65,5 +65,5 @@
 
 (defun make-tagged-token (str)
   (let ((/-pos (position #\/ str :from-end t)))
-    (make-token :word (slice str 0 /-pos)
-                :pos (mksym (slice str (1+ /-pos))))))
+    (make-tok :word (slice str 0 /-pos)
+              :pos (mksym (slice str (1+ /-pos))))))

@@ -1,4 +1,4 @@
-;;; (c) 2013-2016 Vsevolod Dyomkin
+;;; (c) 2013-2017 Vsevolod Dyomkin
 
 (in-package #:nlp.corpora)
 (named-readtables:in-readtable rutilsx-readtable)
@@ -27,7 +27,7 @@
                                  (single (cdr subtree))
                                  (atom (cadr subtree)))
                         (let ((word (second subtree)))
-                          (push (make-token
+                          (push (make-tok
                                  :beg pos
                                  :end (1- (:+ pos (1+ (length word))))
                                  :word word
@@ -43,9 +43,9 @@
                   :name (pathname-name file)
                   :clean (strjoin #\Newline
                                   (mapcar ^(strjoin #\Space
-                                                    (mapcar 'token-word %))
+                                                    (mapcar 'tok-word %))
                                           sents))
-                  :tokenized (list sents)
+                  :par-sent-toks (list sents)
                   :trees trees))))))
 
 (defmethod read-corpus ((type (eql :treebank)) path &key ext)
@@ -92,7 +92,7 @@
 
 (defun remove-dummy-tokens (sent)
   "Remove tokens tagged as -NONE- from list of tokens SENT."
-  (remove-if ^(eql 'tag:-NONE- (token-pos %))
+  (remove-if ^(eql 'tag:-NONE- @%.pos)
              sent))
 
 (defun clean-up-tree (tree)
@@ -103,7 +103,7 @@
         tree
         (let ((head (first tree)))
           (unless (eql 'tag:-NONE- head)
-            (when-let (children (remove nil (mapcar #'clean-up-tree (rest tree))))
+            (when-let (children (remove nil (mapcar 'clean-up-tree (rest tree))))
               (let ((headstr (symbol-name head)))
               (cons (intern (slice headstr 0 (position #\- headstr)) :tag)
                     children))))))))

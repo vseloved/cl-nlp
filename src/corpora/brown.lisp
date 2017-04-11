@@ -1,4 +1,4 @@
-;;; (c) 2013-2016 Vsevolod Dyomkin
+;;; (c) 2013-2017 Vsevolod Dyomkin
 
 (in-package #:nlp.corpora)
 (named-readtables:in-readtable rutilsx-readtable)
@@ -9,7 +9,7 @@
   (let ((text (string-trim +white-chars+ (read-file file)))
         (offset 0)
         (nl-nl-nl (fmt "~%~%~%"))
-        tokenized)
+        par-sent-toks)
     (dolist (par (split nl-nl-nl text :test 'string= :remove-empty-subseqs t))
       (let (cur-par)
         (dolist (sent (split #\Newline par :remove-empty-subseqs t))
@@ -26,12 +26,12 @@
                                    :word word :pos pos)
                        cur-sent)))
             (push (reverse cur-sent) cur-par)))
-        (push (reverse cur-par) tokenized)))
-    (reversef tokenized)
+        (push (reverse cur-par) par-sent-toks)))
+    (reversef par-sent-toks)
     (make-text :name (pathname-name file)
                :raw text
-               :clean (parags->text tokenized)
-               :tokenized tokenized)))
+               :clean (parags->text toks)
+               :par-sent-toks par-sent-toks)))
 
 (defmethod read-corpus ((type (eql :brown)) path &key (ext ""))
   (let* ((path (namestring path))

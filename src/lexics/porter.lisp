@@ -13,7 +13,7 @@
                                     :fill-pointer t :initial-contents word)
           step1ab step1c step2 step3 step4 step5)))
 
-(ncore::def-lang-var porter-stemmer (make 'porter-stemmer)
+(def-lang-var <porter-stemmer> (make 'porter-stemmer)
   "Porter stemmer")
 
 ;;; steps

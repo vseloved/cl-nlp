@@ -1,4 +1,4 @@
-;;; (c) 2013-2016 Vsevolod Dyomkin
+;;; (c) 2013-2017 Vsevolod Dyomkin
 
 (in-package #:nlp.core)
 (named-readtables:in-readtable rutils-readtable)
@@ -19,36 +19,36 @@
                   (progn
                     (when (stringp cur)
                       (cond ((string= "¶" cur)
-                             (setf cur "<S>"))
+                             (:= cur "<S>"))
                             ((and (every #'period-char-p cur)
                                   (or (null (rest tail))
                                       (upper-case-p (char (second tail) 0))))
-                             (setf tail (cons nil (cons "<S>" (rest tail)))))))
-                    (incf (get# cur ht 0)))
-                  (incf (get# (let* ((ngram (sub tail 0 order))
-                                     (suffix (rest ngram)))
-                                (cond
-                                  ;; paragraph start is sentence start
-                                  ((string= "¶" cur)
-                                   (cons "<S>" suffix))
-                                  ;; paragraph end
-                                  ((string= "¶" (nth last-idx ngram))
-                                   (setf tail (nthcdr (1- last-idx) tail))
-                                   (append (butlast ngram) (list "</S>")))
-                                  ;; sentence end
-                                  ((and (upper-case-p
-                                         (char (nth last-idx ngram) 0))
-                                        (every #'period-char-p
-                                               (nth (1- last-idx) ngram)))
-                                   (setf tail (append (list nil "<S>")
-                                                      (nthcdr last-idx tail)))
-                                   (append (butlast ngram) (list "</S>")))
-                                  ;; inside sentence
-                                  (t ngram)))
-                              ht 0)))))
-          (when (= order 1)
+                             (:= tail (cons nil (cons "<S>" (rest tail)))))))
+                    (:+ (get# cur ht 0)))
+                  (:+ (get# (with ((ngram (subseq tail 0 order))
+                                   (suffix (rest ngram)))
+                              (cond
+                                ;; paragraph start is sentence start
+                                ((string= "¶" cur)
+                                 (cons "<S>" suffix))
+                                ;; paragraph end
+                                ((string= "¶" (nth last-idx ngram))
+                                 (setf tail (nthcdr (1- last-idx) tail))
+                                 (append (butlast ngram) (list "</S>")))
+                                ;; sentence end
+                                ((and (upper-case-p
+                                       (char (nth last-idx ngram) 0))
+                                      (every 'period-char-p
+                                             (nth (1- last-idx) ngram)))
+                                 (setf tail (append (list nil "<S>")
+                                                    (nthcdr last-idx tail)))
+                                 (append (butlast ngram) (list "</S>")))
+                                ;; inside sentence
+                                (t ngram)))
+                            ht 0)))))
+          (when (= 1 order)
             (when (get# "<S>" ht)
-              (set# "</S>" ht (decf (get# "<S>" ht)))))
+              (set# "</S>" ht (:- (get# "<S>" ht)))))
           ht)))
 
 (defun index-context-freqs (words &key ignore-order)
@@ -58,7 +58,7 @@
    are normalized and treated as the same context)
    for each distinct word in WORDS."
   ;; TODO: generalize for broader contexts
-  (let ((ctxs (make-hash-table :test 'equal)))
+  (let ((ctxs #h(equal)))
     (loop :for (prev cur next) :on (cons "<S>" (append words (list "</S>")))
        :while next :do
        (unless (get# cur ctxs)
@@ -91,7 +91,7 @@
          (when (and (> n 1) (string= "¶" (car prefix)))
            (setf prefix (cons "¶" (make-list (1- n)))))
          (unless (get# prefix transitions)
-           (set# prefix transitions (make-hash-table :test 'equal)))
+           (set# prefix transitions #h(equal)))
          (set# word (get# prefix transitions)
                (1+ (get# word (get# prefix transitions) 0)))))
     (normalize-freqs transitions)))
@@ -99,14 +99,14 @@
 (defun index-word-transition-freqs (words)
   "Create a table of weighted conditional frequencies
    of next words for each distinct word in WORDS."
-  (let ((transitions (make-hash-table :test 'equalp))
+  (let ((transitions #h(equalp))
         (word-vec (make-array (1+ (length words))
                               :initial-contents (cons "¶" words))))
     (dotimes (i (1- (length words)))
-      (let ((prev (elt word-vec i))
-            (cur (elt word-vec (+ i 1))))
+      (let ((prev (? word-vec i))
+            (cur (? word-vec (+ i 1))))
         (unless (get# prev transitions)
-          (set# prev transitions (make-hash-table :test 'equal)))
+          (set# prev transitions #h(equal)))
        (set# cur (get# prev transitions)
              (1+ (get# cur (get# prev transitions) 0)))))
     (normalize-freqs transitions)))
@@ -114,26 +114,26 @@
 
 ;;; Collocations
 
-(defun find-collocations (bigrams &key (n 20))
+(defun find-collocations (bigrams &key (n 20) stopwords)
   "Find up to N strongest collocations in BIGRAMS."
-  (let ((rez (make-hash-table :test 'equal))
-        (left (make-hash-table :test 'equal))
-        (right (make-hash-table :test 'equal))
-        (total (ngrams-total-freq bigrams)))
-    (dotable (ngram freq (ngrams-table bigrams))
+  (let ((rez #h(equal))
+        (left #h(equal))
+        (right #h(equal))
+        (total @bigrams.total-freq))
+    (dotable (ngram freq @bigrams.table)
       (ds-bind (l r) ngram
         (set# l left (+ freq (get# l left 0)))
         (set# r right (+ freq (get# r right 0)))))
     (dotable (ngram freq (ngrams-table bigrams))
-      (unless (reduce #'or2
-                      (mapcar #`(member % *stopwords-en* :test 'string-equal)
+      (unless (reduce 'or2
+                      (mapcar ^(member % stopwords :test 'string-equal)
                               ngram))
         (let ((lfreq (- (get# (car ngram) left) freq))
               (rfreq (- (get# (cadr ngram) right) freq)))
           (set# ngram rez
                 (log-likelihood-ratio freq lfreq
                                       rfreq (- total lfreq rfreq freq))))))
-    (take n (sorted-ht-keys '> rez))))
+    (take n (sort (keys ht) fn))))
 
 
 ;;; Helpers
@@ -141,8 +141,9 @@
 (defun normalize-freqs (ht-of-hts)
   "For each table in HT-OF-HTS normalize all the values.
    Returns the modified HT-OF-HTS."
-  (maphash #`(let ((total (reduce '+ (ht-vals %%))))
-               (dotable (k v %%)
-                 (set# k %% (/ v total))))
+  (maphash ^(let ((total (sum 'vals %%)))
+              (dotable (k v %%)
+                (set# k %% (/ v total))))
            ht-of-hts)
   ht-of-hts)
+  

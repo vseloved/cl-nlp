@@ -27,45 +27,42 @@
 
 (defmethod classify ((model greedy-ap-dict-postagger) fs &key classes)
   (declare (ignore classes))
-  (or (get# (first fs) (tagger-single-pos-words model))
+  (or (get# (first fs) @model.single-pos-words)
       (call-next-method model (rest fs))))
 
 (defmethod tag ((tagger greedy-ap-dict-postagger) (sent sent))
   (with-postagger-init (tagger sent)
-    (doindex (i token (sent-tokens sent))
-      (:= (token-pos token) (classify tagger
-                                      (extract-fs tagger i (token-word token)
-                                                  ctx prev prev2)))
+    (doindex (i tok @sent.toks)
+      (:= @tok.pos (classify tagger
+                             (extract-fs tagger i @tok.word ctx prev prev2)))
       (:= prev2 prev
-          prev (token-pos token)))
+          prev @tok.pos))
     sent))
 
 (defmethod train ((model greedy-ap-dict-postagger) sents &key (epochs 5) verbose)
-  (with-slots (single-pos-words dict) model
-    ;; expand dict
-    (dolist (sent sents)
-      (dolist (tok (sent-tokens sent))
-        (set# (token-word tok) dict nil)))
+  ;; expand dict
+  (dolist (sent sents)
+    (dolist (tok @sent.toks)
+      (void (? @model.dict @tok.word)))
     ;; expand single-pos-words
     (dotable (word pos (build-single-pos-words-dict (mapcar #'sent-tokens sents)
                                                     :ignore-case? t))
-      (unless (in# word single-pos-words)
-        (set# word single-pos-words pos)))
-    ;; train
-    (training-perceptron (sent sents epochs verbose c n)
-      (with-postagger-init (model sent)
-        (doindex (i token (sent-tokens sent))
-          (let ((word (token-word token)))
-            (:= prev (or (get# word single-pos-words)
-                         (let* ((fs (extract-fs model i word ctx prev prev2))
-                                (guess (classify model fs)))
-                           (train1 model (token-pos token) guess (rest fs))
-                           guess))
-                prev2 prev)
-            (when verbose
-              (:+ c (if (eql prev (token-pos token)) 1 0))
-              (:+ n))))))
-    model))
+      (unless (in# word @model.single-pos-words)
+        (set# word @model.single-pos-words pos))))
+  ;; train
+  (training-perceptron (sent sents epochs verbose c n)
+    (with-postagger-init (model sent)
+      (doindex (i tok @sent.toks)
+        (:= prev (or (? @model.single-pos-words @tok.word)
+                     (with ((fs (extract-fs model i @tok.word ctx prev prev2))
+                            (guess (classify model fs)))
+                       (train1 model @tok.pos guess (rest fs))
+                       guess))
+            prev2 prev)
+        (when verbose
+          (:+ c (if (eql prev @tok.pos) 1 0))
+          (:+ n)))))
+  model)
 
 (defmethod extract-gold ((model greedy-ap-dict-postagger) data)
   (let ((len (length data))
@@ -73,9 +70,9 @@
         rez)
     (dolist (sent data)
       (with-postagger-init (model sent)
-        (doindex (i token (sent-tokens sent))
-          (let ((fs (extract-fs model i (token-word token) ctx prev prev2)))
-            (push (make-sample :fs fs :gold (token-pos token))
+        (doindex (i tok @sent.toks)
+          (let ((fs (extract-fs model i @tok.word ctx prev prev2)))
+            (push (make-ex :fs fs :gold @tok.pos)
                   rez)
             (:= prev2 prev
                 prev (classify model fs)))))
@@ -86,36 +83,35 @@
     (reverse rez)))
 
 (defmethod extract-fs ((model greedy-ap-dict-postagger) &rest args)
-  (ds-bind (i word ctx prev-pos prev2-pos) args
-    (let* ((i (+ i 2))
-           (dict (tagger-dict model))
-           (prev-word  (svref ctx (- i 1)))
-           (prev2-word (svref ctx (- i 2)))
-           (next-word  (svref ctx (+ i 1)))
-           (next2-word (svref ctx (+ i 2)))
-           (dword (string-downcase word)))
-      (cons word
-            (make-fs "bias"
-                     ("i pref1" (char word 0))
-                     ("i suf3" (if (> (length dword) 3) (substr dword -3) dword))
-                     ("i word" word)
-                     ("i-1 pos" prev-pos)
-                     ("i-2 pos" prev2-pos)
-                     ("i-1 pos + i-2 pos" prev-pos prev2-pos)
-                     ("i-1 pos + i word" prev-pos word)
-                     ("i-1 word" prev-word)
-                     ("i-1 suf3" (unless (keywordp prev-word)
-                                   (if (> (length prev-word) 3)
-                                       (substr prev-word -3)
-                                       prev-word)))
-                     ("i+1 word" next-word)
-                     ("i+1 suf3" (unless (keywordp next-word)
-                                   (if (> (length next-word) 3)
-                                       (substr next-word -3)
-                                       next-word)))
-                     ("i-2 word" prev2-word)
-                     ("i+2 word" next2-word))))))
-
+  (with (((i word ctx prev-pos prev2-pos) args)
+         (i (+ i 2))
+         (dict (tagger-dict model))
+         (prev-word  (svref ctx (- i 1)))
+         (prev2-word (svref ctx (- i 2)))
+         (next-word  (svref ctx (+ i 1)))
+         (next2-word (svref ctx (+ i 2)))
+         (dword (string-downcase word)))
+    (cons word
+          (make-fs "bias"
+                   ("i pref1" (char word 0))
+                   ("i suf3" (if (> (length dword) 3) (substr dword -3) dword))
+                   ("i word" word)
+                   ("i-1 pos" prev-pos)
+                   ("i-2 pos" prev2-pos)
+                   ("i-1 pos + i-2 pos" prev-pos prev2-pos)
+                   ("i-1 pos + i word" prev-pos word)
+                   ("i-1 word" prev-word)
+                   ("i-1 suf3" (unless (keywordp prev-word)
+                                 (if (> (length prev-word) 3)
+                                     (substr prev-word -3)
+                                     prev-word)))
+                   ("i+1 word" next-word)
+                   ("i+1 suf3" (unless (keywordp next-word)
+                                 (if (> (length next-word) 3)
+                                     (substr next-word -3)
+                                     next-word)))
+                   ("i-2 word" prev2-word)
+                   ("i+2 word" next2-word)))))
 
 ;;; normalization
 
@@ -140,27 +136,26 @@
     (t (string-downcase word))))
 
 (defun make-sent-ctx (tagger sent)
-  (make-array (+ 4 (length @sent.tokens))
+  (make-array (+ 4 (length @sent.toks))
               :initial-contents
               (append '(:-start- :-start2-)
-                      (mapcar ^(normalize tagger @%.word) @sent.tokens)
+                      (mapcar ^(normalize tagger @%.word) @sent.toks)
                       '(:-end- :-end2-))))
 
 
 ;;; loading/saving
 
 (defmethod save-model :after ((model greedy-ap-dict-postagger) (out stream))
-  (with-slots (single-pos-words dict) model
-    (let ((total (+ (ht-count single-pos-words) (ht-count dict)))
-          (i 0))
-      (format out "~&~A~%" (ht-count single-pos-words))
-      (dotable (word pos single-pos-words)
-        (format out "~S ~S " word pos)
-        (princ-progress (:+ i) total))
-      (format out "~%~A~%" (ht-count dict))
-      (dotable (word _ dict)
-        (format out " ~S" word)
-        (princ-progress (:+ i) total)))))
+  (let ((total (+ (ht-count @model.single-pos-words) (ht-count @model.dict)))
+        (i 0))
+    (format out "~&~A~%" (ht-count @model.single-pos-words))
+    (dotable (word pos @model.single-pos-words)
+      (format out "~S ~S " word pos)
+      (princ-progress (:+ i) total))
+    (format out "~%~A~%" (ht-count @model.dict))
+    (dotable (word _ @model.dict)
+      (format out " ~S" word)
+      (princ-progress (:+ i) total))))
 
 (defmethod load-model :after ((model greedy-ap-dict-postagger) in
                               &key class-package)
@@ -170,3 +165,22 @@
           (read in))))
   (loop :repeat (read in) :do
     (:= (? @model.dict (read in)) t)))
+
+
+;;; utils
+
+(defun build-single-pos-words-dict (sents &key ignore-case?
+                                            (freq-threshold 20)
+                                            (ambiguity-threshold 0.97))
+  (let ((posdict (make-hash-table :test (if ignore-case? 'equalp 'equal))))
+    (dolist (sent sents)
+      (dolist (tok sent)
+        (:+ (get# @tok.pos (getset# @tok.word posdict #h()) 0))))
+    (dotable (word pos-weights posdict)
+      (with ((argmax max (argmax 'rt (pairs pos-weights)))
+             (total (sum 'vals pos-weights)))
+        (if (and (> total freq-threshold)
+                 (> (/ max total) ambiguity-threshold))
+            (set# word posdict (lt argmax))
+            (rem# word posdict))))
+    posdict))

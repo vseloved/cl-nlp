@@ -8,8 +8,8 @@
 
 (defstruct (dep (:print-object print-stanford-dep))
   (rel nil :type (or symbol null))
-  (head nil :type (or token null))
-  (child nil :type (or token null)))
+  (head nil :type (or tok null))
+  (child nil :type (or tok null)))
 
 (defgeneric print-dep (format dep &optional stream)
   (:documentation
@@ -26,9 +26,9 @@
   "Print DEP in Stanford dependency format to STREAM."
   (print-dep :stanford dep stream))
 
-(defun read-stanford-dep (str &optional (tokens #h(0 +root+)))
+(defun read-stanford-dep (str &optional (toks #h(0 +root+)))
   "Read one Stanford format dependency from STR.
-   TOKENS is a cache of already encountered tokens."
+   TOKS is a cache of already encountered tokens."
   (let* ((split1 (position #\( str))
          (split2 (position #\, str))
          (split3 (position #\) str))
@@ -39,28 +39,28 @@
                                        (slice str (1+ split2) (1- split3)))))
          (child-idx (parse-integer (second child))))
     (make-dep :rel (mksym (slice str 0 split1) :package :deps)
-              :head (getset# head-idx tokens
-                             (make-token :id head-idx :word (first head)))
-              :child (getset# child-idx tokens
-                              (make-token :id child-idx :word (first child))))))
+              :head (getset# head-idx toks
+                             (make-tok :id head-idx :word (first head)))
+              :child (getset# child-idx toks
+                              (make-tok :id child-idx :word (first child))))))
 
-(defun read-conll-dep (str &optional (tokens #h(0 +root+)))
+(defun read-conll-dep (str &optional (toks #h(0 +root+)))
   "Read one CONLL format dependency from STR.
-   TOKENS is a cache of already encountered tokens."
+   TOKS is a cache of already encountered tokens."
   (ds-bind (id word lemma pos pos2 feats head-id rel &rest rest)
       (split #\Tab str :remove-empty-subseqs t)
     (declare (ignore pos2 feats rest))
     (let ((child-id (parse-integer id))
           (head-id (parse-integer head-id)))
       (make-dep :rel (mksym rel :package :dep)
-                :head (or (? tokens head-id)
-                          (make-token :id head-id))
-                :child (getset# child-id tokens
-                                (make-token :id child-id
-                                            :word word
-                                            :lemma (unless (string= "_" lemma)
-                                                     lemma)
-                                            :pos (mksym pos :package :tag)))))))
+                :head (or (? toks head-id)
+                          (make-tok :id head-id))
+                :child (getset# child-id toks
+                                (make-tok :id child-id
+                                          :word word
+                                          :lemma (unless (string= "_" lemma)
+                                                   lemma)
+                                          :pos (mksym pos :package :tag)))))))
 
 (defgeneric read-deps (format str)
   (:documentation
@@ -70,17 +70,17 @@
     (with-input-from-string (in str)
       (call-next-method format in)))
   (:method ((format (eql :stanford)) (str stream))
-    (let (tokens all-deps deps)
+    (let (toks all-deps deps)
       (loop :for line := (read-line str nil) :while line :do
          (if (blankp line)
              (progn
-               (:= tokens #h(0 +root+))
+               (:= toks #h(0 +root+))
                (when deps (push (reverse deps) all-deps))
                (void deps))
-             (push (read-stanford-dep line tokens) deps)))
+             (push (read-stanford-dep line toks) deps)))
       (reverse all-deps)))
   (:method ((format (eql :conll)) (str stream))
-    (let ((tokens #h(0 +root+))
+    (let ((toks #h(0 +root+))
           all-deps deps)
       (loop :for line := (read-line str nil) :while line :do
          (if (blankp line)
@@ -88,11 +88,11 @@
                (when deps
                  (dolist (dep deps)
                    (:= (dep-head dep)
-                       (? tokens (token-id (dep-head dep)))))
+                       (? toks (tok-id (dep-head dep)))))
                  (push (reverse deps) all-deps))
-               (:= tokens #h(0 +root+))
+               (:= toks #h(0 +root+))
                (void deps))
-             (push (read-conll-dep line tokens) deps)))
+             (push (read-conll-dep line toks) deps)))
       (reverse all-deps))))
 
 (defun deps->tree (deps &optional dep)
@@ -103,14 +103,14 @@
                       (mapcar ^(deps->tree deps %)
                               (keep-if ^(eql @dep.child %) deps
                                        :key 'dep-head)))
-                '< :key #`(token-id (etypecase %
-                                      (token %)
-                                      (list @%.child#0)))))))
+                '< :key ^(tok-id (etypecase %
+                                   (tok %)
+                                   (list @%.child#0)))))))
 
 #+nil
 (defun pprint-deps-tree (deps)
   (let ((*package* (find-package :dep)))
     (pprint-tree (maptree #`(etypecase %
                               (dep (dep-rel %))
-                              (token (token-word %)))
+                              (tok (tok-word %)))
                           (deps->tree deps)))))

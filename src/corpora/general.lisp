@@ -16,22 +16,23 @@
    - RAW - unprocessed, as it is in the corpus
            (if possible: for instance, for XML corpora ir doesn't make sense)
    - CLEAN - processed, but in plain format (just words)
-   - TOKENIZED - paragraph-sentence-token 3-level structure"
+   - PAR-SENT-TOKS - paragraph-sentence-token 3-level structure"
   name
   raw
   clean
-  tokenized)
+  par-sent-toks)
 
 (defun print-text (text stream)
-  (with-slots (name raw clean tokenized) text
+  (with-slots (name raw clean par-sent-toks) text
     (format stream "#S(TEXT :NAME \"~A\"~
                        ~@[~%:RAW \"~A ...\"~]~
                        ~@[~%:CLEAN \"~A ...\"~]~
-                       ~@[~%:TOKENIZED (~{~A ~}...)~])"
+                       ~@[~%:PAR-SENT-TOKS (~{~A ~}...)~])"
             name
             (when raw (sub raw 0 (min (length raw) 100)))
             (when clean (sub clean 0 (min (length raw) 100)))
-            (when tokenized (sub tokenized 0 (min (length tokenized) 10))))))
+            (when par-sent-toks
+              (subseq par-sent-toks 0 (min (length par-sent-toks) 10))))))
 
 
 (defgeneric read-corpus-file (type file &key &allow-other-keys)

@@ -4,15 +4,14 @@
 (named-readtables:in-readtable rutilsx-readtable)
 
 
-(defstruct (token (:print-object
-                   (lambda (token stream)
-                     (with-slots (id word pos beg end) token
-                       (format stream "<~A~@[/~A~]~@[:~A~]~@[ ~A~]>"
-                               word pos id
-                               (when beg
-                                 (if end
-                                     (fmt "~A..~A" beg end)
-                                     beg)))))))
+(defstruct (tok (:print-object
+                 (lambda (tok stream)
+                   (format stream "<~A~@[/~A~]~@[:~A~]~@[ ~A~]>"
+                           @tok.word @tok.pos @tok.id
+                           (when @tok.beg
+                             (if @tok.end
+                                 (fmt "~A..~A" @tok.beg @tok.end)
+                                 @tok.beg))))))
   "A corpus token with id or postition and possibly POS tag.
    Also may contain word lemma."
   id
@@ -22,13 +21,13 @@
   lemma
   pos)
 
-(defmethod s! ((obj token))
-  (ncore:token-word obj))
+(defmethod ss ((obj tok))
+  @obj.word)
 
 (defclass sent ()
-  ((tokens :initarg :tokens :accessor sent-tokens))
+  ((toks :initarg :toks :accessor sent-toks))
   (:documentation "Basically, a sentence is a list of tokens."))
 
 (defmethod print-object ((obj sent) out)
   (print-unreadable-object (obj out :identity t)
-    (format out "SENT: ~{~A~^ ~}" @obj.tokens)))
+    (format out "SENT: ~{~A~^ ~}" @obj.toks)))

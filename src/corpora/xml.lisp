@@ -1,4 +1,4 @@
-;;; (c) 2014-2016 Vsevolod Dyomkin
+;;; (c) 2014-2017 Vsevolod Dyomkin
 
 (in-package #:nlp.corpora)
 (named-readtables:in-readtable rutilsx-readtable)
@@ -28,7 +28,7 @@
     (princ ".")))
 
 (defclass xml-corpus-sax (sax-progress-mixin)
-  ((token-init :initform 'make-token :initarg :token-init)
+  ((tok-init :initform 'make-tok :initarg :tok-init)
    (sent-class :initform nil :initarg :sent-class :type sent)
    (struct-map :initform #h() :initarg :struct-map)
    (attr-map :initform #h() :initarg :attr-map)
@@ -47,7 +47,7 @@
     (it may be either 'restored' from the XML representation,
     or aggregated directly from the more general elements (sentence, paragraphs)
     if they are not split into tokens).
-    Each read token may have a specific TOKEN-INIT function
+    Each read token may have a specific TOK-INIT function
     and a number of attributes whose names in the token class
     and in the XML are identified by ATTR-MAP.
     If SENT-CLASS is setup, tokens will be groupped not into lists
@@ -59,12 +59,12 @@
 (defmethod sax:start-element ((sax xml-corpus-sax)
                               namespace-uri local-name qname attributes)
   (declare (ignore namespace-uri qname))
-  (with-slots (token-init struct-map attr-map xml-tags cur-sent cur-par) sax
+  (with-slots (tok-init struct-map attr-map xml-tags cur-sent cur-par) sax
     (push (mkeyw local-name) xml-tags)
-    (when-it (get# :token struct-map)
+    (when-it (get# :tok struct-map)
       (when tag-matches?
-        (push (apply token-init
-                     (flat-map #`(list (lt %) (xml-attr (rt %) attributes))
+        (push (apply tok-init
+                     (flat-map ^(list (lt %) (xml-attr (rt %) attributes))
                                (ht->pairs attr-map)))
               cur-sent)))))
 
@@ -74,7 +74,7 @@
       sax
     (cond
       ((and-it (get# :sent struct-map) tag-matches?)
-       (when (and (in# :token struct-map)
+       (when (and (in# :tok struct-map)
                   (not sent-class))
          (reversef cur-sent))
        (when (in# :parag struct-map)
@@ -93,22 +93,22 @@
       sax
     (cond-it
       ;; if we have token level we ignore other levels
-      ((get# :token struct-map)
+      ((get# :tok struct-map)
        (when tag-matches?
-         (:= (token-word (first cur-sent)) data)))
+         (:= (tok-word (first cur-sent)) data)))
       ;; if we have sentence level we ignore paragraph level
       ((get# :sent struct-map)
        (when tag-matches?
          (:= raw-text (strcat raw-text #\Space data)
-             cur-sent (let ((toks (ncore:tokenize ncore:<word-tokenizer> data)))
+             cur-sent (let ((toks (tokenize <word-tokenizer> data)))
                         (if sent-class
-                            (make sent-class :tokens toks)
+                            (make sent-class :toks toks)
                             toks)))))
       ((get# :parag struct-map)
        (when tag-matches?
          (:= raw-text (strcat raw-text #\Newline data)
-             cur-par (mapcar ^(ncore:tokenize ncore:<word-tokenizer> %)
-                             (ncore:tokenize ncore:<sent-splitter> data))))))))
+             cur-par (mapcar ^(tokenize <word-tokenizer> %)
+                             (tokenize <sent-splitter> data))))))))
 
 (defmethod sax:start-document ((sax xml-corpus-sax))
   ;; do nothing

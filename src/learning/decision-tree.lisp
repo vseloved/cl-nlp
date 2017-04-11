@@ -1,4 +1,4 @@
-;;; (c) 2015-2016 Vsevolod Dyomkin
+;;; (c) 2015-2017 Vsevolod Dyomkin
 
 (in-package #:nlp.learning)
 (named-readtables:in-readtable rutilsx-readtable)
@@ -32,8 +32,8 @@
     (unless has-alts
       (:= rez (list rez)))
     (when classes
-      (:= rez (remove-if-not ^(member (first %) classes)
-                             rez)))
+      (:= rez (keep-if ^(member (first %) classes)
+                       rez)))
     (pairs->ht rez)))
 
 (defmethod train ((model c4.5-tree) data
@@ -261,7 +261,8 @@
                                            :verbose verbose)
                        (split-idx criterion data
                                   (if idx-count
-                                      (sample idxs idx-count :with-replacement? nil)
+                                      (sample idxs idx-count
+                                              :with-replacement? nil)
                                       idxs)
                                   :binary binary :verbose verbose))))
          (cond ((null idx)
@@ -278,7 +279,8 @@
                                              :fast fast
                                              :binary binary
                                              :verbose verbose))
-                               (split-at split-point data idx :test test :key 'lt))))
+                               (split-at split-point data idx
+                                         :test test :key 'lt))))
                ;; for categorical data once we use the dimension (idx)
                ;; we won't return to it
                (t
@@ -447,85 +449,86 @@
 (defun split-at (point data idx &key (key 'identity) (test 'eql))
   "Split DATA at POINT in dimension IDX."
   (let (left right)
-    (dolist (sample data)
-      (if (call test (? (call key sample) idx) point)
-          (push sample left)
-          (push sample right)))
+    (dolist (ex data)
+      (if (call test (? (call key ex) idx) point)
+          (push ex left)
+          (push ex right)))
     (list (reverse left)
           (reverse right))))
 
 
 ;;; split criteria
 
-(defun info-gain (samples &key idx (key 'rt))
-  "Info gain criterion for SAMPLES either in dimension IDX or by KEY."
+(defun info-gain (exs &key idx (key 'rt))
+  "Info gain criterion for examples EXS either in dimension IDX or by KEY."
   (if idx
-      (- (entropy samples :key key)
-         (entropy samples :idx idx :key key))
-      (if (some 'null samples)
+      (- (entropy exs :key key)
+         (entropy exs :idx idx :key key))
+      (if (some 'null exs)
           0
-          (- (entropy (reduce 'append samples) :key key)
-             (entropy samples :key key :already-split? t)))))
+          (- (entropy (reduce 'append exs) :key key)
+             (entropy exs :key key :already-split? t)))))
 
-(defun weighted-info-gain (samples split &key (key 'rt))
-  "Weighted info gain criterion for SAMPLES either in dimension IDX or by KEY."
-  (/ (info-gain samples :key key)
+(defun weighted-info-gain (exs split &key (key 'rt))
+  "Weighted info gain criterion for examples EXS either
+   in dimension IDX or by KEY."
+  (/ (info-gain exs :key key)
      (split-info split)))
 
-(defun gini-idx (samples)
-  "Gini impurity index of SAMPLES."
-  (let ((len (length samples)))
+(defun gini-idx (exs)
+  "Gini impurity index of examples EXS."
+  (let ((len (length exs)))
     (- 1 (sum ^(expt (/ % len) 2)
-              (mapcar 'length (ht-vals (partition-by 'rt samples)))))))
+              (mapcar 'length (ht-vals (partition-by 'rt exs)))))))
 
-(defun gini-split-idx (samples)
-  "Gini split index of SAMPLES."
+(defun gini-split-idx (exs)
+  "Gini split index of examples EXS."
   (float
-   (ds-bind (data1 data2) samples
-     (with ((len1 (length data1))
-            (len2 (length data2))
-            (len (+ len1 len2)))
-       (+ (* (/ len1 len) (gini-idx data1))
-          (* (/ len2 len) (gini-idx data2)))))))
+   (with (((data1 data2) exs)
+          (len1 (length data1))
+          (len2 (length data2))
+          (len (+ len1 len2)))
+     (+ (* (/ len1 len) (gini-idx data1))
+        (* (/ len2 len) (gini-idx data2))))))
 
 
 ;;; entropy calculations
 
-(defun entropy (samples &key idx key already-split?)
-  "Entropy calculated for SAMPLES based:
+(defun entropy (exs &key idx key already-split?)
+  "Entropy calculated for examples EXS based:
    - either on a given dimension IDX
    - or for ALREADY-SPLIT? data
    - or based on KEY selection"
   (float
    (cond
-     ((atom samples) (if (member samples '(0 1)) 0
-                         (- (+ (* samples (log samples 2))
-                                (* (- 1 samples) (log (- 1 samples) 2))))))
-     (idx (let ((size (length samples)))
+     ((atom exs) (if (member exs '(0 1)) 0
+                     (- (+ (* exs (log exs 2))
+                           (* (- 1 exs) (log (- 1 exs) 2))))))
+     (idx (let ((size (length exs)))
             (sum #`(let ((len (length (rt %))))
                      (* (/ len size)
                         (entropy (/ (count t (rt %) :key key)
                                     len))))
-                 (ht->pairs (partition-by idx samples)))))
+                 (pairs (partition-by idx exs)))))
      (already-split?
-      (let ((size (reduce '+ (mapcar 'length samples))))
+      (let ((size (sum 'length exs)))
         (sum ^(* (/ (length %) size)
                  (entropy % :key key))
-             samples)))
-     (key (entropy (/ (count t samples :key key)
-                      (length samples))))
+             exs)))
+     (key (entropy (/ (count t exs :key key)
+                      (length exs))))
      (t (- (sum ^(* % (log % 2))
-                (remove-if 'zerop samples)))))))
+                (remove-if 'zerop exs)))))))
 
-(defun split-info (samples &optional idx)
-  "Entropy of SAMPLES best split in dimension IDX."
+(defun split-info (exs &optional idx)
+  "Entropy of examples EXS best split in dimension IDX."
   (let ((size (if idx
-                  (length samples)
-                  (sum #'length samples))))
+                  (length exs)
+                  (sum 'length exs))))
     (entropy (mapcar ^(/ (length %) size)
                      (if idx
-                         (vals (partition-by idx samples))
-                         samples)))))
+                         (vals (partition-by idx exs))
+                         exs)))))
 
 
 ;;; utils
@@ -555,16 +558,6 @@
                 (push item (? rez (call fn item))))))
     rez))
 
-(defun sample (data n &key (with-replacement? t))
-  "Sample N elements from DATA (by default, WITH-REPLACEMENT?)."
-  (if with-replacement?
-      (with ((data (coerce data 'vector))
-             (len (length data)))
-        (if (>= n len)
-            data
-            (loop :repeat n :collect (? data (random len)))))
-      (take n (nshuffle (copy-list data)))))
-
 (defun all-permutations (list)
   "Generate all permutations of a LIST."
   (cond ((null list) nil)
@@ -572,6 +565,7 @@
         (t (loop :for element :in list
               :append (mapcar ^(cons element %)
                               (all-permutations (remove element list)))))))
+
 
 ;;; simple queue utils
 

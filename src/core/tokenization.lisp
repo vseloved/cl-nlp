@@ -324,7 +324,7 @@
             (mapcar ^(with ((words spans (tokenize <word-tokenizer> %)))
                         (loop :for word :in words
                               :for (beg end) :in spans
-                              :collect (make-token :word word :beg beg :end end)))
+                              :collect (make-tok :word word :beg beg :end end)))
                     (tokenize <sent-splitter> parag)))
           (split #\Newline string)))
 
@@ -337,9 +337,9 @@
            (mapcar (lambda (parag)
                      (strjoin #\Space
                               (mapcar ^(strjoin #\Space
-                                                (mapcar 'token-word
+                                                (mapcar 'tok-word
                                                         (if (listp %)
                                                             %
-                                                            (sent-tokens %))))
+                                                            (sent-toks %))))
                                       parag)))
                    parags)))

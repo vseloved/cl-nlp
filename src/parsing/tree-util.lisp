@@ -1,15 +1,15 @@
-;;; (c) 2013 Vsevolod Dyomkin
+;;; (c) 2013-2017 Vsevolod Dyomkin
 
 (in-package #:nlp.parsing)
-(named-readtables:in-readtable rutils-readtable)
+(named-readtables:in-readtable rutilsx-readtable)
 
 
 (defun proper-subtree-p (subtree)
   (if (atom subtree)
       (stringp subtree)
-      (and (symbolp (car subtree))
-           (or (single (cdr subtree))
-               (every #'listp (cdr subtree))))))
+      (and (symbolp (first subtree))
+           (or (single (rest subtree))
+               (every 'listp (rest subtree))))))
 
 (defmethod normalize ((form (eql 'chomsky-nf)) tree)
   "Normalize TREE to Chomsky Normal Form."
@@ -20,24 +20,24 @@
                ((atom subtree)
                 subtree)
                ((cdddr subtree)
-                (cons (car subtree)
-                      (subrec (cdr subtree))))
+                (cons (first subtree)
+                      (subrec (rest subtree))))
                ((and (single (rest subtree))
                      (listp (second subtree)))
                 (let ((*package* (find-package :nlp.parsing)))
                   (rec (cons (mksym (fmt "~A+~A" (car subtree) (caadr subtree)))
                              (cdadr subtree)))))
                (t
-                (cons (car subtree)
-                      (mapcar #'rec (cdr subtree))))))
+                (cons (first subtree)
+                      (mapcar 'rec (rest subtree))))))
            (subrec (nodes)
              (assert (proper-subtree-p (cons nil nodes)) (nodes)
                      "Subtree ~S is improper!" nodes)
              (if (dyadic nodes)
-                 (mapcar #'rec nodes)
+                 (mapcar 'rec nodes)
                  (let ((left (butlast nodes))
                        (*package* (find-package :nlp.parsing)))
-                   (cons (cons (mksym (fmt "~{~A~^_~}" (mapcar #'car left)))
+                   (cons (cons (mksym (fmt "~{~A~^_~}" (mapcar 'first left)))
                                (subrec left))
                          (list (rec (last1 nodes))))))))
     (when-it tree
@@ -51,19 +51,19 @@
              (cond
                ((atom subtree)
                 (list subtree))
-               ((find #\+ (symbol-name (car subtree)))
-                (let* ((*package* (find-package :nlp.parsing))
-                       (parts (mapcar #'mksym (split
-                                               #\+ (symbol-name (car subtree))))))
-                  (list (reduce #'list (butlast parts)
+               ((find #\+ (symbol-name (first subtree)))
+                (with ((*package* (find-package :nlp.parsing))
+                       (parts (mapcar 'mksym (split #\+
+                                                    (symbol-name (first subtree))))))
+                  (list (reduce 'list (butlast parts)
                                 :from-end t
                                 :initial-value
                                 (cons (last1 parts)
-                                      (mapcan #'rec (cdr subtree)))))))
-               ((find #\_ (symbol-name (car subtree)))
-                (mapcan #'rec (cdr subtree)))
+                                      (flat-map 'rec (rest subtree)))))))
+               ((find #\_ (symbol-name (first subtree)))
+                (flat-map 'rec (rest subtree)))
                (t
-                (list (cons (car subtree)
-                            (mapcan #'rec (cdr subtree))))))))
+                (list (cons (first subtree)
+                            (flat-map 'rec (rest subtree))))))))
     (when-it tree
       (car (rec it)))))

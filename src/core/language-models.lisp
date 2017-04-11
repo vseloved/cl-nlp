@@ -1,23 +1,20 @@
-;;; (c) 2013-2016 Vsevolod Dyomkin
+;;; (c) 2013-2017 Vsevolod Dyomkin
 
 (in-package #:nlp.core)
 (named-readtables:in-readtable rutilsx-readtable)
 
 
 (defclass language-model ()
-  ((order :initarg :order :reader m-order)
-   (ngrams :initarg :ngrams :reader m-ngrams))
+  ((order :initarg :order :reader lm-order)
+   (ngrams :initarg :ngrams :reader lm-ngrams))
   (:documentation
    "Language model is a collection of NGRAMS of all orders from 1 upto ORDER."))
 
 (defmethod print-object ((lm language-model) stream)
   (print-unreadable-object (lm stream :type t :identity t)
     (if (slot-boundp lm 'order)
-        (with-accessors ((order m-order) (ngrams m-ngrams)) lm
-          (with-accessors ((count ngrams-count) (total-freq ngrams-total-freq))
-              (elt ngrams order)
-            (format stream "order:~A count:~A outcomes:~A"
-                    order count total-freq)))
+        (format stream "order:~A count:~A outcomes:~A"
+                @lm.order @lm.ngrams.count @lm.ngrams.total-freq)
         (format stream "not initialized"))))
 
 
@@ -36,8 +33,7 @@
                      (2g 2)
                      (1g 1)
                      (t (error "No ngrams supplied")))))
-    (make class
-          :order order
+    (make class :order order
           :ngrams
           (make-array
            (1+ order)
@@ -69,8 +65,8 @@
    "Calculate perplexity of the MODEL on the list of TEST-SENTS."))
 
 (defmethod perplexity ((model language-model) test-sents)
-  (expt 2 (- (/ (reduce '+ (mapcar #`(logprob model %) test-sents))
-                (reduce '+ (mapcar #'length test-sents))))))
+  (expt 2 (- (/ (sum ^(logprob model %) test-sents)
+                (sum 'length test-sents)))))
 
 (defmethod prob ((lm language-model) (sent string))
   (prob lm (tokenize <word-tokenizer> sent)))
@@ -107,7 +103,7 @@
     (if (shorter? ngram 2)
         (let ((ugrams (get-ngrams 1 model)))
           (/ (freq ugrams ngram)
-             (ngrams-total-freq ugrams)))
+             @ugrams.total-freq))
         (let ((denominator-freq (freq (get-ngrams (1- order) model)
                                       (butlast ngram))))
           (if (zerop denominator-freq)
@@ -133,24 +129,22 @@
    "Stupid Backoff language model."))
 
 (defmethod cond-prob ((model stupid-backoff-lm) ngram)
-  (with-accessors ((ngrams m-ngrams) (backoff lm-backoff)) model
-    (let ((coef 1)
-          (len (length ngram)))
-      (loop :for i :from len :downto 1 :do
-         (let* ((cur (butlast ngram (- len i)))
-                (freq (freq (elt ngrams i)
-                            (if (cdr cur) cur (car cur)))))
-           (if (zerop freq)
-               (setf coef (* coef backoff))
-               (return-from cond-prob
-                 (* coef (/ freq
-                            (case i
-                              (1 (ngrams-total-freq (elt ngrams 1)))
-                              (2 (freq (elt ngrams 1) (car ngram)))
-                              (otherwise
-                               (freq (elt ngrams (1- i)) (butlast ngram))))))))))
-      (* coef (/ (ngrams-min-freq (elt ngrams 1))
-                 (ngrams-total-freq (elt ngrams 1)))))))
+  (let ((coef 1)
+        (len (length ngram)))
+    (loop :for i :from len :downto 1 :do
+      (let* ((cur (butlast ngram (- len i)))
+             (freq (freq (? model 'ngrams i)
+                         (if (cdr cur) cur (car cur)))))
+        (if (zerop freq)
+            (setf coef (* coef @model.backoff))
+            (return-from cond-prob
+              (* coef (/ freq
+                         (case i
+                           (1 @ngrams#1.total-freq)
+                           (2 (freq (elt ngrams 1) (car ngram)))
+                           (otherwise (freq (elt ngrams (1- i)) (butlast ngram))))))))))
+    (* coef (/ @ngrams#1.min-freq
+               @ngrams#1.total-freq))))
 
 
 ;;; Helper functions
@@ -158,5 +152,5 @@
 (declaim (inline get-ngrams))
 (defun get-ngrams (order model)
   "Get ngrams of a given ORDER from MODEL."
-  (assert (<= order (m-order model)))
-  (elt (m-ngrams model) order))
+  (assert (<= order @model.order))
+  @model.ngrams.order)

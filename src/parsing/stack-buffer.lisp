@@ -1,4 +1,4 @@
-;;; (c) 2015-2016 Vsevolod Dyomkin
+;;; (c) 2015-2017 Vsevolod Dyomkin
 
 (in-package #:nlp.parsing)
 (named-readtables:in-readtable rutilsx-readtable)
@@ -8,7 +8,7 @@
    (stack :initarg :stack :accessor parser-stack)
    (buffer :initarg :buffer :accessor parser-buffer)
    (ctx :initarg :ctx :accessor parser-ctx)
-   (tokens :initarg :tokens :accessor parser-tokens))
+   (toks :initarg :toks :accessor parser-toks))
   (:documentation
    "A stack-buffer transition-based parser."))
 

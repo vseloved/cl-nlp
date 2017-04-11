@@ -1,4 +1,4 @@
-;;; (c) 2013-2016 Vsevolod Dyomkin
+;;; (c) 2013-2017 Vsevolod Dyomkin
 
 (in-package #:nlp.corpora)
 (named-readtables:in-readtable rutilsx-readtable)
@@ -8,21 +8,20 @@
   "Make a corpus named NAME of texts from files in DIR
    (optionally limited by extension EXT)."
   (let ((corpus (make-corpus :name name)))
-    (with-slots (texts) corpus
-      (dofiles (file dir :ext ext)
-        (when (funcall test (pathname-name %))
-          (let ((raw (read-file %)))
-            (push (make-texts :name (pathname-name %)
-                              :raw raw
-                              :tokenized (tokenize <full-text-tokenizer> raw))
-                  texts))))
-      (reversef texts))
+    (dofiles (file dir :ext ext)
+      (when (call test (pathname-name %))
+        (let ((raw (read-file %)))
+          (push (make-text :name (pathname-name %)
+                           :raw raw
+                           :par-sent-toks (tokenize <full-text-tokenizer> raw))
+                @corpus.texts))))
+    (reversef @corpus.texts)
     corpus))
 
 
 ;;; pre-defined corpora
 
-(defvar +brown-corpus+
+(def-lang-var brown-corpus
   (let ((dir (corpus-file "brown/")))
     (format *debug-io* "~&Reading Brown corpus from: ~A - " dir)
     (read-corpus :brown dir)

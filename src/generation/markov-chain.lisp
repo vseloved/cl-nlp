@@ -1,4 +1,4 @@
-;;; (c) 2013-2016 Vsevolod Dyomkin
+;;; (c) 2013-2017 Vsevolod Dyomkin
 
 (in-package #:nlp.generation)
 (named-readtables:in-readtable rutilsx-readtable)
@@ -49,7 +49,7 @@
                       ;; no continuation - start anew
                       (prog1 (get# (setf prefix initial-prefix) transitions)
                         ;; add period unless one is already there
-                        (unless (every #'period-char-p (car rez))
+                        (unless (every 'period-char-p (car rez))
                           (push "." rez)
                           (incf i)))))
           (when (<= (decf r prob) 0)
@@ -68,18 +68,16 @@
   "Generate text of LENGTH with a markov model of some MARKOV-ORDER
    with the given language MODEL.
    May not return period at the end."
-  (assert (<= (markov-order generator) (m-order model)))
-  (let* ((order (markov-order generator))
-         (vocab (vocab model))
-         (len (length vocab))
-         (ngram (list "<S>"))
-         rez)
+  (assert (<= @generator.order @model.order))
+  (let ((len (length @model.vocab))
+        (ngram (list "<S>"))
+        rez)
     (loop :for i :from 1 :to length :do
-       (when (= (length ngram) order)
+       (when (= (length ngram) @generator.order)
          (setf ngram (rest ngram)))
        (let ((total 0)
              (cond-probs (list (cons "<S>" 0))))
-         (dolist (word vocab)
+         (dolist (word @model.vocab)
            (unless (string= "<S>" word)
              (push (cons word
                          (incf total (cond-prob model (append ngram
@@ -88,17 +86,17 @@
          (let ((word (car (bin-search (random total)
                                       (make-array len
                                                   :initial-contents cond-probs)
-                                      #'> :key #'cdr))))
+                                      '> :key 'cdr))))
            (if (string= "</S>" word)
-               (progn (if (every #'period-char-p (car rez))
+               (progn (if (every 'period-char-p (car rez))
                           (unless (= i length)
-                            (decf i))  ; just skip
+                            (:- i))  ; just skip
                           (push "." rez))
-                      (setf ngram (list "<S>")))
-               (setf rez (cons word rez)
-                     ngram (append ngram (list word)))))))
+                      (:= ngram (list "<S>")))
+               (:= rez (cons word rez)
+                   ngram (append ngram (list word)))))))
     (reverse rez)))
 
 
-(def-lang-var mark-v-shaney (make 'markov-chain-generator :order 2)
+(def-lang-var <mark-v-shaney> (make 'markov-chain-generator :order 2)
   "The infamous Mark V. Shaney.")

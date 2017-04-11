@@ -1,4 +1,4 @@
-;;; (c) 2015-2016 Vsevolod Dyomkin
+;;; (c) 2015-2017 Vsevolod Dyomkin
 
 (in-package #:nlp.lexics)
 (named-readtables:in-readtable rutilsx-readtable)
@@ -59,7 +59,7 @@
   (fmt "~A~@[/~{~A~^:~}~]" word (mklist pos)))
 
 (defun base-pos (pos)
-  ""
+  "Return the base pos tag from a POS (for instance, VBP turns to VB)."
   (when pos
     (let ((postr (symbol-name pos)))
       (mksym (slice postr 0 (min 2 (length postr)))

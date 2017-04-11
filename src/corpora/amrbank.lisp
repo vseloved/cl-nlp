@@ -1,7 +1,7 @@
-;;; (c) 2015 Vsevolod Dyomkin
+;;; (c) 2015-2017 Vsevolod Dyomkin
 
 (in-package #:nlp.corpora)
-(named-readtables:in-readtable rutils-readtable)
+(named-readtables:in-readtable rutilsx-readtable)
 
 
 (defmethod read-corpus-file ((type (eql :amrbank)) file &key)
@@ -9,8 +9,8 @@
            (pair (tokenize <word-chunker> (re:regex-replace-all
                                            " - ([^-])" sent "-\\1"))
                  (read-from-string
-                  (strjoin " " (mapcar #`(re:regex-replace-all
-                                          "/ ([^(\"|\\s)]+)" % "\"\\1\"")
+                  (strjoin " " (mapcar ^(re:regex-replace-all
+                                         "/ ([^(\"|\\s)]+)" % "\"\\1\"")
                                        (reverse amr)))))))
     (let (rez sent amr in-amr)
       (dolines (line file)
@@ -32,17 +32,17 @@
               rez))
       (reversef rez)
       (make-text :name (pathname-name file)
-                 :tokenized (mapcar #'lt rez)
-                 :clean (mapcar #'rt rez)))))
+                 :par-sent-toks (mapcar 'lt rez)
+                 :clean (mapcar 'rt rez)))))
 
 (defmethod read-corpus ((type (eql :amrbank)) path &key ext)
   (let ((rez (make-corpus :desc "Treebank")))
     (if (uiop:directory-pathname-p path)
         (dofiles (file path :ext ext)
-          (push (read-corpus-file :amrbank file) (corpus-texts rez)))
-        (push (read-corpus-file :amrbank path) (corpus-texts rez)))
+          (push (read-corpus-file :amrbank file) @rez.texts))
+        (push (read-corpus-file :amrbank path) @rez.texts))
     rez))
 
 (defmethod map-corpus ((type (eql :amrbank)) path fn &key ext)
   (dofiles (file path :ext ext)
-    (funcall fn (read-corpus-file :amrbank file))))
+    (call fn (read-corpus-file :amrbank file))))

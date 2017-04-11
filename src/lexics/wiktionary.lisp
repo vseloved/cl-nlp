@@ -5,7 +5,7 @@
 
 
 (defclass wikt-lemmatizer (lemmatizer)
-  ((dict :initarg :dict :accessor lemmatizer-dict)))
+  ((dict :initarg :dict :accessor lem-dict)))
 
 (defmethod lemmatize ((lemmatizer wikt-lemmatizer) word &optional tag)
   (or (? @lemmatizer.dict tag word)
@@ -15,7 +15,7 @@
 (defun extract-wikt-lemma-dict (path)
   (cxml:parse path (make 'wikt-sax)))
 
-(def-lang-var wikt-lemmatizer
+(def-lang-var <wikt-lemmatizer>
     (load-mem-dict (lang-file :en "wikt-dict.txt"))
   "Lemmatizer based on Wiktionary data.")
 
@@ -56,7 +56,7 @@
          (:= @sax.skip t)
          (push data @sax.cur-text)))))
 
-(defpar *tag-names*
+(defparameter *tag-names*
     #h(equal
        "Noun" "NN"
        "Adjective" "JJ"

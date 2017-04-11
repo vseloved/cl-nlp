@@ -84,3 +84,31 @@
 (defun ~= (x y &key (epsilon 0.01))
   "Approximately equality between X & Y to the margin EPSILON."
   (< (abs (- x y)) epsilon))
+
+;; (defun entropy (samples &optional total)
+;;   "Compute Shannon's entropy of SAMPLES list.
+;;    To save on calculation a pre-calculated TOTAL can be provided."
+;;   (unless total
+;;     (:= total (sum 'just samples)))
+;;   (sum ^(if (zerop %) 0
+;;             (let ((r (/ % total)))
+;;               (* r (log r 2))))
+;;        samples))
+
+(defun log-likelihood-ratio (ab a~b ~ab ~a~b)
+  "Calculate log-likelihood ratio between event A and B given
+   probabilites of A and B occurring together and separately."
+  (let ((total (+ ab a~b ~ab ~a~b)))
+    (* 2 total (- (entropy (list ab a~b ~ab ~a~b) total)
+                  (entropy (list (+ ab a~b) (+ ~ab ~a~b)) total)
+                  (entropy (list (+ ab ~ab) (+ a~b ~a~b)) total)))))
+
+(defun sample (data n &key (with-replacement? t))
+  "Sample N elements from DATA (by default, WITH-REPLACEMENT?)."
+  (if with-replacement?
+      (with ((data (coerce data 'vector))
+             (len (length data)))
+        (if (>= n len)
+            data
+            (loop :repeat n :collect (? data (random len)))))
+      (take n (nshuffle (copy-list data)))))

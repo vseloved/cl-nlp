@@ -1,18 +1,18 @@
-;;; (c) 2015 Vsevolod Dyomkin
+;;; (c) 2015-2017 Vsevolod Dyomkin
 
 (in-package #:nlp.contrib.corpora)
-(named-readtables:in-readtable rutils-readtable)
+(named-readtables:in-readtable rutilsx-readtable)
 
 
 (defmethod read-corpus-file ((type (eql :wikipedia)) path &key preserve-markup?)
-  (mv-bind (_ texts tokenizeds titles)
+  (mv-bind (_ texts all-pars titles)
       (cxml:parse-file path (make 'wiki-sax :preserve-markup? preserve-markup?))
     (declare (ignore _))
-    (mapcar (lambda (title clean tokenized)
+    (mapcar (lambda (title clean par-sent-toks)
               (make-text :name title
                          :clean clean
-                         :tokenized tokenized))
-            titles texts tokenizeds)))
+                         :par-sent-toks par-sent-toks))
+            titles texts all-pars)))
 
 (defmethod read-corpus ((type (eql :wikipedia)) path &key ext preserve-markup?)
   (declare (ignore ext))
@@ -31,7 +31,7 @@
 (defclass wiki-sax (sax:sax-parser-mixin)
   ((preserve-markup? :initform nil :initarg :preserve-markup?)
    (texts :initform nil)
-   (tokens :initform nil)
+   (toks :initform nil)
    (titles :initform nil)
    (cur-tag :initform nil)
    (cur-text :initform nil)
@@ -70,14 +70,14 @@
                          cur-text)))))))
 
 (defmethod sax:end-element ((sax wiki-sax) namespace-uri local-name qname)
-  (with-slots (cur-tag cur-title cur-text texts tokens titles skip) sax
+  (with-slots (cur-tag cur-title cur-text texts toks titles skip) sax
     (when (eql :text cur-tag)
       (unless skip
         (let ((text (strjoin #\Space (reverse cur-text))))
           (push (string-trim +white-chars+ (strjoin #\Space (reverse cur-title)))
                 titles)
           (push text texts)
-          (push (tokenize <full-text-tokenizer> text) tokens)))
+          (push (tokenize <full-text-tokenizer> text) toks)))
       (void cur-text)
       (void cur-title))))
 
@@ -86,20 +86,19 @@
     (when (eql :text cur-tag)
       (unless skip
         (let ((text (strjoin #\Space (reverse cur-text))))
-          (funcall fn (make-text
-                       :name (string-trim +white-chars+
-                                          (strjoin #\Space (reverse cur-title)))
-                       :clean text
-                       :tokenized (tokenize <full-text-tokenizer> text)))))
+          (call fn (make-text
+                    :name (string-trim +white-chars+
+                                       (strjoin #\Space (reverse cur-title)))
+                    :clean text
+                    :par-sent-toks (tokenize <full-text-tokenizer> text)))))
       (void cur-text)
       (void cur-title))))
 
 (defmethod sax:end-document ((sax wiki-sax))
-  (with-slots (texts titles tokens) sax
-    (values nil
-            (reverse texts)
-            (reverse tokens)
-            (reverse titles))))
+  (values nil
+          (reverse @sax.texts)
+          (reverse @sax.toks)
+          (reverse @sax.titles)))
 
 (defmethod sax:end-document ((sax wiki-stream-sax))
   ;; do nothing

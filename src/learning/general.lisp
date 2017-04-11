@@ -4,7 +4,7 @@
 (named-readtables:in-readtable rutilsx-readtable)
 
 
-(defstruct sample
+(defstruct ex
   fs gold)
 
 (defclass categorical-model ()
@@ -53,12 +53,12 @@
     (with-open-file (out path :direction :output :element-type 'flex:octet
                          :if-does-not-exist :create)
       (:= out (flex:make-flexi-stream (gzip-stream:make-gzip-output-stream out)
-                                      :external-format +utf-8+))
+                                      :external-format :utf8))
       (call-next-method model out)
       path))
   (:method ((model categorical-model) out)
     (let* ((weights (m-weights model))
-           (total (reduce '+ (mapcar 'ht-count (vals weights))))
+           (total (sum 'ht-count (vals weights)))
            (i 0))
       (format out "~A~%" (ht-count weights))
       (dotable (c fw weights)
@@ -102,21 +102,20 @@
     (let ((matched 0)
           (total 0)
           (len (length gold-fs)))
-      (map nil
-           ^(let ((guess (classify model @%.fs)))
-              (if (equal @%.gold guess)
-                  (:+ matched)
-                  (when verbose
-                    (format *debug-io* "guess: ~A   gold: ~A    fs: ~A~%"
-                            guess @%.gold @%.fs)))
-              (:+ total)
-              (unless verbose (princ-progress total len)))
+      (map nil ^(let ((guess (classify model @%.fs)))
+                  (if (equal @%.gold guess)
+                      (:+ matched)
+                      (when verbose
+                        (format *debug-io* "guess: ~A   gold: ~A    fs: ~A~%"
+                                guess @%.gold @%.fs)))
+                  (:+ total)
+                  (unless verbose (princ-progress total len)))
            gold-fs)
       (* 100.0 (/ matched total)))))
 
-(defgeneric feature-importance (model)
+(defgeneric fs-importance (model &key)
   (:documentation
-   "Display MODEL's feature importance."))
+   "Calculate MODEL's feature importance."))
 
 (defun conf-mat (model gold-fs &key (verbose t))
   (let ((rez #h())

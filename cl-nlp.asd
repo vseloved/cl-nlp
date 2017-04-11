@@ -24,21 +24,18 @@
                       ((:file "misc")
                        (:file "chars")
                        (:file "files")
-                       (:file "words")
-                       (:file "trees")
                        (:file "math")
-                       (:file "cond-freq-dist")))
+                       (:file "progress")))
              (:module #:core
                       :serial t
                       :components
                       ((:file "general")
                        (:file "lang")
-                       (:file "stats")
                        (:file "normalization")
                        (:file "tokenization")
                        (:file "ngrams")
-                       (:file "language-models")
-                       (:file "indexing")))
+                       (:file "indexing")
+                       (:file "language-models")))
              (:module #:lexics
                       :serial t
                       :components
@@ -70,8 +67,7 @@
                        (:file "features" :depends-on ("general"))
                        (:file "perceptron" :depends-on ("features"))
                        (:file "decision-tree" :depends-on ("features"))
-                       (:file "random-forest" :depends-on ("decision-tree"))
-                       (:file "boosted-trees" :depends-on ("decision-tree"))))
+                       (:file "random-forest" :depends-on ("decision-tree"))))
              (:module #:generation
                       :components
                       ((:file "markov-chain")))
@@ -79,7 +75,6 @@
                       :serial t
                       :components
                       ((:file "general")
-                       (:file "dicts")
                        (:file "pos")))
              (:module #:parsing
                       :serial t

@@ -1,4 +1,4 @@
-;;; (c) 2014-2016 Vsevolod Dyomkin
+;;; (c) 2014-2017 Vsevolod Dyomkin
 
 (in-package #:nlp.learning)
 (named-readtables:in-readtable rutilsx-readtable)
@@ -29,7 +29,7 @@
   `(list
      ,@(mapcar (lambda (tmpl)
                  (let ((str (etypecase tmpl
-                              (list `(strcat ,@(rest (flat-map #`(list " " %)
+                              (list `(strcat ,@(rest (flat-map ^(list " " %)
                                                                tmpl))))
                               (string tmpl))))
                    (getset# str *strpool* str)))

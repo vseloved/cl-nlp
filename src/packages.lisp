@@ -4,13 +4,11 @@
   (:nicknames #:nutil)
   (:use #:common-lisp #:rutilsx
         #+dev #:should-test)
-  (:export #:cl-nlp-error
+  (:export ;; errors
+           #:cl-nlp-error
            #:not-implemented-error
 
-           #:+utf-8+
-
-           #:*stopwords-en*
-
+           ;; characters
            #:+newline+
            #:+newline-chars+
            #:newline-char-p
@@ -26,58 +24,58 @@
            #:open-quote-char-p
            #:+close-quote-chars+
            #:close-quote-char-p
-
            #:ending-word-p
 
-           #:filler
-           #:uniq
-           #:sorted-ht-keys
-           #:shorter?
-           #:equal-when-present
-           #:timestamp
-
+           ;; files
            #:corpus-file
            #:data-file
            #:model-file
            #:lang-file
            #:src-file
            #:test-file
-           #:regex-from-file
-
            #:dolines*
            #:dofiles
            #:with-tmp-file
            #:write-bin-file
            #:write-tsv
+           #:download
+           #:download-file
 
            #:write-dict
            #:list-from-file
            #:dict-from-file
+           #:regex-from-file
 
-           #:download
-           #:download-file
-
+           ;; zip
            #:zipped-file-data
            #:zip-add-text-file
            #:do-zip-entries
            #:with-zip
            #:with-zipped-zip
 
+           ;; progress
+           #:princ-progress
+           #:progress-bar           
+
+           ;; math
            #:argmax
            #:keymax
            #:~=
            #:sum
            #:frobenius-norm
            #:bin-search
+           #:log-likelihood-ratio
+           #:sample
 
-           #:pprint-tree
-           #:princ-progress
+           ;; misc
+           #:ss
+           #:filler
+           #:uniq
+           #:shorter?
+           #:bound-equal
+           #:timestamp           
 
            #:+inf
-
-           #:s!
-
-           #:make-cfd
            ))
 
 (cl:defpackage #:nlp.core
@@ -85,7 +83,9 @@
   (:use #:common-lisp #:rutilsx #:nlp.util
         #+dev #:should-test)
   (:export #:+iso-639-1+
+           #:*lang*
            #:*lang-profiles*
+           #:*lang-ctx-vars*
            #:iso-lang
            #:lang-iso
            #:in-lang
@@ -94,25 +94,18 @@
            #:def-lang-var
            #:def-lang-profile
 
-           #:id
-           #:word
-           #:pos
-           #:lemma
-           #:beg
-           #:end
-
-           #:token
-           #:token-id
-           #:token-word
-           #:token-lemma
-           #:token-beg
-           #:token-end
-           #:token-pos
-           #:make-token
-
+           #:tok
+           #:make-tok
+           #:tok-id
+           #:tok-word
+           #:tok-lemma
+           #:tok-beg
+           #:tok-end
+           #:tok-pos
+           
            #:sent
            #:make-sent
-           #:sent-tokens
+           #:sent-toks
            
            #:ngrams
            #:ngrams-eq
@@ -138,15 +131,6 @@
            #:table-ngrams
            #:ngrams-table
 
-           #:language-model
-           #:m-order
-           #:m-ngrams
-           #:make-lm
-           #:perplexity
-           #:plain-lm
-           #:stupid-backoff-lm
-           #:lm-backoff
-
            #:count-ngram-freqs
            #:index-ngrams
            #:index-context-freqs
@@ -154,6 +138,15 @@
            #:index-word-transition-freqs
            #:normalize-freqs
 
+           #:language-model
+           #:lm-order
+           #:lm-ngrams
+           #:make-lm
+           #:perplexity
+           #:plain-lm
+           #:stupid-backoff-lm
+           #:lm-backoff
+           
            #:tokenize
            #:tokenizer
            #:regex-word-tokenizer
@@ -161,18 +154,19 @@
            #:baseline-sent-tokenizer
            #:full-text-tokenizer
            #:doublenewline-parag-splitter
-           #:parags->text
            #:<word-chunker>
            #:<basic-word-tokenizer>
            #:<word-tokenizer>
            #:<sent-splitter>
            #:*full-text-tokenizer*
            #:*parag-splitter*
+           #:parags->text
 
            #:find-collocations
 
            #:normalize
            #:denormalize
+
            #:*number-regex*
            #:*url-regex*
            #:*email-regex*
@@ -184,6 +178,7 @@
         #+dev #:should-test)
   (:export #:corpus
            #:make-corpus
+           #:make-corpus-from-dir
            #:corpus-desc
            #:corpus-texts
            #:corpus-groups
@@ -193,7 +188,7 @@
            #:text-name
            #:text-raw
            #:text-clean
-           #:text-tokenized
+           #:text-par-sent-toks
            #:text-trees
 
            #:read-corpus
@@ -210,9 +205,7 @@
            #:xml-progress-mixin
            #:xml-attr
 
-           #:make-corpus-from-dir
-
-           #:+brown-corpus+
+           #:<brown-corpus>
            ))
 
 (cl:defpackage #:nlp.lexics
@@ -220,20 +213,25 @@
   (:use #:common-lisp #:rutilsx #:nlp.util #:nlp.core
         #+dev #:should-test)
   (:export #:dict
+           #:dict-words
+           #:dict-forms
+           #:dict-pos-precedence
+           #:precedence
 
            #:lookup
            #:pos-tags
+           #:word/pos
+           #:base-pos
 
            #:stemmer
            #:stem
-
            #:porter-stemmer
            #:<porter-stemmer>
 
            #:lemmatizer
-           #:lemmatizer-dict
            #:lemmatize
            #:morph
+           #:lem-dict
            #:<dict-lemmatizer>
            #:<wikt-lemmatizer>
 
@@ -248,6 +246,9 @@
            #:vecs
            #:mem-vecs
            #:lazy-mem-vecs
+           #:vecs-dict
+           #:vect-default
+           #:vecs-understream
            
            #:init-vecs
            #:load-vecs))
@@ -258,12 +259,15 @@
         #+dev #:should-test)
   (:export #:%=
 
-           #:sample
-           #:make-sample
-           #:sample-fs
-           #:sample-gold
+           #:ex
+           #:make-ex
+           #:ex-fs
+           #:ex-gold
            
            #:init-model
+           #:save-model
+           #:load-model
+
            #:score
            #:rank
            #:classify
@@ -278,28 +282,45 @@
            #:f_
            #:conf-mat
 
-           #:save-model
-           #:load-model
-
-           ;; Features
+           #:make-fs
+           #:extract-fs
            #:extract-gold
            #:ensure-fs-init
-           #:extract-fs
-           #:make-fs
+           #:fs-improtance
 
-           ;; Models
            #:categorical-model
+           #:ensemble-model
+           
            #:m-weights
+           #:m-random-state
 
-           ;; Perceptron models
            #:perceptron
            #:avg-perceptron
            #:training-perceptron
+           #:ap-step
+           #:ap-timestamps
+           #:ap-totals
 
-           ;; Decision tree models
            #:decision-tree
            #:c4.5-tree
            #:cart-tree
+           #:tree-decision-fn
+           #:tree-decision-fn-dbg
+           #:tree-repr
+           #:tree-classes
+           #:tree-max-depth
+           #:tree-min-size
+           #:*dtree-debug*
+           #:*dtree-max-depth*
+
+           #:info-gain
+           #:weighted-info-gain
+           #:gini-idx
+           #:gini-split-idx
+
+           #:random-forest
+           #:forest-trees
+           #:forest-tree-type
            ))
 
 (cl:defpackage #:nlp.tagging
@@ -332,21 +353,28 @@
            #:dep-head
            #:dep-child
            #:make-dep
+           #:print-dep
+           #:print-stanford-dep
+           #:print-conll-dep
+           #:read-deps
+           #:read-stanford-dep
+           #:read-conll-dep
+           #:deps->tree
 
            #:parsed-sent
            #:sent-tree
            #:sent-deps
            #:sent-amr
 
-           #:grammar-ts
-           #:grammar-nts
-           #:grammar-nts-idx
-           #:grammar-root
-           #:grammar-unary-rules
-           #:grammar-binary-rules
-           #:grammar-root-rules
-           #:grammar-iurules
-           #:grammar-ibrules
+           #:gr-ts
+           #:gr-nts
+           #:gr-nts-idx
+           #:gr-root
+           #:gr-unary-rules
+           #:gr-binary-rules
+           #:gr-root-rules
+           #:gr-iurules
+           #:gr-ibrules
 
            #:pprint-tags
            #:pprint-tree
@@ -355,14 +383,21 @@
            #:pprint-syntax
 
            #:stack-buffer-parser
-           #:parser-actions
-           #:def-sb-action
-           
-           #:depparser
-           ;; #:greedy-sb-depparser
+           #:parser-transitions
+           #:parser-stack
+           #:parser-buffer
+           #:parser-ctx
+           #:parser-toks
 
+           #:deftransition
+           #:select-transition
+           #:judge-transitions
+           #:list-transitions
+           #:transition=
+
+           ;; #:conparser
+           ;; #:depparser
            ;; #:amrparser
-           ;; #:greedy-sb-amrparser
            ))
 
 (cl:defpackage #:nlp.generation
@@ -372,7 +407,6 @@
   (:export #:generate-text
            #:text-generator
 
-           ;; Markov Chain Generators
            #:markov-chain-generator
            #:mark-v-shaney-generator
            #:markov-order
@@ -385,82 +419,19 @@
         #:nlp.util #:nlp.corpora #:nlp.core #:nlp.lexics
         #:nlp.generation #:nlp.learning #:nlp.tagging #:nlp.parsing
         #+dev #:should-test)
-  (:export ;; chars
-           #:newline-char-p
-           #:+white-chars+
-           #:white-char-p
-           #:+period-chars+
-           #:period-char-p
-           #:+punct-chars+
-           #:punct-char-p
-           #:+quote-chars+
-           #:quote-char-p
-           #:+open-quote-chars+
-           #:open-quote-char-p
-           #:+close-quote-chars+
-           #:close-quote-char-p
-
-           ;; langs
-           #:iso-lang
-           #:lang-iso
-           #:in-lang
-           #:init-lang
-           #:def-lang-var
-           #:def-lang-profile
-           
-           ;; tokens
-           #:tokenize
-           #:parags->text
-           #:<word-chunker>
-           #:<basic-word-tokenizer>
-           #:<word-tokenizer>
-           #:<sent-splitter>
-           #:*full-text-tokenizer*
-           #:*parag-splitter*
-           
-           ;; lexics
-           #:known?
-           #:pos-tags
-           #:stem
-           #:lemmatize
-           #:morph
-           #:<porter-stemmer>
-           #:<dict-lemmatizer>
-           #:<wikt-lemmatizer>
-
-           ;; tagging
-           #:tag
-           #:<pos-tagger>
-           ;; #:<ner-tagger>
-
-           ;; parsing
-           #:parse
-           ;; #:<const-parser>
-           #:<dep-parser>
-           ;; #:<amr-parser>
-
-           ;; learning
-           #:save-model
-           #:load-model
-           
-           ;; util
+  (:export ;; util
            #:grep
            #:tabulate
-           #:plot
-
-           ;; conditions
-           #:cl-nlp-error
-           #:not-implemented-error
            ))
 
-;; (rutils:re-export-symbols '#:nutil    '#:nlp-user)
-;; (rutils:re-export-symbols '#:ncorp    '#:nlp-user)
-;; (rutils:re-export-symbols '#:ncore    '#:nlp-user)
-;; (rutils:re-export-symbols '#:nlex     '#:nlp-user)
-;; (rutils:re-export-symbols '#:nlearn   '#:nlp-user)
-;; (rutils:re-export-symbols '#:ngen     '#:nlp-user)
-;; (rutils:re-export-symbols '#:ntag     '#:nlp-user)
-;; (rutils:re-export-symbols '#:nparse   '#:nlp-user)
+(rutils:re-export-symbols '#:nutil    '#:nlp-user)
+(rutils:re-export-symbols '#:ncorp    '#:nlp-user)
+(rutils:re-export-symbols '#:ncore    '#:nlp-user)
+(rutils:re-export-symbols '#:nlex     '#:nlp-user)
+(rutils:re-export-symbols '#:nlearn   '#:nlp-user)
+(rutils:re-export-symbols '#:ngen     '#:nlp-user)
+(rutils:re-export-symbols '#:ntag     '#:nlp-user)
+(rutils:re-export-symbols '#:nparse   '#:nlp-user)
 
 
 ;;; special namespaces

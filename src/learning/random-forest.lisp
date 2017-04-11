@@ -7,29 +7,29 @@
 (defclass random-forest (ensemble-model)
   ((trees :accessor forest-trees :initform () :initarg :trees)
    (tree-type :accessor forest-tree-type :initform 'cart :initarg :tree-type)
-   (random-state :accessor forest-random-state :initform (make-random-state t)
+   (random-state :accessor m-random-state :initform (make-random-state t)
                  :initarg :random-state)
    (classes :accessor tree-classes :initarg :classes)
    (max-depth :accessor tree-max-depth :initform nil :initarg :max-depth)
    (min-size :accessor tree-min-size :initform 0 :initarg :min-size)))
 
 
-(defun feature-imps (rf oobs)
-  (with ((rez #h()))
-    (loop :for dtree :in @rf.trees
+(defmethod fs-importance ((model random-forest) &key oobs &allow-other-keys)
+  (let ((rez #h()))
+    (loop :for dtree :in @model.trees
           :for oob :in oobs :do
-      (loop :for (fs label) :in oob :do
-        (dotimes (i (length fs))
-          (push (pair (eql label (nlearn:classify rf fs))
-                      (let ((alt (copy-seq fs)))
-                        (:= (? alt i)
-                            (etypecase (? alt i)
-                              (float (- (random 2000.0) 1000.0))
-                              (integer (- (random 2000) 1000))
-                              (boolean (not (? alt i)))))
-                        (eql label (nlearn:classify rf alt))))
-                (? rez i))))      
-      (princ "."))
+          (loop :for (fs label) :in oob :do
+            (dotimes (i (length fs))
+              (push (pair (eql label (classify model fs))
+                          (let ((alt (copy-seq fs)))
+                            (:= (? alt i)
+                                (etypecase (? alt i)
+                                  (float (- (random 2000.0) 1000.0))
+                                  (integer (- (random 2000) 1000))
+                                  (boolean (not (? alt i)))))
+                            (eql label (classify model alt))))
+                    (? rez i))))
+          (princ "."))
     rez))
 
 (defmethod train ((model random-forest) data
@@ -53,9 +53,9 @@
         (if threads
             (push rez futures)
             (format *debug-io* "+"))
-        (dolist (item data)
-          (unless (in# item sample)
-            (push item oob)))
+        (dolist (ex data)
+          (unless (in# ex sample)
+            (push ex oob)))
         (push oob oobs)
         (push dt (forest-trees model))))
     (when threads

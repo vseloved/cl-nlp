@@ -1,10 +1,10 @@
-;;; (c) 2014-2016 Vsevolod Dyomkin
+;;; (c) 2014-2017 Vsevolod Dyomkin
 
 (in-package #:nlp.contrib.corpora)
 (named-readtables:in-readtable rutilsx-readtable)
 
 
-(defstruct (semcor-token (:include token))
+(defstruct (semcor-tok (:include tok))
   cmd
   ot
   wsn
@@ -15,9 +15,9 @@
   "Read individual file from the Semcor Corpus."
   (cxml:parse in (make 'xml-corpus-sax
                        :token-init 'make-semcor-token
-                       :struct-map #h(:token '(:wf :punc)
-                                      :sentence :s
-                                      :paragraph :p)
+                       :struct-map #h(:tok '(:wf :punc)
+                                      :sent :s
+                                      :par :p)
                        :attr-map #h(:tag "pos"
                                     :cmd "cmd"
                                     :lemma "lemma"
@@ -28,7 +28,7 @@
 
 (defmethod read-corpus ((type (eql :semcor)) path &key ext)
   (let ((rez (make-corpus :desc "Semcor 3.0")))
-    (map-corpus :semcor path #`(push % (corpus-texts rez)) :ext ext)
+    (map-corpus :semcor path ^(push % @rez.texts) :ext ext)
     rez))
 
 (deftype ub8 () '(unsigned-byte 8))
@@ -38,22 +38,24 @@
   (with-open-file (tarball path :element-type 'ub8)
     (archive:do-archive-entries
         (entry (archive:open-archive 'archive:tar-archive
-                                     (chipz:make-decompressing-stream 'chipz:gzip
-                                                                      tarball)))
+                                     (chipz:make-decompressing-stream
+                                      'chipz:gzip tarball)))
       (let ((name (slice (archive:name entry)
                          (1+ (position #\/ (archive:name entry) :from-end t)))))
         (when (starts-with "br-" name)
           (let ((buf (make-array (slot-value entry 'archive::size)
-                                 :element-type 'ub8 :adjustable t :fill-pointer t)))
+                                 :element-type 'ub8
+                                 :adjustable t :fill-pointer t)))
             (read-sequence buf (archive:entry-stream entry))
-            (mv-bind (_ clean tokenized)
-                (read-corpus-file :semcor
-                                  (re:regex-replace-all
-                                   "&"
-                                   (re:regex-replace-all
-                                    "=\"?([^ >\"]*)\"?"
-                                    (flex:octets-to-string buf :external-format :utf-8)
-                                    "=\"\\1\"")
-                                   "&amp;"))
-              (declare (ignore _))
-              (funcall fn (make-text :name name :clean clean :tokenized tokenized)))))))))
+            (with ((_ clean par-sent-toks
+                      (read-corpus-file :semcor
+                                        (-> buf
+                                            (flex:octets-to-string
+                                             % :external-format :utf-8)
+                                            (re:regex-replace-all
+                                             "=\"?([^ >\"]*)\"?" % "=\"\\1\"")
+                                            (re:regex-replace-all "&" % "&amp;")))))
+              (call fn (make-text
+                        :name name
+                        :clean clean
+                        :par-sent-toks par-sent-toks)))))))))
