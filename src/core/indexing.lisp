@@ -141,7 +141,7 @@
 (defun normalize-freqs (ht-of-hts)
   "For each table in HT-OF-HTS normalize all the values.
    Returns the modified HT-OF-HTS."
-  (maphash ^(let ((total (sum 'vals %%)))
+  (maphash ^(let ((total (sum 'just (vals %%))))
               (dotable (k v %%)
                 (set# k %% (/ v total))))
            ht-of-hts)

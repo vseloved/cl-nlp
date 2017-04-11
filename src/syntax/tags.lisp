@@ -10,13 +10,13 @@
     (export tag package)
     tag))
 
-(def-lang-var <word-tags> (dict-from-file (lang-file :en "word-tags.txt")
-                                          :test 'eql :key-transform 'export-tag)
+(def-lang-var word-tags (dict-from-file (lang-file :en "word-tags.txt")
+                                        :test 'eql :key-transform 'export-tag)
   "Word-level tags."
   :eager t)
 
-(def-lang-var <phrase-tags> (dict-from-file (lang-file :en "phrase-tags.txt")
-                                            :test 'eql :key-transform 'export-tag)
+(def-lang-var phrase-tags (dict-from-file (lang-file :en "phrase-tags.txt")
+                                          :test 'eql :key-transform 'export-tag)
   "Phrase-level tags."
   :eager t)
 

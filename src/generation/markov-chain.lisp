@@ -98,5 +98,5 @@
     (reverse rez)))
 
 
-(def-lang-var <mark-v-shaney> (make 'markov-chain-generator :order 2)
+(def-lang-var mark-v-shaney (make 'markov-chain-generator :order 2)
   "The infamous Mark V. Shaney.")

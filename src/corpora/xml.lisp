@@ -34,7 +34,7 @@
    (attr-map :initform #h() :initarg :attr-map)
    (xml-tags :initform nil  :accessor sax-xml-tags)
    (cur-sent :initform nil)
-   (cur-par :initform nil)
+   (cur-parag :initform nil)
    (parags :initform nil :accessor sax-parags)
    (sents :initform nil :accessor sax-sents)
    (raw-text :initform nil :accessor sax-raw-text))
@@ -59,7 +59,7 @@
 (defmethod sax:start-element ((sax xml-corpus-sax)
                               namespace-uri local-name qname attributes)
   (declare (ignore namespace-uri qname))
-  (with-slots (tok-init struct-map attr-map xml-tags cur-sent cur-par) sax
+  (with-slots (tok-init struct-map attr-map xml-tags cur-sent cur-parag) sax
     (push (mkeyw local-name) xml-tags)
     (when-it (get# :tok struct-map)
       (when tag-matches?
@@ -70,7 +70,7 @@
 
 (defmethod sax:end-element ((sax xml-corpus-sax) namespace-uri local-name qname)
   (declare (ignore namespace-uri local-name qname))
-  (with-slots (struct-map xml-tags cur-sent cur-parag sents parags sentence-class)
+  (with-slots (struct-map xml-tags cur-sent cur-parag sents parags sent-class)
       sax
     (cond
       ((and-it (get# :sent struct-map) tag-matches?)
@@ -107,8 +107,8 @@
       ((get# :parag struct-map)
        (when tag-matches?
          (:= raw-text (strcat raw-text #\Newline data)
-             cur-par (mapcar ^(tokenize <word-tokenizer> %)
-                             (tokenize <sent-splitter> data))))))))
+             cur-parag (mapcar ^(tokenize <word-tokenizer> %)
+                               (tokenize <sent-splitter> data))))))))
 
 (defmethod sax:start-document ((sax xml-corpus-sax))
   ;; do nothing
@@ -116,7 +116,7 @@
 
 (defmethod sax:end-document ((sax xml-corpus-sax))
   (with-slots (struct-map sents parags raw-text) sax
-    (if (in# :sentence struct-map)
+    (if (in# :sent struct-map)
         (reversef parags)
         (:= parags (list sents)))
     (values nil

@@ -178,7 +178,7 @@
         (:+ (get# @tok.pos (getset# @tok.word posdict #h()) 0))))
     (dotable (word pos-weights posdict)
       (with ((argmax max (argmax 'rt (pairs pos-weights)))
-             (total (sum 'vals pos-weights)))
+             (total (sum 'just (vals pos-weights))))
         (if (and (> total freq-threshold)
                  (> (/ max total) ambiguity-threshold))
             (set# word posdict (lt argmax))

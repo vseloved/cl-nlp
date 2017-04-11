@@ -30,7 +30,7 @@
     (reversef par-sent-toks)
     (make-text :name (pathname-name file)
                :raw text
-               :clean (parags->text toks)
+               :clean (parags->text par-sent-toks)
                :par-sent-toks par-sent-toks)))
 
 (defmethod read-corpus ((type (eql :brown)) path &key (ext ""))

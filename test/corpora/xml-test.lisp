@@ -3,22 +3,21 @@
 (in-package #:nlp.corpora)
 (named-readtables:in-readtable rutilsx-readtable)
 
-(defun make-token-blah (&rest args &key word tag &allow-other-keys)
+(defun make-tok-blah (&rest args &key word pos &allow-other-keys)
   (declare (ignore args))
-  (make-token :word word :tag tag))
+  (make-tok :word word :pos pos))
 
 (deftest parse-xml ()
   (should be string=
           (let ((raw (read-file (corpus-file "samples/semcor-br-c14"))))
-            (slice #1=(2nd (cxml:parse (re:regex-replace-all
-                                        "&" (re:regex-replace-all
-                                             "=\"?([^ >\"]*)\"?"
-                                             raw
-                                             "=\"\\1\"")
-                                        "&amp;")
+            (slice #1=(2nd (cxml:parse (-> raw
+                                           (re:regex-replace-all
+                                            "=\"?([^ >\"]*)\"?" % "=\"\\1\"")
+                                           (re:regex-replace-all
+                                            "&" % "&amp;"))
                                        (make 'xml-corpus-sax
-                                             :token-init 'make-token-blah
-                                             :struct-map #h(:token '(:wf :punc)
+                                             :tok-init 'make-tok-blah
+                                             :struct-map #h(:tok '(:wf :punc)
                                                             :sent :s
                                                             :parag :p)
                                              :attr-map #h(:tag "pos"

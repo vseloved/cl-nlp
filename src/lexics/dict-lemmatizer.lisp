@@ -82,7 +82,7 @@
     dict))
 
 
-(def-lang-var <dict-lemmatizer> nil
+(def-lang-var dict-lemmatizer nil
   "Lemmatizer based on arbitrary dictionary in CL-NLP format.")
 
 
