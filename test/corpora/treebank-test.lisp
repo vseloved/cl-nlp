@@ -1,16 +1,16 @@
-;;; (c) 2013-2015 Vsevolod Dyomkin
+;;; (c) 2013-2017 Vsevolod Dyomkin
 
 (in-package #:nlp.corpora)
-(named-readtables:in-readtable rutils-readtable)
+(named-readtables:in-readtable rutilsx-readtable)
 
 (deftest read-treebank ()
-  (should be equal '((S (|``| "\"")
-                        (NLP.TAGS::NP-SBJ "I")
-                        (VP "do" "not"
-                            (VP "mind"
-                                (S (NLP.TAGS::NP-SBJ "you(r)")
-                                   (VP "leaving"
-                                       (NLP.TAGS::ADV-TMP "early")))))))
+  (should be equal '((tag:S (tag:|``| "\"")
+                      (tag::NP-SBJ "I")
+                      (tag:VP "do" "not"
+                       (tag:VP "mind"
+                        (tag:S (tag::NP-SBJ "you(r)")
+                         (tag:VP "leaving"
+                          (tag::ADV-TMP "early")))))))
           (with-tmp-file (f "(S (`` \")
                                 (NP-SBJ I)
                                 (VP do not

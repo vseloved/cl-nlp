@@ -127,7 +127,7 @@
                  (loop :for id
                        :from @left.id
                        :below @right.id
-                       :collect @sent.id))))
+                       :collect (? sent id)))))
 
 (defun format-rel (out line-char sent dep space extra-space)
   (with (((left right) (sort (list @dep.child @dep.head) '<
@@ -244,8 +244,8 @@
                                           (progn
                                             (format-rel out line-char sent it
                                                         space extra-space)
-                                            (:= i (max @it.child.tok-id
-                                                       @it.head.tok-id))
+                                            (:= i (max @it.child.id
+                                                       @it.head.id))
                                             (format out " ~A "
                                                     (if (and-it (? mid i)
                                                                 (= it (1- level)))

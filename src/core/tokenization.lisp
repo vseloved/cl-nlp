@@ -20,7 +20,7 @@
 ;;
 ;;         (let ((pipe (make-two-way-stream
 ;;                       (make-input-string-stream) (make-output-string-stream))))
-;;           (bt:make-thread #`(stream-tokenize *standard-input* pipe))
+;;           (bt:make-thread ^(stream-tokenize *standard-input* pipe))
 ;;           (loop :for line := (read-line pipe nil) :while line :do
 ;;              (print line)))
 ;;    "))

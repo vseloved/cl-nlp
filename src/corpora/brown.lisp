@@ -21,9 +21,9 @@
                  (when (member word '("``" "''") :test #'string=)
                    (:= word "\""
                        end (1- end)))
-                 (push (make-token :beg (- beg offset)
-                                   :end (- end (:+ offset (1+ (length pos))))
-                                   :word word :pos pos)
+                 (push (make-tok :beg (- beg offset)
+                                 :end (- end (:+ offset (1+ (length pos))))
+                                 :word word :pos pos)
                        cur-sent)))
             (push (reverse cur-sent) cur-par)))
         (push (reverse cur-par) par-sent-toks)))

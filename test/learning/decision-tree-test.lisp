@@ -1,7 +1,7 @@
-;;; (c) 2015-2016 Vsevolod Dyomkin
+;;; (c) 2015-2017 Vsevolod Dyomkin
 
 (in-package #:nlearn)
-(named-readtables:in-readtable rutils-readtable)
+(named-readtables:in-readtable rutilsx-readtable)
 
 
 (defparameter *golf-data*
@@ -83,26 +83,26 @@ rain    |      71     |    80    | true  | Don't Play
   (should be equal
           '(case (? % 0)
             (:rain (case (? % 3)
-                     (nil (pair t 1))
-                     (t (pair nil 1))))
-            (:overcast (pair t 1))
+                     (nil (pair t 1.0))
+                     (t (pair nil 1.0))))
+            (:overcast (pair t 1.0))
             (:sunny
              (if (%= <= 2 70.0)
-                 (pair t 1)
-                 (pair nil 1))))
+                 (pair t 1.0)
+                 (pair nil 1.0))))
           (tree-repr (train (make 'c4.5-tree) (car *golf-data*)))))
 
 (deftest cart-train ()
   (should be equal
           '(if (%= eql 0 :overcast)
-               (pair t 1)
+               (pair t 1.0)
                (if (%= <= 1 75.0)
                    (if (%= <= 1 65.0)
-                       (pair nil 1)
+                       (pair nil 1.0)
                        (if (%= <= 1 70.0)
-                           (pair t 1)
+                           (pair t 1.0)
                            (if (%= <= 1 72.0)
-                               (pair nil 1)
-                               (pair t 1))))
+                               (pair nil 1.0)
+                               (pair t 1.0))))
                    (pair nil 1)))
           (tree-repr (train (make 'cart-tree) (car *golf-data*)))))

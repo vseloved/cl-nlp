@@ -45,7 +45,7 @@
     (dolist (tok @sent.toks)
       (void (? @model.dict @tok.word)))
     ;; expand single-pos-words
-    (dotable (word pos (build-single-pos-words-dict (mapcar #'sent-tokens sents)
+    (dotable (word pos (build-single-pos-words-dict (mapcar 'sent-toks sents)
                                                     :ignore-case? t))
       (unless (in# word @model.single-pos-words)
         (set# word @model.single-pos-words pos))))
