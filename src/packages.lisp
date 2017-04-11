@@ -460,4 +460,4 @@
 
 ;;; renamings
 
-(rename-package "MGL-MAT" "MGL-MAT" '("MAT"))
+;; (rename-package "MGL-MAT" "MGL-MAT" '("MAT"))

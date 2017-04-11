@@ -9,7 +9,8 @@
   :depends-on (#:rutilsx #:cl-fad #:cl-ppcre
                #:cxml #:drakma #:flexi-streams
                #:zip #:archive #:chipz #:gzip-stream
-               #:eager-future2 #:mgl-mat
+               #:eager-future2
+               ;; #:mgl-mat
                #+dev #:bknr.skip-list #+dev #:fsvd
                #+dev #:should-test)
   :serial t
