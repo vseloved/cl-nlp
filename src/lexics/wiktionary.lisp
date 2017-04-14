@@ -15,7 +15,7 @@
 (defun extract-wikt-lemma-dict (path)
   (cxml:parse path (make 'wikt-sax)))
 
-(def-lang-var <wikt-lemmatizer>
+(def-lang-var wikt-lemmatizer
     (load-mem-dict (lang-file :en "wikt-dict.txt"))
   "Lemmatizer based on Wiktionary data.")
 
