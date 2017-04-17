@@ -104,7 +104,6 @@
            #:tok-pos
            
            #:sent
-           #:make-sent
            #:sent-toks
            
            #:ngrams

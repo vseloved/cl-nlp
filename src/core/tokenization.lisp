@@ -321,10 +321,14 @@
 
 (defmethod tokenize ((tokenizer full-text-tokenizer) string)
   (mapcar (lambda (parag)
-            (mapcar ^(with ((words spans (tokenize <word-tokenizer> %)))
-                        (loop :for word :in words
-                              :for (beg end) :in spans
-                              :collect (make-tok :word word :beg beg :end end)))
+            (mapcar ^(with ((words spans (tokenize <word-tokenizer> %))
+                            (id -1))
+                       (make 'sent
+                             :toks (loop :for word :in words
+                                         :for (beg end) :in spans
+                                         :collect (make-tok
+                                                   :id (:+ id) :word word
+                                                   :beg beg :end end))))
                     (tokenize <sent-splitter> parag)))
           (split #\Newline string)))
 

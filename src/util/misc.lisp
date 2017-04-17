@@ -21,7 +21,7 @@
 
 (defun filler (n &optional (fill-char #\Space))
   "Produce an N-element filler string of FILL-CHAR's."
-  (if (plusp n)
+  (if (and (numberp n) (plusp n))
       (make-string n :initial-element fill-char)
       ""))
 
