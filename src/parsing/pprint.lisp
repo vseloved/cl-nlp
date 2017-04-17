@@ -123,7 +123,7 @@
          (1- (ceiling (- @left.end @left.beg)
                       2))
          (- (length (ss left)))
-         (if lt -2 0) (if rt -2 0)
+         (if lt -1 0) (if rt -1 0)
          (mapcar ^(+ (length (ss %))
                      space
                      (get# @%.id extra-spaces 0))
@@ -139,20 +139,20 @@
                (length (ss @dep.rel))
                2)))
     ;; (write-string (w/outstr (out) 
-    (format out "~@[~A~]`~A ~(~A~) ~A'~@[~A~]~A"
+    (format out "~@[~A~]`~A ~(~A~) ~A´~@[~A~]~A"
             (strcat (when-it (? lt @left.id)
-                      (fmt "~C " (if (> it (1- level)) conch #\Space)))
+                      (fmt "~C" (if (> it (1- level)) conch #\Space)))
                     (unless (eql left @dep.child)
-                      (fmt "~C " (if (> (? mid @left.id) (1- level))
+                      (fmt "~C" (if (> (? mid @left.id) (1- level))
                                      conch #\Space))))
             (filler (floor d 2) line-char)
             @dep.rel
             (filler (ceiling d 2) line-char)
             (strcat (unless (eql right @dep.child)
-                      (fmt " ~C" (if (> (? mid @right.id) (1- level))
+                      (fmt "~C" (if (> (? mid @right.id) (1- level))
                                      conch #\Space)))
                     (when-it (? rt @right.id)
-                      (fmt " ~C" (if (> it (1- level)) conch #\Space))))
+                      (fmt "~C" (if (> it (1- level)) conch #\Space))))
             (filler (when (< @right.id (1- (length sent)))
                       (tok-dist sent right (? sent (1+ @right.id))
                                 space extra-spaces
@@ -166,11 +166,11 @@
   ;; (write-string (w/outstr (out)
   (format out "~@[~A~]~C~@[~A~]~@[~A~]"
           (when-it (? lt @tok.id)
-            (fmt "~C " (if (> it (1- level)) conch #\Space)))
+            (fmt "~C" (if (> it (1- level)) conch #\Space)))
           (if (> (? mid @tok.id) (1- level))
               mid-char #\Space)
           (when-it (? rt @tok.id)
-            (fmt " ~C" (if (> it (1- level)) conch #\Space)))
+            (fmt "~C" (if (> it (1- level)) conch #\Space)))
           (when (< @tok.id (1- (length sent)))
             (filler (tok-dist sent tok (? sent (1+ @tok.id)) space extra-spaces
                               (? rt @tok.id) (? lt (1+ @tok.id)))))))
@@ -212,11 +212,11 @@
                      (if (= hid rtid)
                          (:= (get# (1- hid) extra-spaces)
                              (max (get# (1- hid) extra-spaces 0)
-                                  (floor (- 5 (length (ss (? sent hid))))
+                                  (floor (- 3 (length (ss (? sent hid))))
                                          2)))
                          (:= (get# hid extra-spaces)
                              (max (get# hid extra-spaces 0)
-                                  (ceiling (- 5 (length (ss (? sent hid))))
+                                  (ceiling (- 3 (length (ss (? sent hid))))
                                            2))))
                      (:+ (get# ltid extra-spaces 0)
                          (max 0 (- min-dist (tok-dist sent left right
@@ -226,7 +226,7 @@
                           (ltid (min id hid))
                           (rtid (max id hid))
                           (level (reduce 'max
-                                         (loop :for i :from ltid :below rtid
+                                         (loop :for i :from ltid :to rtid
                                                :collect (length (? levels i))))))
                      (loop :for i :from ltid :to rtid :do
                        (loop :repeat (- level (length (? levels i))) :do
@@ -285,9 +285,13 @@
                                (:+ i)))))
                     ;; root
                     (list (fmt "~Aroot~%"
-                               (filler (+ (1- (floor (length (ss @root.child))))
-                                          (tok-dist sent (? sent 0) @root.child
-                                                    space extra-spaces))))))
+                               (filler
+                                (if (plusp @root.child.id)
+                                    (+ (1- (floor (length (ss @root.child))))
+                                       (tok-dist sent (? sent 0) @root.child
+                                                 space extra-spaces))
+                                    (floor (- (length (ss @root.child)) 4)
+                                           2))))))
             extra-spaces)))
 
 
