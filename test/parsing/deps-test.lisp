@@ -11,7 +11,7 @@
                    :child (make-tok :id 7 :word "Bills"))
          (read-dep :stanford "nsubjpass(submitted-8, Bills-7)"))
   (should be eql dep:+root+
-         (dep-head (read-dep :stanford "root ( ROOT-0 , test-4 )"))))
+         (dep-head (read-dep :stanford "root ( test-4 , test-4 )"))))
 
 (deftest read-dep-conll ()
   (should be equalp

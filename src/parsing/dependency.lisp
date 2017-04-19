@@ -15,12 +15,14 @@
   (:documentation
    "FORMAT may be :stanford, :conll, and, maybe some other.")
   (:method ((format (eql :stanford)) dep &optional (stream *standard-output*))
+    (let ((head (if (eql dep:+root+ @dep.head) @dep.child @dep.head)))
       (format stream "~(~A~)(~A-~A, ~A-~A)"
-              @dep.rel @dep.head.word @dep.head.id @dep.child.word @dep.child.id))
+              @dep.rel @head.word @head.id @dep.child.word @dep.child.id)))
   (:method ((format (eql :conll)) dep &optional (stream *standard-output*))
-    (format stream "~A	~A	~:[_~;~:*~A~]	_	~A	~A~%"
-            @dep.child.id @dep.child.word @dep.child.lemma @dep.child.pos
-            @dep.head.id @dep.rel)))
+    (let ((head (if (eql dep:+root+ @dep.head) @dep.child @dep.head)))
+      (format stream "~A	~A	~:[_~;~:*~A~]	_	~A	~A~%"
+              @dep.child.id @dep.child.word @dep.child.lemma @dep.child.pos
+              @head.id @dep.rel))))
 
 (defun print-stanford-dep (dep stream)
   "Print DEP in Stanford dependency format to STREAM."
@@ -30,7 +32,7 @@
   (:documentation
    "Read one dependency in FORMAT from STR.
     TOKS is a cache of already encountered tokens.")
-  (:method ((format (eql :stanford)) str &optional (toks #h(0 dep:+root+)))
+  (:method ((format (eql :stanford)) str &optional (toks #h(-1 dep:+root+)))
     (with ((split1 (position #\( str))
            (split2 (position #\Space str
                              :start (position #\Space str :start (1+ split1)
@@ -44,16 +46,18 @@
                                                      (slice str (1+ split2)
                                                             split3))))
            (child-id (parse-integer child-id))
-           (rel (mksym (slice str 0 split1) :package :dep)))
+           (rel (mksym (slice str 0 (1+ (position-if 'alpha-char-p str
+                                                     :from-end t :end split1)))
+                       :package :dep)))
       (make-dep
        :rel rel
        :head (if (eql 'dep:root rel)
-                 (? toks 0)
+                 (? toks -1)
                  (getset# head-id toks
                           (make-tok :id head-id :word head)))
        :child (getset# child-id toks
                        (make-tok :id child-id :word child)))))
-  (:method ((format (eql :conll)) str &optional (toks #h(0 dep:+root+)))
+  (:method ((format (eql :conll)) str &optional (toks #h(-1 dep:+root+)))
     (with (((id word lemma pos pos2 feats head-id rel &rest rest)
             (split #\Tab str :remove-empty-subseqs t)))
       (declare (ignore pos2 feats rest))
@@ -62,7 +66,7 @@
             (rel (mksym rel :package :dep)))
         (make-dep
          :rel rel
-         :head (or (? toks (if (eql 'dep:root rel) 0 head-id))
+         :head (or (? toks (if (eql 'dep:root rel) -1 head-id))
                    (make-tok :id head-id))
          :child (getset# child-id toks
                          (make-tok :id child-id
@@ -79,13 +83,13 @@
     (with-input-from-string (in str)
       (read-deps format in)))
   (:method (format (str stream))
-    (let ((toks #h(0 dep:+root+))
+    (let ((toks #h(-1 dep:+root+))
           deps
           all-deps)
       (loop :for line := (read-line str nil) :while line :do
         (if (blankp line)
             (progn
-              (:= toks #h(0 dep:+root+))
+              (:= toks #h(-1 dep:+root+))
               (when deps (push (reverse deps) all-deps))
               (void deps))
             (push (read-dep format line toks) deps))
