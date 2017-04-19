@@ -104,16 +104,15 @@
                                              ;; :extra-spaces extra-spaces
                                              :utf-connectors utf-connectors)))
                     below))))))
-    (let ((id -1))
-      (mapcar (lambda (&rest args)
-                (push (fmt "~A~A~A"
+    (mapcar (lambda (&rest args)
+              (push (fmt "~A~A~A"
                          (filler (ceiling extra-pad 2))
                          (apply 'reduce ^(fmt "~A~A" % %%)
                                 args)
                          (filler (ceiling extra-pad 2)))
-                          ;; (+ (get# (:+ id) extra-spaces 0))))
+                    ;; (+ (get# (:+ id) extra-spaces 0))))
                     rez))
-            (apply 'zip (reverse below))))
+            (apply 'zip (reverse below)))
     (reverse rez)))
 
 (defun tok-dist (toks left right space extra-spaces &optional lt rt)

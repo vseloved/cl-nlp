@@ -3,7 +3,7 @@
 (in-package #:nlp.parsing)
 (named-readtables:in-readtable rutilsx-readtable)
 
-(declaim (inline read-stanford-dep read-conll-dep print-stanford-dep))
+(declaim (inline print-stanford-dep))
 
 
 (defstruct (dep (:print-object print-stanford-dep))
@@ -30,7 +30,7 @@
   (:documentation
    "Read one dependency in FORMAT from STR.
     TOKS is a cache of already encountered tokens.")
-  (:method ((format (eql :stanford)) str &optional (toks #h(-1 dep:+root+)))
+  (:method ((format (eql :stanford)) str &optional (toks #h(0 dep:+root+)))
     (with ((split1 (position #\( str))
            (split2 (position #\Space str
                              :start (position #\Space str :start (1+ split1)
@@ -48,21 +48,21 @@
       (make-dep
        :rel rel
        :head (if (eql 'dep:root rel)
-                 (? toks -1)
+                 (? toks 0)
                  (getset# head-id toks
                           (make-tok :id head-id :word head)))
        :child (getset# child-id toks
                        (make-tok :id child-id :word child)))))
-  (:method ((format (eql :conll)) str &optional (toks #h(-1 dep:+root+)))
+  (:method ((format (eql :conll)) str &optional (toks #h(0 dep:+root+)))
     (with (((id word lemma pos pos2 feats head-id rel &rest rest)
             (split #\Tab str :remove-empty-subseqs t)))
       (declare (ignore pos2 feats rest))
       (let ((child-id (parse-integer id))
             (head-id (parse-integer head-id))
-            (rel rel :package :dep))
+            (rel (mksym rel :package :dep)))
         (make-dep
          :rel rel
-         :head (or (? toks (if (eql 'dep:root rel) -1 head-id))
+         :head (or (? toks (if (eql 'dep:root rel) 0 head-id))
                    (make-tok :id head-id))
          :child (getset# child-id toks
                          (make-tok :id child-id
@@ -79,13 +79,13 @@
     (with-input-from-string (in str)
       (read-deps format in)))
   (:method (format (str stream))
-    (let ((toks #h(-1 dep:+root+))
+    (let ((toks #h(0 dep:+root+))
           deps
           all-deps)
       (loop :for line := (read-line str nil) :while line :do
         (if (blankp line)
             (progn
-              (:= toks #h(-1 dep:+root+))
+              (:= toks #h(0 dep:+root+))
               (when deps (push (reverse deps) all-deps))
               (void deps))
             (push (read-dep format line toks) deps))

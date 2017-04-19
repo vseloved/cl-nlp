@@ -357,9 +357,8 @@
            #:print-dep
            #:print-stanford-dep
            #:print-conll-dep
+           #:read-dep
            #:read-deps
-           #:read-stanford-dep
-           #:read-conll-dep
            #:deps->tree
 
            #:parsed-sent
