@@ -116,7 +116,7 @@
             (apply 'zip (reverse below))))
     (reverse rez)))
 
-(defun tok-dist (sent left right space extra-spaces &optional lt rt)
+(defun tok-dist (toks left right space extra-spaces &optional lt rt)
   (apply '+
          (floor (- @right.end @right.beg)
                 2)
@@ -130,12 +130,12 @@
                  (loop :for id
                        :from @left.id
                        :below @right.id
-                       :collect (? sent id)))))
+                       :collect (? toks id)))))
 
-(defun format-rel (out dep sent space extra-spaces lt mid rt
+(defun format-rel (out dep toks space extra-spaces lt mid rt
                    line-char conch level)
   (with (((left right) (sort (list @dep.child @dep.head) '< :key 'tok-id))
-         (d (- (tok-dist sent left right space extra-spaces t)
+         (d (- (tok-dist toks left right space extra-spaces t)
                (length (ss @dep.rel))
                2)))
     ;; (write-string (w/outstr (out) 
@@ -153,15 +153,15 @@
                                      conch #\Space)))
                     (when-it (? rt @right.id)
                       (fmt "~C" (if (> it (1- level)) conch #\Space))))
-            (filler (when (< @right.id (1- (length sent)))
-                      (tok-dist sent right (? sent (1+ @right.id))
+            (filler (when (< @right.id (1- (length toks)))
+                      (tok-dist toks right (? toks (1+ @right.id))
                                 space extra-spaces
                                 (? rt @right.id) (? lt (1+ @right.id))))))))
                   ;; out)))
                   
 
 
-(defun format-connectors (out tok sent space extra-spaces lt mid rt level
+(defun format-connectors (out tok toks space extra-spaces lt mid rt level
                           mid-char conch)
   ;; (write-string (w/outstr (out)
   (format out "~@[~A~]~C~@[~A~]~@[~A~]"
@@ -171,24 +171,32 @@
               mid-char #\Space)
           (when-it (? rt @tok.id)
             (fmt "~C" (if (> it (1- level)) conch #\Space)))
-          (when (< @tok.id (1- (length sent)))
-            (filler (tok-dist sent tok (? sent (1+ @tok.id)) space extra-spaces
+          (when (< @tok.id (1- (length toks)))
+            (filler (tok-dist toks tok (? toks (1+ @tok.id)) space extra-spaces
                               (? rt @tok.id) (? lt (1+ @tok.id)))))))
                 ;; out))
 
-(defun total-extra-space (sent extra-spaces begid endid)
+(defun total-extra-space (toks extra-spaces begid endid)
   (mapcar ^(get# @%.id extra-spaces 0)
           (loop :for id :from begid :below endid
-                :collect (? sent id))))
+                :collect (? toks id))))
 
-(defun deps->levels (sent deps &key (space 1) (extra-spaces #h()) utf-connectors)
-  (let ((lt (make-array (length sent) :initial-element nil))
-        (mid (make-array (length sent) :initial-element nil))
-        (rt (make-array (length sent) :initial-element nil))
-        (conch (if utf-connectors #\│ #\:))
-        (levels (make-array (length sent) :initial-element nil))
-        root
-        depth)
+(defun deps->levels (deps &key (space 1) (extra-spaces #h()) utf-connectors)
+  (with ((toks (sort (mapcar 'nlp:dep-child deps) '< :key 'nlp:tok-id))
+         (lt (make-array (length toks) :initial-element nil))
+         (mid (make-array (length toks) :initial-element nil))
+         (rt (make-array (length toks) :initial-element nil))
+         (conch (if utf-connectors #\│ #\:))
+         (levels (make-array (length toks) :initial-element nil))
+         (root nil)
+         (depth nil)
+         (off 0))
+    ;; pre-process toks
+    (doindex (i tok toks)
+      (unless @tok.beg
+        (:= @tok.beg off
+            @tok.end (:+ off (length @tok.word)))
+        (:+ off)))
     ;; find root
     (dolist (dep deps)
       (when (eql 'dep:root @dep.rel)
@@ -206,20 +214,20 @@
                           (chid @d.child.id)
                           (ltid (min hid chid))
                           (rtid (max hid chid))
-                          (left (? sent ltid))
-                          (right (? sent rtid))
+                          (left (? toks ltid))
+                          (right (? toks rtid))
                           (min-dist (+ 4 (length (ss @d.rel)))))
                      (if (= hid rtid)
                          (:= (get# (1- hid) extra-spaces)
                              (max (get# (1- hid) extra-spaces 0)
-                                  (floor (- 3 (length (ss (? sent hid))))
+                                  (floor (- 3 (length (ss (? toks hid))))
                                          2)))
                          (:= (get# hid extra-spaces)
                              (max (get# hid extra-spaces 0)
-                                  (ceiling (- 3 (length (ss (? sent hid))))
+                                  (ceiling (- 3 (length (ss (? toks hid))))
                                            2))))
                      (:+ (get# ltid extra-spaces 0)
-                         (max 0 (- min-dist (tok-dist sent left right
+                         (max 0 (- min-dist (tok-dist toks left right
                                                       space extra-spaces t))))))
                  (unless (eql 'dep:ROOT @dep.rel)
                    (with ((hid @dep.head.id)
@@ -238,7 +246,7 @@
                          (:= (? rt hid) level)))))))
       (rec root (remove root deps)))
     ;; add root dep and arrange levels properly
-    (:= depth (reduce 'max (loop :for i :from 0 :below (1- (length sent))
+    (:= depth (reduce 'max (loop :for i :from 0 :below (1- (length toks))
                                  :collect (length (? levels i)))))
     (:= (? mid @root.child.id) depth)
     (loop :repeat (- depth (length (? levels @root.child.id))) :do
@@ -247,51 +255,52 @@
       (:= (? levels i) (reverse (? levels i))))
     ;; output resuting level strings
     (values (append (list
-                     ;; sent
+                     ;; toks
                      (with-output-to-string (out)
-                       (doindex (i tok sent)
+                       (doindex (i tok toks)
                          (format out "~A~A" (ss tok)
                                  (filler (+ space (get# i extra-spaces 0))))))
                      ;; arrows
                      (with-output-to-string (out)
-                       (write-string (filler (floor (length (ss (? sent 0)))
+                       (write-string (filler (floor (length (ss (? toks 0)))
                                                     2))
                                      out)
-                       (dolist (tok sent)
+                       (dolist (tok toks)
                          (format-connectors
-                          out tok sent space extra-spaces lt mid rt -1
-                          (if utf-connectors #\↑ #\^) conch))))
+                          out tok toks space extra-spaces lt mid rt -1
+                          (if utf-connectors #\↑ #\^)
+                          (if utf-connectors #\│ #\.)))))
                     ;; rels
                     (maptimes
                      depth
                      (lambda (level)
                        (with-output-to-string (out)
-                         (write-string (filler (floor (length (ss (? sent 0)))
+                         (write-string (filler (floor (length (ss (? toks 0)))
                                                       2))
                                        out)
                          (iter (:with i := 0)
-                               (:while (< i (length sent)))
+                               (:while (< i (length toks)))
                                (if-it (? levels i level)
                                       (progn
-                                        (format-rel out it sent
+                                        (format-rel out it toks
                                                     space extra-spaces lt mid rt
                                                     (if utf-connectors #\─ #\.)
                                                     conch level)
                                         (:= i (max @it.child.id
                                                    @it.head.id)))
                                       (format-connectors
-                                       out (? sent i) sent space extra-spaces
+                                       out (? toks i) toks space extra-spaces
                                        lt mid rt level conch conch))
                                (:+ i)))))
                     ;; root
                     (list (fmt "~Aroot~%"
                                (filler
-                                (if (plusp @root.child.id)
-                                    (+ (1- (floor (length (ss @root.child))))
-                                       (tok-dist sent (? sent 0) @root.child
-                                                 space extra-spaces))
-                                    (floor (- (length (ss @root.child)) 4)
-                                           2))))))
+                                (+ (1- (floor (length (ss (? toks 0)))
+                                              2))
+                                   (if (plusp @root.child.id)
+                                       (tok-dist toks (? toks 0) @root.child
+                                                 space extra-spaces)
+                                       0))))))
             extra-spaces)))
 
 
@@ -313,16 +322,16 @@
       (unless (= 1 i)
         (write-line level stream)))))
 
-(defun pprint-deps (sent deps &key (space 1) (stream *standard-output*)
-                                utf-connectors)
-  (dolist (level (deps->levels sent deps :space space
+(defun pprint-deps (deps &key (space 1) (stream *standard-output*)
+                           utf-connectors)
+  (dolist (level (deps->levels deps :space space
                                :utf-connectors utf-connectors))
     (write-line level stream)))
 
-(defun pprint-deps+tags (sent tree deps &key (space 1) (stream *standard-output*)
-                                          utf-connectors)
+(defun pprint-deps+tags (tree deps &key (space 1) (stream *standard-output*)
+                                     utf-connectors)
   (with ((span max-height (annotate-spans tree :space space))
-         (deps-levels extra-spaces (deps->levels sent deps :space space)))
+         (deps-levels extra-spaces (deps->levels deps :space space)))
     ;; tags
     (doindex (i level (last (spans->levels (list span) max-height 0 :space space
                                            :extra-spaces extra-spaces
@@ -334,10 +343,10 @@
     (dolist (level (rest deps-levels))
       (write-line level))))
 
-(defun pprint-syntax (sent tree deps &key (space 1) (stream *standard-output*)
-                                       utf-connectors)
+(defun pprint-syntax (tree deps &key (space 1) (stream *standard-output*)
+                                  utf-connectors)
   (with ((span max-height (annotate-spans tree :space space))
-         (deps-levels extra-spaces (deps->levels sent deps :space space)))
+         (deps-levels extra-spaces (deps->levels deps :space space)))
       ;; consts
       (dolist (level (rest (spans->levels (list span) max-height 0 :space space
                                           :extra-spaces extra-spaces

@@ -205,6 +205,8 @@
            #:xml-attr
 
            #:<brown-corpus>
+
+           #:prepare-tree-for-reading
            ))
 
 (cl:defpackage #:nlp.lexics

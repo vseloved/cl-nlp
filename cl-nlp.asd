@@ -1,6 +1,6 @@
 ;;; (c) 2013-2017 Vsevolod Dyomkin
 
-(asdf:defsystem #:cl-nlp
+(defsystem #:cl-nlp
   :version (:read-file-line "version.txt" :at 0)
   :description "NLP toolkit for Common Lisp"
   :author "Vsevolod Dyomkin <vseloved@gmail.com>"

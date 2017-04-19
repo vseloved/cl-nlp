@@ -1,10 +1,7 @@
-;;; (c) 2013 Vsevolod Dyomkin
-
-(in-package #:asdf)
-
+;;; (c) 2013-2017 Vsevolod Dyomkin
 
 (defsystem #:cl-nlp-contrib
-  :version "0.0.3"
+  :version (:read-file-line "version.txt" :at 1)
   :description "CL-NLP additional packages."
   :author "Vsevolod Dyomkin <vseloved@gmail.com>"
   :maintainer "Vsevolod Dyomkin <vseloved@gmail.com>"

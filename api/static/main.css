@@ -1,0 +1,25 @@
+BODY { padding: 30px; background-color: #e6e6e6; }
+TD, TH { vertical-align: top; }
+DIV {
+    margin: 5px;
+}
+DIV.page {
+    box-shadow: 0 2px 6px rgba(100, 100, 100, 0.3);
+    padding: 1rem 2.857142857rem 2rem;
+    margin-top: 3.428571429rem;
+    margin-bottom: 3.428571429rem;
+    margin: 0 auto;
+    max-width: 68.571428571rem;
+    background-color: #fff;
+}
+DIV.footer {
+    width: 100%;
+    text-align: center;
+    margin-top: 10px;
+}
+PRE {
+    margin-bottom: 10px;
+    padding: 20px;
+    background-color: beige;
+    font-size: smaller;
+}
