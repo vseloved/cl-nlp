@@ -7,7 +7,7 @@
   :maintainer "Vsevolod Dyomkin <vseloved@gmail.com>"
   :license "Apache 2.0"
   :depends-on (#:rutilsx #:cl-nlp
-                         #:woo #:local-time #:yason
+                         #:woo #:local-time #:yason #:hunchentoot
                          #:babel #:flexi-streams #:verbose #:cl-who)
   :serial t
   :components

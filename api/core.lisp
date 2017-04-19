@@ -64,9 +64,9 @@
                     'cl-nlp-api (strcat "api" path))))
     (if-it (probe-file filename)
            (list 200
-                 (list "Content-Type" (or (htt:mime-type it)
+                 (list "Content-Type" (or (hunchentoot:mime-type it)
                                           "application/octet-stream")
-                       "Last-Modified" (htt:rfc-1123-date
+                       "Last-Modified" (hunchentoot:rfc-1123-date
                                         (or (file-write-date it)
                                             (get-universal-time)))
                        "Content-Length"
