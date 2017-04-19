@@ -5,5 +5,5 @@
 (ql:quickload :cl-nlp-api)
 
 (v:log :info :api "Starting API at port 7778")
-(bt:make-thread ^(woo:run 'napi:napi :port 7778))
+(bt:make-thread (lambda () (woo:run 'napi:napi :port 7778)))
 
