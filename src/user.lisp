@@ -53,7 +53,7 @@
                       table))
            (val-width #h())
            (conds (or keys (keys table)))
-           (key-width (reduce 'max (mapcar 'strlen conds))))
+           (key-width (reduce 'max (mapcar #'strlen conds))))
       (dolist (s samples)
         (set# s val-width
               (max (strlen s)
