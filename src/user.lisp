@@ -1,7 +1,19 @@
-;;; (c) 2013-2016 Vsevolod Dyomkin
+;;; (c) 2013-2017 Vsevolod Dyomkin
 
 (in-package #:nlp-user)
 (named-readtables:in-readtable rutilsx-readtable)
+
+
+;;; exports
+
+(rutils:re-export-symbols '#:nutil    '#:nlp-user)
+(rutils:re-export-symbols '#:ncorp    '#:nlp-user)
+(rutils:re-export-symbols '#:ncore    '#:nlp-user)
+(rutils:re-export-symbols '#:nlex     '#:nlp-user)
+(rutils:re-export-symbols '#:nlearn   '#:nlp-user)
+(rutils:re-export-symbols '#:ngen     '#:nlp-user)
+(rutils:re-export-symbols '#:ntag     '#:nlp-user)
+(rutils:re-export-symbols '#:nparse   '#:nlp-user)
 
 
 ;;; end-user utilies
@@ -20,7 +32,7 @@
        (let ((s- (- s width))
              (e+ (+ e width)))
          (if pass-newlines
-             (format t "~A~%" (substitute-if #\Space #'white-char-p
+             (format t "~A~%" (substitute-if #\Space 'white-char-p
                                              (subseq string s- e+)))
              (let ((l-pos (max s- (1+ (position #\Newline string
                                                 :end s :from-end t))))
@@ -39,8 +51,8 @@
    If CUMULATIVE is T accumulate counts over each column."
   (flet ((strlen (obj)
            (length (princ-to-string obj))))
-    (let* ((samples (sort (or cols
-                              (uniq (flatten (mapcar #'keys (vals table)))))
+    (with ((samples (sort (or cols
+                              (uniq (flatten (mapcar 'keys (vals table)))))
                           order-by))
            (table (if cumulative
                       (let ((cv (copy-hash-table table)))
@@ -53,12 +65,12 @@
                       table))
            (val-width #h())
            (conds (or keys (keys table)))
-           (key-width (reduce #'max (mapcar #'strlen conds))))
+           (key-width (reduce 'max (mapcar 'strlen conds))))
       (dolist (s samples)
         (set# s val-width
               (max (strlen s)
-                   (strlen (reduce #'max
-                                   (mapcar #`(or (? % s) 0)
+                   (strlen (reduce 'max
+                                   (mapcar ^(or (? % s) 0)
                                            (vals table)))))))
       ;; print header
       (format stream " ~V:@A" key-width "")

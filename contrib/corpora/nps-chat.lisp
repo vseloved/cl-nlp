@@ -14,11 +14,11 @@
     (declare (ignore _))
     (let ((filename (pathname-name file)))
       (values (loop :for clean :in cleans
-                    :for par-sent-toks :in all-pars
+                    :for parag-sent-toks :in all-pars
                     :for i :from 0
                     :collect (make-text :name (fmt "~A-~A" filename i)
                                         :clean clean
-                                        :par-sent-toks par-sent-toks))
+                                        :parag-sent-toks parag-sent-toks))
               (mapcar 'mkeyw classes)
               users))))
 

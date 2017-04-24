@@ -32,7 +32,7 @@
               rez))
       (reversef rez)
       (make-text :name (pathname-name file)
-                 :par-sent-toks (mapcar 'lt rez)
+                 :parag-sent-toks (mapcar 'lt rez)
                  :clean (mapcar 'rt rez)))))
 
 (defmethod read-corpus ((type (eql :amrbank)) path &key ext)

@@ -284,30 +284,30 @@
 
 ;;; Paragraph splitting
 
-(defclass doublenewline-parag-splitter ()
-  ()
+(defclass parag-splitter ()
+  ((regex :initarg :regex :accessor tokenizer-regex
+          :initform (re:create-scanner (fmt "(?:~C{2}|~C{2}|~C{2}|[~C~C]{2})"
+                                            #\Newline #\Return #\Linefeed
+                                            #\Return #\Linefeed))))
   (:documentation
    "Paragraph tokenizer that splits text on double newlines
     and removes single newlines."))
 
-(let ((newline-regex (re:create-scanner (fmt "(?:~C{2}|~C{2}|~C{2}|[~C~C]{2})"
-                                             #\Newline #\Return #\Linefeed
-                                             #\Return #\Linefeed))))
-  (defmethod tokenize ((tokenizer doublenewline-parag-splitter) string)
-    (let ((off 0)
-          ps ss)
-      (re:do-matches (beg end newline-regex string)
-        (unless (= off beg)
-          (push (slice string off beg) ps)
-          (push (pair off beg) ss))
-        (:= off end))
-      (unless (= off (1- (length string)))
-        (push (slice string off) ps)
-        (push (pair off (length string)) ss))
-      (values (reverse ps)
-              (reverse ss)))))
+(defmethod tokenize ((tokenizer parag-splitter) string)
+  (let ((off 0)
+        ps ss)
+    (re:do-matches (beg end @tokenizer.regex string)
+      (unless (= off beg)
+        (push (slice string off beg) ps)
+        (push (pair off beg) ss))
+      (:= off end))
+    (unless (= off (1- (length string)))
+      (push (slice string off) ps)
+      (push (pair off (length string)) ss))
+    (values (reverse ps)
+            (reverse ss))))
 
-(defvar *parag-splitter* (make 'doublenewline-parag-splitter)
+(defvar *parag-splitter* (make 'parag-splitter)
   "Basic paragraph splitter.")
 
 

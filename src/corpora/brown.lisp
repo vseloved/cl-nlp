@@ -9,10 +9,10 @@
   (let ((text (string-trim +white-chars+ (read-file file)))
         (offset 0)
         (nl-nl-nl (fmt "~%~%~%"))
-        par-sent-toks)
-    (dolist (par (split nl-nl-nl text :test 'string= :remove-empty-subseqs t))
-      (let (cur-par)
-        (dolist (sent (split #\Newline par :remove-empty-subseqs t))
+        parag-sent-toks)
+    (dolist (parag (split nl-nl-nl text :test 'string= :remove-empty-subseqs t))
+      (let (cur-parag)
+        (dolist (sent (split #\Newline parag :remove-empty-subseqs t))
           (let (cur-sent)
             (loop :for (beg end) :on (re:all-matches "[^\\s]+" text) :by #'cddr :do
                (let* ((split (position #\/ text :start beg :end end :from-end t))
@@ -25,16 +25,16 @@
                                  :end (- end (:+ offset (1+ (length pos))))
                                  :word word :pos pos)
                        cur-sent)))
-            (push (reverse cur-sent) cur-par)))
-        (push (reverse cur-par) par-sent-toks)))
-    (reversef par-sent-toks)
+            (push (reverse cur-sent) cur-parag)))
+        (push (reverse cur-parag) parag-sent-toks)))
+    (reversef parag-sent-toks)
     (make-text :name (pathname-name file)
                :raw text
-               :clean (parags->text par-sent-toks)
-               :par-sent-toks par-sent-toks)))
+               :clean (parags->text parag-sent-toks)
+               :parag-sent-toks parag-sent-toks)))
 
 (defmethod read-corpus ((type (eql :brown)) path &key (ext ""))
-  (let* ((path (namestring path))
+  (with ((path (namestring path))
          (topic-mapping #h(#\a :press-reportage
                            #\b :press-editorial
                            #\c :press-reviews
@@ -51,19 +51,18 @@
                            #\p :fiction-romance
                            #\r :humor))
          (rez (make-corpus :desc "Brown Corpus" :groups #h())))
-    (with-slots (texts groups) rez
-      (dofiles (file path :ext ext)
-        (when (= 4 (length (pathname-name file)))
-          (let ((text (read-corpus-file :brown file)))
-            (push text texts)
-            (push text (? groups (? topic-mapping
-                                    (char (pathname-name file) 1)))))))
-      (reversef texts)
-      (dotable (topic text-group groups)
+    (dofiles (file path :ext ext)
+      (when (= 4 (length (pathname-name file)))
+        (let ((text (read-corpus-file :brown file)))
+          (push text @rez.texts)
+          (push text (? @rez.groups (? topic-mapping
+                                       (char (pathname-name file) 1))))))
+      (reversef @rez.texts)
+      (dotable (topic text-group @rez.groups)
         (:= (? groups topic) (reverse text-group))))
     rez))
 
 (defmethod map-corpus ((type (eql :brown)) path fn &key (ext ""))
   (dofiles (file (directory path) :ext ext)
     (when (= 4 (length (pathname-name file)))
-      (funcall fn (read-corpus-file :brown file)))))
+      (call fn (read-corpus-file :brown file)))))

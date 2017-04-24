@@ -21,3 +21,8 @@
   :eager t)
 
 (export-tag "-NONE-")
+
+
+(defvar *ner-tags* (dict-from-file (lang-file :uni "ner-tags.txt")
+                                   :test 'eql :key-transform 'export-tag)
+  "NER tags.")

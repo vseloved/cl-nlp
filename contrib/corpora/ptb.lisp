@@ -24,7 +24,7 @@
                                                ^(string-trim +white-chars+ %)
                                                (re:split "={38}"
                                                          (read-file file))))))))
-      (let (cur-par cur-par-nps)
+      (let (cur-parag cur-parag-nps)
         (dolist (sent par)
           ;; account for tokens that have square brackets in them 1/2
           (:= sent (re:regex-replace-all "(\\w)\\]" sent "\\1}}"))
@@ -39,10 +39,10 @@
                     (push tok cur-np)
                     (push tok cur-sent)))
                 (push (reverse cur-np) cur-nps)))
-            (push (reverse cur-nps) cur-par-nps)
-            (push (reverse cur-sent) cur-par)))
-        (push (reverse cur-par-nps) nps)
-        (push (reverse cur-par) pars)))
+            (push (reverse cur-nps) cur-parag-nps)
+            (push (reverse cur-sent) cur-parag)))
+        (push (reverse cur-parag-nps) nps)
+        (push (reverse cur-parag) pars)))
     (reversef pars)
     (make-ptb-tagged-text :name (pathname-name file)
                           :clean (parags->text pars)

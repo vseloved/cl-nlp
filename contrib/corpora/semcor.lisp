@@ -47,7 +47,7 @@
                                  :element-type 'ub8
                                  :adjustable t :fill-pointer t)))
             (read-sequence buf (archive:entry-stream entry))
-            (with ((_ clean par-sent-toks
+            (with ((_ clean parag-sent-toks
                       (read-corpus-file :semcor
                                         (-> buf
                                             (flex:octets-to-string
@@ -55,7 +55,6 @@
                                             (re:regex-replace-all
                                              "=\"?([^ >\"]*)\"?" % "=\"\\1\"")
                                             (re:regex-replace-all "&" % "&amp;")))))
-              (call fn (make-text
-                        :name name
-                        :clean clean
-                        :par-sent-toks par-sent-toks)))))))))
+              (call fn (make-text :name name
+                                  :clean clean
+                                  :parag-sent-toks parag-sent-toks)))))))))

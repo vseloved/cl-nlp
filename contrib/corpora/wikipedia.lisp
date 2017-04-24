@@ -8,10 +8,10 @@
   (mv-bind (_ texts all-pars titles)
       (cxml:parse-file path (make 'wiki-sax :preserve-markup? preserve-markup?))
     (declare (ignore _))
-    (mapcar (lambda (title clean par-sent-toks)
+    (mapcar (lambda (title clean parag-sent-toks)
               (make-text :name title
                          :clean clean
-                         :par-sent-toks par-sent-toks))
+                         :parag-sent-toks parag-sent-toks))
             titles texts all-pars)))
 
 (defmethod read-corpus ((type (eql :wikipedia)) path &key ext preserve-markup?)

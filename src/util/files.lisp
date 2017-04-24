@@ -103,16 +103,17 @@
   (let ((dict (make-hash-table :test test))
         (count 0))
     (dolines (line file)
-      (when (zerop (rem (:+ count) 10000)) (format *debug-io* "."))
-      (let* ((split-pos (search separator line))
-             (k (funcall key-transform (slice line 0 split-pos)))
-             (v (funcall val-transform (when split-pos
-                                         (slice line (+ split-pos
-                                                         (length separator)))))))
-        (when-it (get# k dict)
-          (warn "Key: ~A has been already in dict with value: ~A. New value: ~A"
-                k it v))
-        (set# k dict v)))
+      (unless (blankp line)
+        (when (zerop (rem (:+ count) 10000)) (format *debug-io* "."))
+        (with ((split-pos (search separator line))
+               (k (call key-transform (slice line 0 split-pos)))
+               (v (call val-transform (when split-pos
+                                        (slice line (+ split-pos
+                                                       (length separator)))))))
+          (when-it (? dict k)
+            (warn "Key: ~A has been already in dict with value: ~A. New value: ~A"
+                  k it v))
+          (:= (? dict k) v))))
     (format *debug-io* " done. (Read ~A words).~%" count)
     dict))
 

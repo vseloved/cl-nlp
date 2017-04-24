@@ -6,7 +6,7 @@
 
 (defun extract-sents (text)
   (mapcar ^(make 'ncore:sent :toks (ncorp::remove-dummy-tokens %))
-          (flatten @text.par-sent-toks 1)))
+          (flatten @text.parag-sent-toks 1)))
 
 
 (defvar *sents* ())

@@ -6,10 +6,16 @@
 
 ;;; Language-dependent context
 
+(define-condition unknown-lang-var (warning)
+  ((var :initarg :var :accessor unknown-lang-var))
+  (:report (lambda (condition stream)
+             (format stream "Unknown language variable: ~A"
+                     @condition.var))))
+
 (defvar *lang* :en
   "Current language.")
 
-(defvar *lang-ctx-vars* ()
+(defvar *lang-vars* ()
   "A list of global language-dependent variables.")
 
 (defvar *lang-profiles* #h()
@@ -19,58 +25,85 @@
   "Define profile for language LANG with "
   (with-gensyms (ctx var form)
     `(let ((,ctx #h()))
-       (loop :for (,var ,form) :on (list ,@vars-forms) :by #'cddr :do
+       (loop :for (,var ,form) :on ',vars-forms :by #'cddr :do
          (let ((,var (mkeyw ,var)))
-           (if (member ,var *lang-ctx-vars*)
-               (:= (? ,ctx ,var) ,form)
-               (warn "Unknown language variable: ~A" ,var))))
+           (if (member ,var *lang-vars*)
+               (progn
+                 (format *debug-io* "Initializing ~A~%" ,var)й
+                 (:= (? ,ctx ,var) (eval ,form)))
+               (warn 'unknown-lang-var :var ,var))))
        (:= (? *lang-profiles* ,lang) ,ctx))))
 
 (defmacro def-lang-var (name init docstring &key eager)
   "Define a function NAME, that will return a singleton object,
    initialized lazily with INIT on first call.
    Also define a symbol macro <NAME> that will expand to (ACCESS-NAME).
-   When EAGER will initialize the variable at definition time."
-  (with-gensyms (singleton)
-    (let ((var (mksym name :format "*~A*"))
-          (fn (mksym name :format "ACCESS-~A")))
-      `(progn
-         (defvar ,var nil ,docstring)
-         (defun ,fn ()
-           ,docstring
-           (or ,var
-               (:= ,var ,init)))
-         (define-symbol-macro ,(mksym name :format "<~A>") (,fn))
-         ,(when eager `(,fn))
-         (pushnew (mkeyw ',name) *lang-ctx-vars*)))))
+   When EAGER will initialize the variable at definition time.
 
-(defun init-lang (lang)
+   <NAME> and *NAME* are automatically exported."
+  (let ((*name* (mksym name :format "*~A*"))
+        (<name> (mksym name :format "<~A>"))
+        (access-name (mksym name :format "ACCESS-~A")))
+    `(progn
+       (defvar ,*name* nil ,docstring)
+       (defun ,access-name ()
+         ,docstring
+         (or ,*name*
+             (:= ,*name* ,init)))
+       (define-symbol-macro ,<name> (,access-name))
+       ,(when eager `(,access-name))
+       (export ',<name>)
+       (export ',*name*)
+       (pushnew (mkeyw ',name) *lang-vars*))))
+
+(defun init-lang (lang &rest vars)
   "Load language profile and other necessary data for LANG.
    The initialization data should be defined in the file langs/LANG/LANG.lisp."
-  (load (lang-file lang (fmt "~(~A~).lisp" lang))))
+  (let ((all-lang-vars *lang-vars*)
+        (*lang-vars* (if vars
+                         (if-it (set-difference vars *lang-vars*)
+                                (progn
+                                  (warn "Ignoring unknown lang vars:~{ ~A~}"
+                                        it)
+                                  (set-difference vars it))
+                                vars)
+                         *lang-vars*)))
+    (handler-bind ((unknown-lang-var
+                     ^(when (and vars (member @%.var all-lang-vars))
+                        (muffle-warning %))))
+      (load (lang-file lang (fmt "~(~A~).lisp" lang))))))
 
 (defun in-lang (lang)
   "Switch current lang to LANG if the appropriate language profile is defined."
   (let ((ctx (? *lang-profiles* lang)))
     (if ctx
         (progn (:= *lang* lang)
-               (dolist (ctx-var *lang-ctx-vars*)
+               (dolist (ctx-var *lang-vars*)
                  (when-it (? ctx ctx-var)
-                   (:= (symbol-value (mksym ctx-var :format "*~A*")) it))))
+                   (:= (symbol-value (mksym ctx-var :format "*~A*" :package :nlp))
+                       it))))
         (error "No language profile for: ~A (~A)" lang (iso-lang lang)))))
 
-(defmacro with-lang ((lang) &body body)
+(defmacro with-lang ((lang &rest vars) &body body)
   "Execute BODY in the constant of current lang set to LANG
-   if the appropriate language profile is defined."
-  (once-only (lang)
-    `(if-it (? *lang-profiles* ,lang)
-            (let ((*lang* ,lang)
-                  ,@(flat-map (lambda (var)
-                                (when-it (? it var)
-                                  `((,(mksym var :format "*~A*") ,it))))
-                              *lang-ctx-vars*))
-              ,@body)
-            (error "No language profile for: ~A (~A)" ,lang (iso-lang ,lang)))))
+   if the appropriate language profile is defined.
+   If VARS are specified (as keywords), only those lang vars are overriden."
+  `(if (? *lang-profiles* ,lang)
+       (let ((*lang* ,lang)
+             ,@(flat-map (lambda (var)
+                           (when-it (? *lang-profiles* lang var)
+                             `((,(mksym var :format "*~A*")
+                                ,it))))
+                         (if vars
+                             (if-it (set-difference vars *lang-vars*)
+                                    (progn
+                                      (warn "Ignoring unknown lang vars:~{ ~A~}"
+                                            it)
+                                      (set-difference vars it))
+                                    vars)
+                             *lang-ctx-vars*)))
+         ,@body)
+       (error "No language profile for: ~A (~A)" ,lang (iso-lang ,lang))))
 
 
 ;;; Language ISO codes

@@ -45,7 +45,7 @@
                                   (mapcar ^(strjoin #\Space
                                                     (mapcar 'tok-word %))
                                           sents))
-                  :par-sent-toks (list sents)
+                  :parag-sent-toks (list sents)
                   :trees trees))))))
 
 (defmethod read-corpus ((type (eql :treebank)) path &key ext)

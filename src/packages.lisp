@@ -85,7 +85,7 @@
   (:export #:+iso-639-1+
            #:*lang*
            #:*lang-profiles*
-           #:*lang-ctx-vars*
+           #:*lang-vars*
            #:iso-lang
            #:lang-iso
            #:in-lang
@@ -152,11 +152,7 @@
            #:postprocessing-regex-word-tokenizer
            #:baseline-sent-tokenizer
            #:full-text-tokenizer
-           #:doublenewline-parag-splitter
-           #:<word-chunker>
-           #:<basic-word-tokenizer>
-           #:<word-tokenizer>
-           #:<sent-splitter>
+           #:parag-splitter
            #:*full-text-tokenizer*
            #:*parag-splitter*
            #:parags->text
@@ -187,7 +183,7 @@
            #:text-name
            #:text-raw
            #:text-clean
-           #:text-par-sent-toks
+           #:text-parag-sent-toks
            #:text-trees
 
            #:read-corpus
@@ -203,8 +199,6 @@
            #:xml-corpus-sax
            #:xml-progress-mixin
            #:xml-attr
-
-           #:<brown-corpus>
 
            #:prepare-tree-for-reading
            ))
@@ -227,14 +221,11 @@
            #:stemmer
            #:stem
            #:porter-stemmer
-           #:<porter-stemmer>
 
            #:lemmatizer
            #:lemmatize
            #:morph
            #:lem-dict
-           #:<dict-lemmatizer>
-           #:<wikt-lemmatizer>
 
            #:mem-dict
            #:load-mem-dict))
@@ -333,7 +324,6 @@
            #:tagger-dict
            #:tagger-single-pos-words
            #:greedy-ap-dict-postagger
-           #:<pos-tagger>
            ))
 
 (cl:defpackage #:nlp.parsing
@@ -410,7 +400,6 @@
            #:markov-chain-generator
            #:mark-v-shaney-generator
            #:markov-order
-           #:<mark-v-shaney>
            ))
 
 (cl:defpackage #:nlp-user
@@ -424,31 +413,19 @@
            #:tabulate
            ))
 
-(rutils:re-export-symbols '#:nutil    '#:nlp-user)
-(rutils:re-export-symbols '#:ncorp    '#:nlp-user)
-(rutils:re-export-symbols '#:ncore    '#:nlp-user)
-(rutils:re-export-symbols '#:nlex     '#:nlp-user)
-(rutils:re-export-symbols '#:nlearn   '#:nlp-user)
-(rutils:re-export-symbols '#:ngen     '#:nlp-user)
-(rutils:re-export-symbols '#:ntag     '#:nlp-user)
-(rutils:re-export-symbols '#:nparse   '#:nlp-user)
-
 
 ;;; special namespaces
 
 (cl:defpackage #:nlp.tags
   (:nicknames #:tag)
   (:use #:common-lisp #:rutilsx #:nutil #:ncore)
-  (:export #:<word-tags>
-           #:<phrase-tags>
-           #:export-tag
+  (:export #:export-tag
            ))
 
 (cl:defpackage #:nlp.deps
   (:nicknames #:dep)
   (:use #:common-lisp #:rutilsx #:nutil #:ncore)
-  (:export #:<dep-tags>
-           #:+root+
+  (:export #:+root+
            ))
 
 ;; (cl:defpackage #:nlp.amr

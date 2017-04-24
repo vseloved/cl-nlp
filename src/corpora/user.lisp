@@ -13,7 +13,7 @@
         (let ((raw (read-file %)))
           (push (make-text :name (pathname-name %)
                            :raw raw
-                           :par-sent-toks (tokenize <full-text-tokenizer> raw))
+                           :parag-sent-toks (tokenize <full-text-tokenizer> raw))
                 @corpus.texts))))
     (reversef @corpus.texts)
     corpus))

@@ -53,7 +53,10 @@
 
 (defun load-mem-dict (in)
   "Load new mem-dict from IN."
-  (format *debug-io* "~&Reading mem-dict from ~A:" in)
+  (format *debug-io* "~&Reading mem-dict from ~A:"
+          (if (streamp in)
+              @in.stream.underfile.pathname
+              in))
   (with ((dict (make 'mem-dict))
          ((words forms) @ dict)
          (cur nil)
