@@ -21,6 +21,21 @@
   lemma
   pos)
 
+(defstruct (ent (:include tok)
+                (:print-object
+                 (lambda (tok stream)
+                   (format stream "<~@[~A ~]~A~@[/~A~]~@[:~A~]~@[ ~A~]>"
+                           @tok.ner @tok.word @tok.pos @tok.id
+                           (when @tok.beg
+                             (if @tok.end
+                                 (fmt "~A..~A" @tok.beg @tok.end)
+                                 @tok.beg))))))
+  ner)
+
+(defun tok->ent (tok &optional ner)
+  (make-ent :id @tok.id :beg @tok.beg :end @tok.end
+            :word @tok.word :pos @tok.pos :ner ner))
+
 (defmethod ss ((obj tok))
   @obj.word)
 

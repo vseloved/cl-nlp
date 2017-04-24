@@ -4,18 +4,6 @@
 (named-readtables:in-readtable rutilsx-readtable)
 
 
-;;; exports
-
-(rutils:re-export-symbols '#:nutil    '#:nlp-user)
-(rutils:re-export-symbols '#:ncorp    '#:nlp-user)
-(rutils:re-export-symbols '#:ncore    '#:nlp-user)
-(rutils:re-export-symbols '#:nlex     '#:nlp-user)
-(rutils:re-export-symbols '#:nlearn   '#:nlp-user)
-(rutils:re-export-symbols '#:ngen     '#:nlp-user)
-(rutils:re-export-symbols '#:ntag     '#:nlp-user)
-(rutils:re-export-symbols '#:nparse   '#:nlp-user)
-
-
 ;;; end-user utilies
 
 (defun grep (word string &key (width 25) pass-newlines limit)

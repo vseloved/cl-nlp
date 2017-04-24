@@ -102,6 +102,10 @@
            #:tok-beg
            #:tok-end
            #:tok-pos
+           #:ent
+           #:make-ent
+           #:ent-ner
+           #:tok->ent
            
            #:sent
            #:sent-toks
@@ -412,6 +416,15 @@
            #:grep
            #:tabulate
            ))
+
+(rutils:re-export-symbols '#:nutil    '#:nlp-user)
+(rutils:re-export-symbols '#:ncorp    '#:nlp-user)
+(rutils:re-export-symbols '#:ncore    '#:nlp-user)
+(rutils:re-export-symbols '#:nlex     '#:nlp-user)
+(rutils:re-export-symbols '#:nlearn   '#:nlp-user)
+(rutils:re-export-symbols '#:ngen     '#:nlp-user)
+(rutils:re-export-symbols '#:ntag     '#:nlp-user)
+(rutils:re-export-symbols '#:nparse   '#:nlp-user)
 
 
 ;;; special namespaces

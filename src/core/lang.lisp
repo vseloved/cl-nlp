@@ -53,7 +53,11 @@
        (define-symbol-macro ,<name> (,access-name))
        ,(when eager `(,access-name))
        (export ',<name>)
+       (import ',<name> '#:nlp)
+       (export ',<name> '#:nlp)
        (export ',*name*)
+       (import ',*name* '#:nlp)
+       (export ',*name* '#:nlp)
        (pushnew (mkeyw ',name) *lang-vars*))))
 
 (defun init-lang (lang &rest vars)

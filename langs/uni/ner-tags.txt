@@ -1,0 +1,4 @@
+PERS person
+LOC geo-political entity
+ORG organization
+MISC other

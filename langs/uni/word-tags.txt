@@ -1,0 +1,18 @@
+ADJ adjective
+ADV adverb
+INTJ interjection
+NOUN noun
+PROPN proper noun
+VERB verb
+ADP adposition
+AUX auxiliary 
+CCONJ coordinating conjunction
+DET determiner
+NUM numeral
+PART particle
+PRON pronoun
+SCONJ subordinating conjunction
+PUNCT punctuation
+SYM symbol
+X other
+
