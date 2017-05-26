@@ -62,10 +62,10 @@
 (defmethod tokenize ((tokenizer regex-word-tokenizer) string)
   (loop :for (beg end) :on (re:all-matches (tokenizer-regex tokenizer) string)
                        :by #'cddr
-     :collect (slice string beg end) :into words
-     :collect (pair beg end) :into spans
-     :finally (return (values words
-                              spans))))
+        :collect (slice string beg end) :into words
+        :collect (pair beg end) :into spans
+        :finally (return (values words
+                                 spans))))
 
 (defclass postprocessing-regex-word-tokenizer (regex-word-tokenizer)
   ((regex :accessor tokenizer-regex :initarg :regex
@@ -73,80 +73,82 @@
    (2char-contractions-regex
     :initarg :2char-contractions-regex
     :initform (re:create-scanner
-              "i['‘’`]m|(?:\\w)['‘’`]s|(?:i|you|s?he|we|they)['‘’`]d$"
-              :case-insensitive-mode t))
+               "i['‘’`]m|(?:\\w)['‘’`]s|(?:i|you|s?he|we|they)['‘’`]d$"
+               :case-insensitive-mode t))
     (3char-contractions-regex
      :initarg :3char-contractions-regex
      :initform (re:create-scanner
                 "(?:i|you|s?he|we|they)['‘’`](?:ll|[vr]e)|n['‘’`]t$"
-               :case-insensitive-mode t)))
+                :case-insensitive-mode t)))
   (:documentation
    "Regex-based word tokenizer."))
 
 (defmethod tokenize :around ((tokenizer postprocessing-regex-word-tokenizer)
                              string)
-  (mv-bind (ws ss) (call-next-method)
-    (let (words spans skip)
-      (loop :for wtail :on ws :for stail :on ss :do
-         (if skip (void skip)
-             (let ((cur (first wtail))
-                   (cur-span (first stail))
-                   (prev (first words))
-                   (next (second wtail))
-                   (2char-regex @tokenizer.2char-contractions-regex)
-                   (3char-regex @tokenizer.3char-contractions-regex))
-               (macrolet ((push-contractions (char-length)
-                            `(let* ((next cur-span)
-                                    (split-pos (- (length cur) ,char-length))
-                                    (split (- (rt next) ,char-length)))
-                               (when (plusp split-pos)
-                                 (push (slice cur 0 split-pos) words)
-                                 (push (pair (lt next) split) spans))
-                               (push (slice cur split-pos) words)
-                               (push (pair split (rt next)) spans))))
-                 (cond
-                   ;; glue together abbreviations, decimals
-                   ((and prev
-                         (= (lt cur-span) (rt (first spans)))
-                         (or (and (string= "." cur)
-                                  next
-                                  (not (open-quote-char-p (char next 0)))
-                                  (alphanumericp (char prev (1- (length prev)))))
-                             (and (ends-with "." prev)
-                                  (alphanumericp (char cur 0)))
-                             (and (every #`(char= #\' %) prev)
-                                  (every #`(char= #\' %) cur))))
-                    (:= (first words) (strcat prev cur)
-                        (first spans) (pair (lt (first spans))
-                                            (rt cur-span))))
-                   ;; process times (00:00)
-                   ((and prev next
-                         (string= ":" cur)
-                         (digit-char-p (char prev (1- (length prev))))
-                         (digit-char-p (char next 0)))
-                    (:= (first words) (slice string
-                                             (lt (first spans))
-                                             (rt (second stail)))
-                        (first spans) (pair (lt (first spans))
-                                            (rt (second stail)))
-                        skip t))
-                   ;; split posessives and contractions: I'm, 'd, 's
-                   ((re:scan 2char-regex cur)
-                    (push-contractions 2))
-                   ;; split contractions: 'll, 've, 're, n't
-                   ((re:scan 3char-regex cur)
-                    (push-contractions 3))
-                   ;; split trailing '
-                   ((re:scan "\\w+'+$" cur)
-                    (push-contractions (- (length cur)
-                                          (position-if-not #`(eql #\' %)
-                                                           cur :from-end t)
-                                          1)))
-                   ;; pass other tokens as is
-                   (t (push cur words)
-                      (push cur-span spans)))))))
-      (values (reverse words)
-              (reverse spans)))))
+  (with ((ws ss (call-next-method))
+         (words nil)
+         (spans nil)
+         (skip nil))
+    (loop :for wtail :on ws :for stail :on ss :do
+      (if skip (void skip)
+          (let ((cur (first wtail))
+                (cur-span (first stail))
+                (prev (first words))
+                (next (second wtail))
+                (2char-regex @tokenizer.2char-contractions-regex)
+                (3char-regex @tokenizer.3char-contractions-regex))
+            (macrolet ((push-contractions (char-length)
+                         `(with ((next cur-span)
+                                 (split-pos (- (length cur) ,char-length))
+                                 (split (- (rt next) ,char-length)))
+                            (when (plusp split-pos)
+                              (push (slice cur 0 split-pos) words)
+                              (push (pair (lt next) split) spans))
+                            (push (slice cur split-pos) words)
+                            (push (pair split (rt next)) spans))))
+              (cond
+                ;; glue together abbreviations, decimals
+                ((and prev
+                      (= (lt cur-span) (rt (first spans)))
+                      (or (and (string= "." cur)
+                               next
+                               (not (open-quote-char-p (char next 0)))
+                               (alphanumericp (char prev (1- (length prev)))))
+                          (and (ends-with "." prev)
+                               (alphanumericp (char cur 0)))
+                          (and (every ^(char= #\' %) prev)
+                               (every ^(char= #\' %) cur))))
+                 (:= (first words) (strcat prev cur)
+                     (first spans) (pair (lt (first spans))
+                                         (rt cur-span))))
+                ;; process times (00:00)
+                ((and prev next
+                      (string= ":" cur)
+                      (digit-char-p (char prev (1- (length prev))))
+                      (digit-char-p (char next 0)))
+                 (:= (first words) (slice string
+                                          (lt (first spans))
+                                          (rt (second stail)))
+                     (first spans) (pair (lt (first spans))
+                                         (rt (second stail)))
+                     skip t))
+                ;; split posessives and contractions: I'm, 'd, 's
+                ((re:scan 2char-regex cur)
+                 (push-contractions 2))
+                ;; split contractions: 'll, 've, 're, n't
+                ((re:scan 3char-regex cur)
+                 (push-contractions 3))
+                ;; split trailing '
+                ((re:scan "\\w+'+$" cur)
+                 (push-contractions (- (length cur)
+                                        (position-if-not ^(eql #\' %)
+                                                         cur :from-end t)
+                                        1)))
+                ;; pass other tokens as is
+                (t (push cur words)
+                   (push cur-span spans)))))))
+    (values (reverse words)
+            (reverse spans))))
 
 (def-lang-var word-chunker (make 'regex-word-tokenizer
                                  :regex (re:create-scanner "[^\\s]+"))
@@ -237,48 +239,51 @@
 
 ;;; Sentence splitting
 
-(defclass baseline-sent-tokenizer (tokenizer)
+(defclass punct-sent-tokenizer (tokenizer)
   ((abbrevs-with-dot :initarg :abbrevs-with-dot
                      :initform (list-from-file
                                 (lang-file :en "abbrevs-with-dot.txt")))
    (sent-end-chars :initarg :sent-end-chars
-                   :initform '(#\. #\? #\! #\… #\¶ #\»)))
+                   :initform '(#\. #\? #\! #\… #\¶))
+   (sent-post-end-chars :initarg :sent-post-end-chars
+                        :initform '(#\) #\" #\' #\»)))
   (:documentation
    "Basic tokenizer for sentence splitting."))
 
-(defmethod tokenize ((tokenizer baseline-sent-tokenizer) string)
+(defmethod tokenize ((tokenizer punct-sent-tokenizer) string)
   (with ((words word-spans
                 (tokenize (make 'regex-word-tokenizer :regex "[^\\s]+")
                           (substitute #\¶ #\Newline string)))
-         ((sent-end-chars abbrevs-with-dot) @ tokenizer)
+         ((sent-end-chars sent-post-end-chars abbrevs-with-dot) @ tokenizer)
          (beg 0)
-         (lower-first (when words (lower-case-p (? words 0 0))))
          (sents nil)
          (spans nil))
     (loop :for (word . ws) :on words
-          :and (span . ss) :on word-spans :do
-      (when (or (null ws)
-                (and (member (char word (1- (length word)))
-                             sent-end-chars)
-                     (notevery 'upper-case-p
-                               (slice word 0
-                                      (position-if ^(member % sent-end-chars)
-                                                   word)))
-                     (or (not (char= (char word (1- (length word))) #\.))
-                         (not (or (starts-with "(" word)
-                                  (member word abbrevs-with-dot
-                                          :test 'string=))))
-                     (or lower-first
-                         (upper-case-p (? ws 0 0)))))
+          :for (span . ss) :on word-spans :do
+      (let ((last-char (char word (1- (length word)))))
+        (when (or (null ws)
+                  (and (cond ((member last-char sent-end-chars)
+                              (not (and (char= #\. last-char)
+                                        (member word abbrevs-with-dot
+                                                :test 'string=))))
+                             ((member last-char sent-post-end-chars)
+                              (and (> (length word) 1)
+                                   (member (char word (- (length word) 2))
+                                           sent-end-chars))))
+                       (or ;; normal case
+                           (not (lower-case-p (? ws 0 0)))
+                           ;; all lower case
+                           (every ^(notany 'upper-case-p %) words)
+                           ;; all caps
+                           (every ^(notany 'lower-case-p %) words))))
         (push (slice string beg (rt span)) sents)
         (push (pair beg (rt span)) spans)
         (when ws
-          (:= beg (? ss 0 0)
-              lower-first (lower-case-p (? ws 0 0))))))
+          (:= beg (? ss 0 0))))))
     (values (reverse sents)
             (reverse spans))))
 
-(def-lang-var sent-splitter (make 'baseline-sent-tokenizer)
+(def-lang-var sent-splitter (make 'punct-sent-tokenizer)
   "Basic sentence splitter.")
 
 

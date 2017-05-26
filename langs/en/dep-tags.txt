@@ -26,8 +26,10 @@ AGENT agent
 REF referent
 EXPL expletive (expletive there)
 MOD modifier
+ACL non-finite clause that modify a nominal
 ADVCL adverbial clause modifier
 PURPCL purpose clause modifier
+RELCL relative clause modifier
 TMOD temporal modifier
 RCMOD relative clause modifier
 AMOD adjectival modifier

@@ -61,10 +61,6 @@ the following things should be finished (work-in-progress):
 
 ## Technical notes
 
-### Current limitations:
-
-- targeted at English language only
-
 ### Dependencies
 
 - [RUTILS][RUTILS]
