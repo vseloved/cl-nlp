@@ -16,38 +16,28 @@
                   :val-transform #`(split-sequence #\Space %)))
 
 (deftest word-tokenizer ()
-  (dotable (str tokens *word-tokenization-tests*)
-    (should be equal tokens
-            (mv-bind (tokens spans) (tokenize <word-tokenizer> str)
-              tokens))))
-
+  (dotable (str toks *word-tokenization-tests*)
+    (should be equal toks
+            (tokenize <word-tokenizer> str))))
 
 (deftest regex-tokenizer ()
   (should be equal '("," "." "," "," "?")
-          (multiple-value-bind (tokens spans)
-              (tokenize (make 'regex-word-tokenizer :regex "[,\.\?!\"]\s*")
-                        "Alas, it has not rained today. When, do you think, will it rain again?")
-            tokens))
+          (tokenize (make 'regex-word-tokenizer :regex "[,\.\?!\"]\s*")
+                    "Alas, it has not rained today. When, do you think, will it rain again?"))
   (should be equal '("<p>" "<b>" "</b>" "</p>")
-          (multiple-value-bind (tokens spans)
-              (tokenize (make 'regex-word-tokenizer :regex "</?(b|p)>")
-                        "<p>Although this is <b>not</b> the case here, we must not relax our vigilance!</p>")
-            tokens))
+          (tokenize (make 'regex-word-tokenizer :regex "</?(b|p)>")
+                    "<p>Although this is <b>not</b> the case here, we must not relax our vigilance!</p>"))
   (should be equal '("las" "has" "rai" "rai")
-          (multiple-value-bind (tokens spans)
-              (tokenize (make 'regex-word-tokenizer :regex "(h|r|l)a(s|(i|n0))")
-                        "Alas, it has not rained today. When, do you think, will it rain again?")
-            tokens)))
+          (tokenize (make 'regex-word-tokenizer :regex "(h|r|l)a(s|(i|n0))")
+                    "Alas, it has not rained today. When, do you think, will it rain again?")))
 
 (deftest sent-tokenizer ()
   (should be equal
           '("Good muffins cost $3.88  in New York."
             "Please buy me  two of them."
             "Thanks.")
-          (with ((tokens spans
-                         (tokenize <sent-splitter>
-                                   "Good muffins cost $3.88  in New York.   Please buy me  two of them.    Thanks.")))
-            tokens)))
+          (tokenize <sent-splitter>
+                    "Good muffins cost $3.88  in New York.   Please buy me  two of them.    Thanks.")))
 
 
 ;; (dolist (group (split "" (split #\Newline

@@ -11,7 +11,7 @@
    "Word vectors stored in memory."))
 
 (defmethod slot-unbound (class (obj mem-vecs) (slot-name (eql 'default)))
-  (:= @instance.default (make-array @obj.order :element-type 'single-float)))
+  (:= @obj.default (make-array @obj.order :element-type 'single-float)))
 
 (defclass lazy-mem-vecs (mem-vecs)
   ((understream :initarg :understream :accessor vecs-understream))
@@ -33,24 +33,26 @@
            @vecs.default)
           (t rez))))
 
-(defgeneric init-vecs (vecs file)
+(defgeneric init-vecs (vecs file &key prolog)
   (:documentation
    "Initialize word VECS from FILE.")
-  (:method ((vecs mem-vecs) file)
+  (:method ((vecs mem-vecs) file &key prolog)
     (let ((dict #h(equal))
           (cc 0))
       (with-open-file (in file)
+        (when prolog (read-line in nil))
         (loop :for word := (read-word in t) :while word :do
           (when (zerop (rem (:+ cc) 10000)) (princ "."))
           (:= (? dict (normalize vecs word))
               (read-vec @vecs.order in))))
       (:= @vecs.dict dict)
       vecs))
-  (:method ((vecs lazy-mem-vecs) file)
+  (:method ((vecs lazy-mem-vecs) file &key prolog)
     (let ((dict #h(equal))
           (off 0)
           (cc 0)
           (in (open file :external-format :utf8)))
+      (when prolog (read-line in nil))
       (:= @vecs.understream in)
       (loop :for line := (read-line in nil)
             :while (and line (not (blankp line))) :do

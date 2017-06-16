@@ -9,7 +9,7 @@
 
 (defmethod lemmatize ((lemmatizer wikt-lemmatizer) word &optional tag)
   (or (? @lemmatizer.dict tag word)
-      (? @lemmatizer.dict nil word)
+      (when tag (? @lemmatizer.dict nil word))
       word))
 
 (defun extract-wikt-lemma-dict (path)

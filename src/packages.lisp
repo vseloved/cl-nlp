@@ -154,7 +154,7 @@
            #:tokenizer
            #:regex-word-tokenizer
            #:postprocessing-regex-word-tokenizer
-           #:baseline-sent-tokenizer
+           #:punct-sent-tokenizer
            #:full-text-tokenizer
            #:parag-splitter
            #:*full-text-tokenizer*
@@ -259,6 +259,7 @@
            #:make-ex
            #:ex-fs
            #:ex-gold
+           #:ex-raw
            
            #:init-model
            #:save-model
@@ -425,6 +426,7 @@
 (rutils:re-export-symbols '#:ngen     '#:nlp-user)
 (rutils:re-export-symbols '#:ntag     '#:nlp-user)
 (rutils:re-export-symbols '#:nparse   '#:nlp-user)
+(rutils:re-export-symbols '#:nemb   '#:nlp-user)
 
 
 ;;; special namespaces
@@ -433,6 +435,7 @@
   (:nicknames #:tag)
   (:use #:common-lisp #:rutilsx #:nutil #:ncore)
   (:export #:export-tag
+           #:*ner-tags*
            ))
 
 (cl:defpackage #:nlp.deps

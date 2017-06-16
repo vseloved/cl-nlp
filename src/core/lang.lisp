@@ -18,7 +18,7 @@
 (defvar *lang-vars* ()
   "A list of global language-dependent variables.")
 
-(defvar *lang-profiles* #h()
+(defvar *lang-profiles* #h(:en #h())
   "A table of known language-dependent variables values per lang.")
 
 (defmacro def-lang-profile (lang &rest vars-forms)
@@ -29,7 +29,8 @@
          (let ((,var (mkeyw ,var)))
            (if (member ,var *lang-vars*)
                (progn
-                 (format *debug-io* "Initializing ~A~%" ,var)й
+                 (format *debug-io* "Initializing ~A~%" ,var)
+                 ;; TODO: add lazy evaluation
                  (:= (? ,ctx ,var) (eval ,form)))
                (warn 'unknown-lang-var :var ,var))))
        (:= (? *lang-profiles* ,lang) ,ctx))))
@@ -51,7 +52,10 @@
          (or ,*name*
              (:= ,*name* ,init)))
        (define-symbol-macro ,<name> (,access-name))
-       ,(when eager `(,access-name))
+       (:= (? *lang-profiles* :en ,(mkeyw name))
+           ,(if eager
+                `(,access-name)
+                `(lambda () (,access-name))))
        (export ',<name>)
        (import ',<name> '#:nlp)
        (export ',<name> '#:nlp)
@@ -81,23 +85,27 @@
   "Switch current lang to LANG if the appropriate language profile is defined."
   (let ((ctx (? *lang-profiles* lang)))
     (if ctx
-        (progn (:= *lang* lang)
-               (dolist (ctx-var *lang-vars*)
-                 (when-it (? ctx ctx-var)
-                   (:= (symbol-value (mksym ctx-var :format "*~A*" :package :nlp))
-                       it))))
+        (dolist (ctx-var *lang-vars*
+                         (:= *lang* lang))
+          (when-it (? ctx ctx-var)
+            (:= (symbol-value (mksym ctx-var :format "*~A*" :package :nlp))
+                (print (if (functionp it)
+                    (call it)
+                    it)))))
         (error "No language profile for: ~A (~A)" lang (iso-lang lang)))))
 
 (defmacro with-lang ((lang &rest vars) &body body)
   "Execute BODY in the constant of current lang set to LANG
    if the appropriate language profile is defined.
    If VARS are specified (as keywords), only those lang vars are overriden."
-  `(if (? *lang-profiles* ,lang)
-       (let ((*lang* ,lang)
+  (if (? *lang-profiles* lang)
+      `(let ((*lang* ,lang)
              ,@(flat-map (lambda (var)
                            (when-it (? *lang-profiles* lang var)
                              `((,(mksym var :format "*~A*")
-                                ,it))))
+                                (if (functionp ,it)
+                                    (call ,it)
+                                    ,it)))))
                          (if vars
                              (if-it (set-difference vars *lang-vars*)
                                     (progn
@@ -105,9 +113,11 @@
                                             it)
                                       (set-difference vars it))
                                     vars)
-                             *lang-ctx-vars*)))
+                             *lang-vars*)))
          ,@body)
-       (error "No language profile for: ~A (~A)" ,lang (iso-lang ,lang))))
+      (error "No language profile for: ~A (~A). ~%~
+              Use `(init-lang ~S~{ ~S~})` to load it first."
+             lang (iso-lang lang) lang vars)))
 
 
 ;;; Language ISO codes

@@ -5,7 +5,7 @@
 
 
 (defstruct ex
-  fs gold)
+  fs gold raw)
 
 (defclass categorical-model ()
   ((weights :initarg :weights :initform #h() :accessor m-weights))
@@ -105,8 +105,9 @@
                   (if (equal @%.gold guess)
                       (:+ matched)
                       (when verbose
-                        (format *debug-io* "guess: ~A   gold: ~A    fs: ~A~%"
-                                guess @%.gold @%.fs)))
+                        (format *debug-io*
+                                "guess: ~A   gold: ~A~@[    raw: ~A~]    fs: ~A~%"
+                                guess @%.gold @%.raw @%.fs)))
                   (:+ total)
                   (unless verbose (princ-progress total len)))
            gold-fs)
@@ -118,11 +119,12 @@
 
 (defun conf-mat (model gold-fs &key (verbose t))
   (let ((rez #h())
+        (len (length gold-fs))
         (cc 0))
     (map nil ^(prog1 (:+ (get# (classify model @%.fs)
                                (getset# @%.gold rez #h())
                                0))
-                (when (zerop (rem (:+ cc) 1000)) (princ ".")))
+                (princ-progress (:+ cc) len))
          gold-fs)
     (when verbose
       (dolist (row (sort (ht->pairs rez) '>

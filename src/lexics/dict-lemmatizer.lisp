@@ -28,7 +28,7 @@
     (return-from lemmatize word))
   (let ((tags (pos-tags lemmatizer word) :test 'equalp))
     (if (member pos tags)
-        ;; the word itseld is a known word form for the requested tag
+        ;; the word itself is a known word form for the requested tag
         (values word
                 pos)
         (with ((word-tag present?
@@ -44,10 +44,13 @@
                                                                   (? % 0 0)))
                                         t)))
                              (get# word @lemmatizer.forms))))
+          (:= word-tag (remove-duplicates word-tag  :test 'equalp))
           (if present?
               ;; there is a known word form for the requested tag
-              (apply 'values word-tag)
-              ;; the word id known but ther's no word forms for the requested ta
+              (apply 'values (if (single word-tag)
+                                 (first word-tag)
+                                 word-tag))
+              ;; the word is known but there's no word forms for the requested tag
               (values word
                       (first tags)))))))
 
@@ -74,7 +77,7 @@
              (if (char= #\Space (? line 0))
                  (:= (? forms word) (if-it (? forms word)
                                            (cons cur it)
-                                           cur)
+                                           (list cur))
                      (? forms (word/pos word (rt cur))) cur
                      (? forms (word/pos word (? (rt cur) 0))) cur
                      (? forms (word/pos (lt cur) tags)) (pair word tags))

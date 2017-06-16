@@ -16,4 +16,5 @@
     :components
     ((:file "packages")
      (:file "core")
-     (:file "parsing")))))
+     (:file "parsing")
+     (:file "tokenization")))))
