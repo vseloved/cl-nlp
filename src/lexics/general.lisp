@@ -44,6 +44,11 @@
   (:documentation
    "Lemmatize WORD (with optionally specified POS tag) string with a LEMMATIZER."))
 
+(defgeneric guess-lemma (lemmatizer word &optional pos)
+  (:documentation
+   "Guess the most appropriate lemma for the WORD
+    (with optionally specified POS tag) accoding to LEMMATIZER."))
+
 (defun morph (lemmatizer word pos)
   "Change WORD form to a desired POS tag using LEMMATIZER."
   (when (lookup @lemmatizer.dict word)

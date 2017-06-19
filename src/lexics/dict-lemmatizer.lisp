@@ -25,10 +25,10 @@
 (defmethod lemmatize ((lemmatizer mem-dict) word &optional pos)
   ;; unkown word
   (unless (lookup @lemmatizer.words word)
-    (return-from lemmatize word))
+    (return-from lemmatize))
   (let ((tags (pos-tags lemmatizer word) :test 'equalp))
     (if (member pos tags)
-        ;; the word itself is a known word form for the requested tag
+        ;; the word itself is a known wordform for the requested tag
         (values word
                 pos)
         (with ((word-tag present?
@@ -49,11 +49,38 @@
               ;; there is a known word form for the requested tag
               (apply 'values (if (single word-tag)
                                  (first word-tag)
-                                 word-tag))
+                                 (append (first word-tag) (rest word-tag))))
               ;; the word is known but there's no word forms for the requested tag
-              (values word
-                      (first tags)))))))
+              (apply 'values (cons nil
+                                   (mapcar ^(pair word %)
+                                           tags))))))))
 
+
+;; TODO: make generic & language-dependent
+(defun derived-form? (lemmatizer word)
+  (intersection (mapcar 'atomize (nlp:pos-tags lemmatizer word))
+                '(tag:NNS tag:VBD tag:VBG tag:VBN tag:VBZ
+                  tag:JJR tag:JJS tag:RBR tag:RBS)))
+
+(defmethod guess-lemma ((lemmatizer mem-dict) word &optional pos)
+  (if (derived-form? lemmatizer word)
+      (with (((&rest word-pos) (multiple-value-list
+                                (lemmatize lemmatizer word pos))))
+        (etypecase (first word-pos)
+          (null word)
+          (string (first word-pos))
+          (list (flet ((pos-len (word-pos)
+                         (length (princ-to-string (? word-pos 1 0)))))
+                  (? (sort word-pos
+                           ^(let ((%len (pos-len %))
+                                  (%%len (pos-len %%)))
+                              (if (= %len %%len)
+                                  (< (length (? % 0))
+                                     (length (? %% 0)))
+                                  (< %len %%len))))
+                     0 0)))))
+      word))
+  
 (defun load-mem-dict (in)
   "Load new mem-dict from IN."
   (format *debug-io* "~&Reading mem-dict from ~A:"
@@ -73,7 +100,7 @@
            (with (((word tag) (split #\Space line :remove-empty-subseqs t))
                   (tags (mapcar ^(mksym % :package :tag)
                                 (split #\: tag))))
-             (push tags (? words word))
+             (pushnew tags (? words word) :test 'equalp)
              (if (char= #\Space (? line 0))
                  (:= (? forms word) (if-it (? forms word)
                                            (cons cur it)

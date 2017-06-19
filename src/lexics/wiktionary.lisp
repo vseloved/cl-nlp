@@ -8,9 +8,9 @@
   ((dict :initarg :dict :accessor lem-dict)))
 
 (defmethod lemmatize ((lemmatizer wikt-lemmatizer) word &optional tag)
-  (or (? @lemmatizer.dict tag word)
-      (when tag (? @lemmatizer.dict nil word))
-      word))
+  (when-it (? @lemmatizer.dict tag word)
+    (values it
+            tag)))
 
 (defun extract-wikt-lemma-dict (path)
   (cxml:parse path (make 'wikt-sax)))
