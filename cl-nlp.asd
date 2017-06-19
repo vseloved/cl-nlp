@@ -37,6 +37,10 @@
                        (:file "ngrams")
                        (:file "indexing")
                        (:file "language-models")))
+             (:module #:syntax
+                      :components
+                      ((:file "tags")
+                       (:file "deps")))
              (:module #:lexics
                       :serial t
                       :components
@@ -49,10 +53,6 @@
                       :components
                       ((:file "general")
                        (:file "mem-vecs")))
-             (:module #:syntax
-                      :components
-                      ((:file "tags")
-                       (:file "deps")))
              (:module #:corpora
                       :components
                       ((:file "general")
