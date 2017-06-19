@@ -17,4 +17,5 @@
     ((:file "packages")
      (:file "core")
      (:file "parsing")
-     (:file "tokenization")))))
+     (:file "tokenization")
+     (:file "lemmatization")))))
