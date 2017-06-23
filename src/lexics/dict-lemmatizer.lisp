@@ -28,10 +28,10 @@
     (return-from lemmatize))
   (let ((poss (pos-tags lemmatizer word) :test 'equalp))
     (if-it (or (member pos poss)  ; the word is a known form for the requested POS
-               (and (null pos)
-                    ;; the word is in basic form and no specific POS is requested
-                    (member-if ^(= 2 (length (princ-to-string %)))
-                               poss)))
+               (unless pos
+                 ;; the word is in basic form and no specific POS is requested
+                 (member-if ^(= 2 (length (princ-to-string (? % 0))))
+                            poss)))
            (values word
                    it)
            (with ((word-pos present?
