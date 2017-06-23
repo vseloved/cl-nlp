@@ -32,7 +32,9 @@ NAPI")
               (,(with-output-to-string (out)
                   (yason:encode #h("result"
                                    (strjoin #\Space
-                                            (mapcar ^(nlp:lemmatize
-                                                      nlp:<wikt-lemmatizer> %)
+                                            (mapcar ^(or (nlp:lemmatize
+                                                          nlp:<wikt-lemmatizer>
+                                                          %)
+                                                         %)
                                                     (split #\Space text))))
                                 out)))))))
