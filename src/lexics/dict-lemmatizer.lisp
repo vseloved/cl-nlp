@@ -26,35 +26,59 @@
   ;; unkown word
   (unless (lookup @lemmatizer.words word)
     (return-from lemmatize))
-  (let ((tags (pos-tags lemmatizer word) :test 'equalp))
-    (if (member pos tags)
-        ;; the word itself is a known wordform for the requested tag
-        (values word
-                pos)
-        (with ((word-tag present?
-                         (if pos
-                             (cond-it
-                               ((? @lemmatizer.forms (word/pos word pos))
-                                (values it
-                                        t))
-                               ((? @lemmatizer.forms
-                                   (word/pos word (first (mklist pos))))
-                                (values (argmax 'identity it
-                                                :key ^(precedence lemmatizer
-                                                                  (? % 0 0)))
-                                        t)))
-                             (? @lemmatizer.forms word))))
-          (:= word-tag (remove-duplicates word-tag :test 'equalp))
-          (if present?
-              ;; there is a known word form for the requested tag
-              (values (? word-tag 0 0)
-                      (? word-tag 0 1)
-                      (rest word-tag))
-              ;; the word is known but there're no word forms for the requested tag
-              (values nil
-                      nil
-                      (mapcar ^(pair word %)
-                              tags)))))))
+  (let ((poss (pos-tags lemmatizer word) :test 'equalp))
+    (if-it (or (member pos poss)  ; the word is a known form for the requested POS
+               (and (null pos)
+                    ;; the word is in basic form and no specific POS is requested
+                    (member-if ^(= 2 (length (princ-to-string %)))
+                               poss)))
+           (values word
+                   it)
+           (with ((word-pos present?
+                            (if pos
+                                (cond-it
+                                  ((? @lemmatizer.forms (word/pos word pos))
+                                   (values it
+                                           t))
+                                  ((? @lemmatizer.forms
+                                      (word/pos word (first (mklist pos))))
+                                   (values (argmax 'identity it
+                                                   :key ^(precedence lemmatizer
+                                                                     (? % 0 0)))
+                                           t)))
+                                (get# word @lemmatizer.forms))))
+             (:= word-pos (remove-duplicates word-pos :test 'equalp))
+             (if present?
+                 ;; there is a known word form for the requested POS
+                 (values (? word-pos 0 0)
+                         (? word-pos 0 1)
+                         (rest word-pos))
+                 ;; the word is known but there're no word forms for the requested POS
+                 (values nil
+                         nil
+                         (mapcar ^(pair word %)
+                                 poss)))))))
+
+(defmethod lemmatize1 ((lemmatizer mem-dict) word &optional pos)
+  (if (derived-form? lemmatizer word)
+      (with (((&rest word-pos) (multiple-value-list
+                                (lemmatize lemmatizer word pos))))
+        (etypecase (first word-pos)
+          (null word)
+          (string (first word-pos))
+          (list (flet ((pos-len (word-pos)
+                         (length (princ-to-string (? word-pos 1 0)))))
+                  (? (sort word-pos
+                           ^(let ((%len (pos-len %))
+                                  (%%len (pos-len %%)))
+                              (if (= %len %%len)
+                                  (< (length (? % 0))
+                                     (length (? %% 0)))
+                                  (< %len %%len))))
+                     0 0)))))
+      word))
+
+
 
 ;; TODO: make generic & language-dependent
 (defun derived-form? (lemmatizer word)
