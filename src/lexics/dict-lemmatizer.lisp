@@ -43,43 +43,24 @@
                                                 :key ^(precedence lemmatizer
                                                                   (? % 0 0)))
                                         t)))
-                             (get# word @lemmatizer.forms))))
-          (:= word-tag (remove-duplicates word-tag  :test 'equalp))
+                             (? @lemmatizer.forms word))))
+          (:= word-tag (remove-duplicates word-tag :test 'equalp))
           (if present?
               ;; there is a known word form for the requested tag
-              (apply 'values (if (single word-tag)
-                                 (first word-tag)
-                                 (append (first word-tag) (rest word-tag))))
-              ;; the word is known but there's no word forms for the requested tag
-              (apply 'values (cons nil
-                                   (mapcar ^(pair word %)
-                                           tags))))))))
-
+              (values (? word-tag 0 0)
+                      (? word-tag 0 1)
+                      (rest word-tag))
+              ;; the word is known but there're no word forms for the requested tag
+              (values nil
+                      nil
+                      (mapcar ^(pair word %)
+                              tags)))))))
 
 ;; TODO: make generic & language-dependent
 (defun derived-form? (lemmatizer word)
   (intersection (mapcar 'atomize (nlp:pos-tags lemmatizer word))
-                '(tag:NNS tag:VBD tag:VBG tag:VBN tag:VBZ
+                '(tag:NNS tag:VBD tag:VBG tag:VBN tag:VBZ tag:VBP
                   tag:JJR tag:JJS tag:RBR tag:RBS)))
-
-(defmethod guess-lemma ((lemmatizer mem-dict) word &optional pos)
-  (if (derived-form? lemmatizer word)
-      (with (((&rest word-pos) (multiple-value-list
-                                (lemmatize lemmatizer word pos))))
-        (etypecase (first word-pos)
-          (null word)
-          (string (first word-pos))
-          (list (flet ((pos-len (word-pos)
-                         (length (princ-to-string (? word-pos 1 0)))))
-                  (? (sort word-pos
-                           ^(let ((%len (pos-len %))
-                                  (%%len (pos-len %%)))
-                              (if (= %len %%len)
-                                  (< (length (? % 0))
-                                     (length (? %% 0)))
-                                  (< %len %%len))))
-                     0 0)))))
-      word))
   
 (defun load-mem-dict (in)
   "Load new mem-dict from IN."

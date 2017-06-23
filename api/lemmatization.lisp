@@ -28,11 +28,11 @@ NAPI")
         (list 400 '(:content-type "text/plain")
               (list (fmt "Request exceeds API limit of ~A chars: ~A"
                          *lemmatize-limit* (length text))))
-        (list 200 '(:content-type "application/json;charset=utf-8")
-              (list (with-output-to-string (out)
-                      (yason:encode
-                       #h("result" (strjoin #\Space
-                                            (mapcar ^(nlp:guess-lemma
+        `(200 (:content-type "application/json;charset=utf-8")
+              (,(with-output-to-string (out)
+                  (yason:encode #h("result"
+                                   (strjoin #\Space
+                                            (mapcar ^(nlp:lemmatize
                                                       nlp:<wikt-lemmatizer> %)
                                                     (split #\Space text))))
-                       out)))))))
+                                out)))))))

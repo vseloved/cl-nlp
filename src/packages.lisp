@@ -228,7 +228,6 @@
 
            #:lemmatizer
            #:lemmatize
-           #:guess-lemma
            #:morph
            #:lem-dict
 
