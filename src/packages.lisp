@@ -283,7 +283,7 @@
            #:extract-fs
            #:extract-gold
            #:ensure-fs-init
-           #:fs-improtance
+           #:fs-importance
 
            #:categorical-model
            #:ensemble-model

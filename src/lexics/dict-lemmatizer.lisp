@@ -25,7 +25,7 @@
 (defmethod lemmatize ((lemmatizer mem-dict) word &optional pos)
   ;; unkown word
   (unless (lookup @lemmatizer.words word)
-    (return-from lemmatize))
+    (return-from lemmatize word))
   (let ((poss (pos-tags lemmatizer word) :test 'equalp))
     (if-it (or (member pos poss)  ; the word is a known form for the requested POS
                (unless pos
