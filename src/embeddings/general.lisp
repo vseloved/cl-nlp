@@ -17,7 +17,14 @@
   (:documentation
    "Return a vector representation of the WORD according to VECS.")
   (:method :around (vecs word)
-    (call-next-method vecs (normalize vecs word))))
+    (or (call-next-method vecs (normalize vecs word))
+        (unk vecs))))
+  
+(defgeneric unk (vecs)
+  (:documentation
+   "Return a vector for unknown word according to VECS.")
+  (:method (vecs)
+    (make-array @vecs.order :initial-element 0.0)))
 
 
 (defmethod normalize ((form vecs) word)

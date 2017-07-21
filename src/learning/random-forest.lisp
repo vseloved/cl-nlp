@@ -18,25 +18,31 @@
   (let ((rez #h()))
     (loop :for dtree :in @model.trees
           :for oob :in oobs :do
-          (loop :for (fs label) :in oob :do
-            (dotimes (i (length fs))
-              (push (pair (eql label (classify model fs))
-                          (let ((alt (copy-seq fs)))
+          (loop :for ex :in oob :do
+            (dotimes (i (length @ex.fs))
+              (push (pair (eql @ex.gold (classify model @ex.fs))
+                          (let ((alt (copy-seq @ex.fs)))
                             (:= (? alt i)
                                 (etypecase (? alt i)
                                   (float (- (random 2000.0) 1000.0))
                                   (integer (- (random 2000) 1000))
                                   (boolean (not (? alt i)))))
-                            (eql label (classify model alt))))
+                            (eql @ex.gold (classify model alt))))
                     (? rez i))))
           (princ "."))
     rez))
+
+;; example:
+;; (dotable (fs vals (nlearn::fs-importance *model* :oobs *oobs*))
+;;   (print (list (? *fs-idx* fs)
+;;                (float (/ (count-if-not ^(equal (lt %) (rt %)) vals)
+;;                          (length vals))))))
 
 (defmethod train ((model random-forest) data
                   &key (n 10) verbose threads fast)
   (when threads (eager-future2:advise-thread-pool-size threads))
   (let ((train-len (* 2/3 (length data)))
-        (train-rank (sqrt (length (? (lt data) 0)))) ; also possible 1/2x & 2x
+        (train-rank (sqrt (length @data#0.fs))) ; also possible 1/2x & 2x
         (*random-state* @model.random-state)
         oobs
         futures)

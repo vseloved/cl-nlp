@@ -37,7 +37,7 @@
     (pairs->ht rez)))
 
 (defmethod train ((model c4.5-tree) data
-                  &key idx-count (idxs (range 0 (length (lt (first data)))))
+                  &key idx-count (idxs (range 0 (length @data#0.fs)))
                        classes verbose fast)
   (let ((tree (tree-train 'info-gain data
                           :binary nil
@@ -54,7 +54,7 @@
     model))
 
 (defmethod train ((model cart-tree) data
-                  &key idx-count (idxs (range 0 (length (lt (first data)))))
+                  &key idx-count (idxs (range 0 (length @data#0.fs)))
                        classes verbose fast)
   (with ((tree (tree-train ^(- 1 (gini-split-idx %)) data
                            :binary t
@@ -172,7 +172,6 @@
                    (with ((val (? vals i))
                           (idx (? fs i))
                           (cur (? % idx))
-                          (test it)
                           (rez (call it cur val)))
                      (when debug (print-dtree-debug-info idx cur it val rez))
                      (:= i (+ (* i 2)
@@ -221,18 +220,14 @@
 
 (defun normed-dist (data)
   (with ((dist (maptab ^(length %%)
-                       (partition-by 'rt data)))
+                       (partition-by 'ex-gold data)))
          (total (reduce '+ (ht-vals dist)))
          (key max (keymax dist)))
     `(pair ,key ,(float (/ max total)))))
-    ;; `(list ,@(mapcar (lambda (pair)
-    ;;                    `(pair ,(lt pair)
-    ;;                           ,(float (/ (rt pair) total))))
-    ;;                  (ht->pairs dist)))))
 
 (defun tree-train (criterion data
                    &key (min-size 0) (depth 1) max-depth
-                        (idxs (range 0 (length (lt (first data)))))
+                        (idxs (range 0 (length @data#0.fs)))
                         idx-count  ; for RF classifier to sample dimensions
                         binary
                         (fast t)
@@ -243,8 +238,8 @@
     ;; no data
     ((endp data) nil)
     ;; single class
-    ((single (uniq (mapcar 'rt data)))
-     `(pair ,(rt (first data)) 1.0))
+    ((single (uniq (mapcar 'ex-gold data)))
+     `(pair ,(? data 0 'gold) 1.0))
     ;; no indices, min-size or max-depth reached
     ((or (endp idxs)
          (when max-depth (>= depth max-depth))
@@ -279,8 +274,7 @@
                                              :fast fast
                                              :binary binary
                                              :verbose verbose))
-                               (split-at split-point data idx
-                                         :test test :key 'lt))))
+                               (split-at split-point data idx :test test))))
                ;; for categorical data once we use the dimension (idx)
                ;; we won't return to it
                (t
@@ -316,41 +310,41 @@
         split-point
         binary?)
     (dolist (idx idxs)
-      (let ((vals (mapcar ^(? (lt %) idx)
-                          data))
-            numeric?)
-        (mv-bind (point gain)
-            (cond
-              ((typep (first vals) '(or float ratio))
-               (:= numeric? t)
-               (flet ((@idx (item)
-                        (? (lt item) idx)))
-                 (let ((left ())
-                       (right (safe-sort data '< :key #'@idx)))
-                   (argmax (lambda (split-point)
-                             (appendf left
-                                      (loop :for tail :on right
-                                            :for item := (first tail)
-                                            :while (<= (@idx item) split-point)
-                                            :collect item
-                                            :finally (:= right tail)))
-                             (call criterion (list left right)))
-                           (let* ((vals (uniq vals :raw t))
-                                  (len (ht-count vals))
-                                  (vals (sort (ht-keys vals) '<))
-                                  (i 0)
-                                  (step (/ len 100)))
-                             (if (> len 100)
-                                 (loop :for val :in vals
-                                    :when (> (incf i) step)
-                                    :do (:= i 0) :and :collect val)
-                                 vals))))))
-              (binary
-               (argmax ^(call criterion (split-at % data idx :key 'lt))
-                       (uniq vals)))
-              (t
-               (values nil  ; there's no split-point for non-binary splits
-                       (call criterion data :idx idx))))
+      (flet ((@idx (ex) (? @ex.fs idx)))
+        (with ((vals (mapcar #'@idx data))
+               (numeric? nil)
+               (point gain
+                      (cond
+                        ((typep (first vals) '(or float ratio))
+                         (:= numeric? t)
+                         (let ((left ())
+                               (right (safe-sort data '< :key #'@idx)))
+                           (argmax (lambda (split-point)
+                                     (appendf left
+                                              (loop :for tail :on right
+                                                    :for item := (? tail 0)
+                                                    :while (<= (@idx item)
+                                                               split-point)
+                                                    :collect item
+                                                    :finally (:= right tail)))
+                                     (call criterion (list left right)))
+                                   (with ((vals (uniq vals :raw t))
+                                          (len (ht-count vals))
+                                          (vals (sort (keys vals) '<))
+                                          (i 0)
+                                          (step (/ len 100)))
+                                     (if (> len 100)
+                                         (loop :for val :in vals
+                                               :when (> (:+ i) step)
+                                                 :do (:= i 0)
+                                                 :and :collect val)
+                                         vals)))))
+                        (binary
+                         (argmax ^(call criterion (split-at % data idx))
+                                 (uniq vals)))
+                        (t
+                         (values nil ; there's no split-point for non-binary splits
+                                 (call criterion data :idx idx ))))))
           (when verbose (format *debug-io* "~&idx=~A gain=~A~%" idx (float gain)))
           (push gain gains)
           (when (> gain best-gain)
@@ -362,8 +356,7 @@
     (unless (> (ht-count (uniq gains :raw t)) 1)
       (void best-idx))
     (when verbose
-      (with (((left right) (split-at split-point data best-idx
-                                     :test best-test :key 'lt)))
+      (with (((left right) (split-at split-point data best-idx :test best-test)))
         (format *debug-io* "~&best-idx=~A gain=~A split-point=~A test=~A split=~$/~$~%"
                 best-idx (float best-gain) split-point best-test
                 (float (/ (length left) (length data)))
@@ -386,53 +379,48 @@
         best-idx
         best-test
         gains
-        split-point
-        numeric?)
+        split-point)
     (dolist (idx idxs)
-      (flet ((@idx (item)
-               (? (lt item) idx)))
+      (flet ((@idx (ex) (? @ex.fs idx)))
         (with ((numeric? (typep (@idx (first data)) '(or float ratio)))
-               (point gain
-                      (if numeric?
-                          (with ((sorted (safe-sort (coerce data 'vector) '<
-                                                    :key #'@idx))
-                                 (beg 0)                                 
-                                 (end (length sorted))
-                                 (m (floor (- end beg) 2))
-                                 (mg (call criterion
-                                           (list (slice sorted 0 m)
-                                                 (slice sorted m)))))
-                            (dotimes (i (floor (log (length sorted) 2)))
-                              (with ((l (floor (- end beg) 4))
-                                     (r (+ l m))
-                                     ((lg rg) (mapcar ^(call criterion %)
-                                                      (list
-                                                       (list (slice sorted 0 l)
-                                                             (slice sorted l))
-                                                       (list (slice sorted 0 r)
-                                                             (slice sorted r))))))
-                                (cond ((< mg (min lg rg))
-                                       (return))
-                                      ((< lg rg)
-                                       (:= end m))
-                                      (t
-                                       (:= beg m)))))
-                            (values (@idx (? sorted m))
-                                    mg))
-                          (argmax ^(call criterion (split-at % data idx :key 'lt))
-                                  (uniq data :test 'eql)))))
-            (when verbose (format *debug-io* "~&idx=~A gain=~A~%" idx (float gain)))
-            (push gain gains)
-            (when (> gain best-gain)
-              (:= best-idx idx
-                  best-gain gain
-                  split-point point
-                  best-test (if numeric? '<= 'eql))))))
-    ;; (unless (> (ht-count (uniq gains :raw t)) 1)
-    ;;   (void best-idx))
+               (point gain (if numeric?
+                               (with ((sorted (safe-sort (coerce data 'vector)
+                                                         '< :key #'@idx))
+                                      (beg 0)                                 
+                                      (end (length sorted))
+                                      (m (floor (- end beg) 2))
+                                      (mg (call criterion
+                                                (list (slice sorted 0 m)
+                                                      (slice sorted m)))))
+                                 (dotimes (i (floor (log (length sorted) 2)))
+                                   (with ((l (floor (- end beg) 4))
+                                          (r (+ l m))
+                                          ((lg rg) (mapcar ^(call criterion %)
+                                                           `((,(slice sorted 0 l)
+                                                              ,(slice sorted l))
+                                                             (,(slice sorted 0 r)
+                                                              ,(slice sorted r))))))
+                                     (cond ((< mg (min lg rg))
+                                            (return))
+                                           ((< lg rg)
+                                            (:= end m))
+                                           (t
+                                            (:= beg m)))))
+                                 (values (? sorted m 'fs idx)
+                                         mg))
+                               (argmax ^(call criterion (split-at % data idx))
+                                       (uniq data :test 'eql)))))
+          (when verbose
+            (format *debug-io* "~&idx=~A gain=~A~%" idx (float gain)))
+          (push gain gains)
+          (when (> gain best-gain)
+            (:= best-idx idx
+                best-gain gain
+                split-point point
+                best-test (if numeric? '<= 'eql))))))
     (with (((&optional left right) (when best-idx
                                      (split-at split-point data best-idx
-                                               :test best-test :key 'lt))))
+                                               :test best-test))))
       (unless (and left right)
         (void best-idx))
       (when verbose
@@ -446,7 +434,7 @@
             best-test
             best-gain)))
 
-(defun split-at (point data idx &key (key 'identity) (test 'eql))
+(defun split-at (point data idx &key (key 'ex-fs) (test 'eql))
   "Split DATA at POINT in dimension IDX."
   (let (left right)
     (dolist (ex data)
@@ -459,7 +447,7 @@
 
 ;;; split criteria
 
-(defun info-gain (exs &key idx (key 'rt))
+(defun info-gain (exs &key idx (key 'ex-gold))
   "Info gain criterion for examples EXS either in dimension IDX or by KEY."
   (if idx
       (- (entropy exs :key key)
@@ -469,7 +457,7 @@
           (- (entropy (reduce 'append exs) :key key)
              (entropy exs :key key :already-split? t)))))
 
-(defun weighted-info-gain (exs split &key (key 'rt))
+(defun weighted-info-gain (exs split &key (key 'ex-gold))
   "Weighted info gain criterion for examples EXS either
    in dimension IDX or by KEY."
   (/ (info-gain exs :key key)
@@ -479,7 +467,7 @@
   "Gini impurity index of examples EXS."
   (let ((len (length exs)))
     (- 1 (sum ^(expt (/ % len) 2)
-              (mapcar 'length (ht-vals (partition-by 'rt exs)))))))
+              (mapcar 'length (vals (partition-by 'ex-gold exs)))))))
 
 (defun gini-split-idx (exs)
   "Gini split index of examples EXS."
@@ -494,7 +482,7 @@
 
 ;;; entropy calculations
 
-(defun entropy (exs &key idx key already-split?)
+(defun entropy (exs &key idx (key 'ex-gold) already-split?)
   "Entropy calculated for examples EXS based:
    - either on a given dimension IDX
    - or for ALREADY-SPLIT? data
@@ -505,7 +493,7 @@
                      (- (+ (* exs (log exs 2))
                            (* (- 1 exs) (log (- 1 exs) 2))))))
      (idx (let ((size (length exs)))
-            (sum #`(let ((len (length (rt %))))
+            (sum ^(let ((len (length (rt %))))
                      (* (/ len size)
                         (entropy (/ (count t (rt %) :key key)
                                     len))))
@@ -549,7 +537,7 @@
   (let ((fn (if (or (functionp idx-or-fn)
                     (symbolp idx-or-fn))
                 idx-or-fn
-                ^(? (lt %) idx-or-fn)))
+                ^(? @%.fs idx-or-fn)))
         (rez #h(equal)))
     (etypecase seq
       (list (dolist (item seq)

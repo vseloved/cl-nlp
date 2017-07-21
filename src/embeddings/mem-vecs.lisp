@@ -33,10 +33,10 @@
            @vecs.default)
           (t rez))))
 
-(defgeneric init-vecs (vecs file &key prolog)
+(defgeneric init-vecs (vecs format file &key prolog)
   (:documentation
    "Initialize word VECS from FILE.")
-  (:method ((vecs mem-vecs) file &key prolog)
+  (:method ((vecs mem-vecs) (format (eql :text)) file &key prolog)
     (let ((dict #h(equal))
           (cc 0))
       (with-open-file (in file)
@@ -47,7 +47,7 @@
               (read-vec @vecs.order in))))
       (:= @vecs.dict dict)
       vecs))
-  (:method ((vecs lazy-mem-vecs) file &key prolog)
+  (:method ((vecs lazy-mem-vecs) (format (eql :text)) file &key prolog)
     (let ((dict #h(equal))
           (off 0)
           (cc 0)

@@ -242,6 +242,7 @@
            #:vecs
            #:mem-vecs
            #:lazy-mem-vecs
+           #:unk
            #:vecs-dict
            #:vect-default
            #:vecs-understream
