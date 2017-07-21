@@ -30,11 +30,11 @@ NAPI")
                          *lemmatize-limit* (length text))))
         `(200 (:content-type "application/json;charset=utf-8")
               (,(with-output-to-string (out)
-                  (yason:encode #h("result"
-                                   (strjoin #\Space
-                                            (mapcar ^(or (nlp:lemmatize
-                                                          nlp:<wikt-lemmatizer>
-                                                          %)
-                                                         %)
-                                                    (split #\Space text))))
-                                out)))))))
+                  (yason:encode
+                   #h("result"
+                      (strjoin #\Space
+                               (mapcar ^(or (nlp:lemmatize nlp:<wikt-dict> %)
+                                            %)
+                                       (nlp:tokenize nlp:<word-chunker>
+                                                     text))))
+                   out)))))))

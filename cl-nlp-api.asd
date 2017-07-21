@@ -18,4 +18,5 @@
      (:file "core")
      (:file "parsing")
      (:file "tokenization")
-     (:file "lemmatization")))))
+     (:file "lemmatization")
+     (:file "embeddings")))))
