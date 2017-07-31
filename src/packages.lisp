@@ -275,11 +275,10 @@
            #:update1
 
            #:accuracy
-           #:precision
-           #:recall
            #:f1
            #:f_
            #:conf-mat
+           #:cost
 
            #:make-fs
            #:extract-fs
@@ -322,6 +321,9 @@
            #:forest-tree-type
 
            #:softmax
+
+           #:sgd
+           #:grad1
            ))
 
 (cl:defpackage #:nlp.tagging

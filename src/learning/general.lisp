@@ -47,6 +47,10 @@
    "Perform one step of MODEL training with GOLD and GUESS variants
     and correspondng GOLD-FS and optionally GUESS-FS features."))
 
+(defgeneric cost (model data &key)
+  (:documentation
+   "Calculate the cost of the current DATA set for the given MODEL."))
+
 (defgeneric save-model (model path)
   (:documentation
    "Save MODEL data into PATH (which will be overwritten).")
@@ -95,6 +99,9 @@
     (rem# nil (m-weights model))
     model))
 
+
+;;; quality measurement
+
 (defgeneric accuracy (model gold-fs &key verbose)
   (:documentation
    "Measure MODEL's performance on GOLD-FS gold resultx features.")
@@ -142,16 +149,3 @@
                       (lt entry))))
           (terpri))))
     rez))
-
-
-
-;; (defun precision (model gold-corpus &key verbose)
-;;   (let ((matched 0) (total 0) (len (length gold-corpus)))
-;;     (loop :for (t/f gold &rest fs) :in gold-corpus :do
-;;        (let ((guess (classify model fs)))
-;;          (if (equal gold guess)
-;;              (:+ matched)
-;;              (when verbose
-;;                   (format *debug-io* "~A ~A ~A~%" guess gold fs)))))
-;;         (:+ total)
-;;         (unless verbose (princ-progress total len)))
