@@ -40,17 +40,17 @@ rain    |      71     |    80    | true  | Don't Play
                                               (float (parse-integer item)))
                                              (t (mkeyw item))))
                                    (split #\| line))))
-                  (push (pair (coerce (butlast cur) 'vector) (last1 cur))
+                  (push (make-ex :fs (coerce (butlast cur) 'vector)
+                                 :gold (last1 cur))
                         data)))))
     (cons (reverse data) labels)))
 
 (deftest entropy ()
-  (should be = 1.0 (entropy '(0.5 0.5)))
-  (should be ~= 0.914 (entropy '(0.67 0.33)))
-  (should be = 0 (entropy '(1 0 0 0)))
+  (should be = 1.0 (entropy '(0.5 0.5) :key nil))
+  (should be ~= 0.914 (entropy '(0.67 0.33) :key nil))
+  (should be = 0 (entropy '(1 0 0 0) :key nil))
   (should be ~= 0.693 (entropy (car *golf-data*)
-                               :idx (position :outlook (cdr *golf-data*))
-                               :key 'rt)))
+                               :idx (position :outlook (cdr *golf-data*)))))
 
 (deftest info-gain ()
   (should be ~= 0.246
@@ -61,23 +61,29 @@ rain    |      71     |    80    | true  | Don't Play
   (should be ~= 1.577
           (split-info (car *golf-data*) (position :outlook (cdr *golf-data*)))))
 
+(defun pair->fs (pair)
+  (make-ex :fs (lt pair) :gold (rt pair)))
+
 (deftest gini-idx ()
-  (should be zerop (gini-idx '((#(1 2) t))))
-  (should be = 1/2 (gini-idx '((#(1 2) t)
-                               (#(1 2) t)
-                               (#(1 2) nil)
-                               (#(1 2) nil)))))
+  (should be zerop (gini-idx (list (pair->fs '(#(1 2) t)))))
+  (should be = 1/2 (gini-idx (mapcar 'pair->fs '((#(1 2) t)
+                                                 (#(1 2) t)
+                                                 (#(1 2) nil)
+                                                 (#(1 2) nil))))))
 
 (deftest gini-split-idx ()
-  (should be zerop (gini-split-idx '(((#(1 2) t)
-                                      (#(1 2) t))
-                                     ((#(1 2) nil)
-                                      (#(1 2) nil)))))
-  (should be = 0.4 (gini-split-idx '(((#(1 2) t))
-                                     ((#(1 2) t)
-                                      (#(1 2) t)
-                                      (#(1 2) nil)
-                                      (#(1 2) nil))))))
+  (should be zerop (gini-split-idx (list (mapcar 'pair->fs
+                                                 '((#(1 2) t)
+                                                   (#(1 2) t)))
+                                         (mapcar 'pair->fs
+                                                 '((#(1 2) nil)
+                                                   (#(1 2) nil))))))
+  (should be = 0.4 (gini-split-idx (list (list (pair->fs '(#(1 2) t)))
+                                         (mapcar 'pair->fs
+                                                 '((#(1 2) t)
+                                                   (#(1 2) t)
+                                                   (#(1 2) nil)
+                                                   (#(1 2) nil)))))))
 
 (deftest c4.5-train ()
   (should be equal

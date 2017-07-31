@@ -66,6 +66,7 @@
            #:bin-search
            #:log-likelihood-ratio
            #:sample
+           #:normal-random
 
            ;; misc
            #:ss
@@ -319,6 +320,8 @@
            #:random-forest
            #:forest-trees
            #:forest-tree-type
+
+           #:softmax
            ))
 
 (cl:defpackage #:nlp.tagging

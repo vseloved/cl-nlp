@@ -35,13 +35,13 @@
   "Common scaffold for training different perceptron models."
   (with-gensyms (j prev-j total epoch)
     `(dotimes (,epoch ,epochs)
+       (when ,verbose
+         (format *debug-io* "~%~%==== Epoch: ~A ====~%~%" (1+ ,epoch)))
        (let ((,c 0)
              (,n 0)
              (,prev-j 0)
              (,total (length ,data))
              (,data (copy-seq ,data)))
-         (when ,verbose
-           (format *debug-io* "~%~%==== Epoch: ~A ====~%~%" (1+ ,epoch)))
          (doindex (,j ,ex ,data)
            ,@body
            (when (and ,verbose

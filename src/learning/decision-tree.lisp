@@ -81,6 +81,12 @@
                                              :if-exists :supersede)
     (call-next-method model out)))
 
+(defmacro node-repr (node &rest clauses)
+  `(cond ((eql t ,node) "__T__")
+         ((eql nil ,node) "__F__")
+         ,@clauses
+         (t (fmt "~S" ,node))))
+
 (defmethod save-model ((model cart-tree) (out stream))
   (with (((fs ops vals) (cart->vecs @model.repr)))
     (format out "~{~A~^ ~}~%" (map 'list ^(or % -1)
@@ -91,11 +97,11 @@
                                             (t 2))
                                    ops))
     (format out "~{~A~^~%~}~%"
-            (map 'list ^(cond ((eql t %) "__T__")
-                              ((eql nil %) "__F__")
-                              ((listp %) (fmt "~:[F~;T~] ~A" (? % 0) (? % 1)))
-                              (t (fmt "~S" %)))
-                    vals))))
+            (map 'list ^(node-repr %
+                          ((listp %) (fmt "~A ~A"
+                                          (node-repr (? % 0))
+                                          (? % 1))))
+                 vals))))
 
 (defmethod load-model ((model cart-tree) path &key)
   (gzip-stream:with-open-gzip-file (in path)
@@ -119,13 +125,13 @@
                   ("__F__" nil)
                   (otherwise
                    (if (member (char val 0)
-                               '(#\0 #\1 #\2 #\3 #\4 #\5 #\6 #\7 #\8 #\9))
+                               '(#\0 #\1 #\2 #\3 #\4 #\5 #\6 #\7 #\8 #\9 #\-))
                        (read-from-string val)
                        val)))
                 (unless (string= "0" val)
                   (with (((k v) (split #\Space val)))
-                    (pair (cond ((string= k "F") nil)
-                                ((string= k "T") t)
+                    (pair (cond ((string= k "__F__") nil)
+                                ((string= k "__T__") t)
                                 (t (read-from-string k)))
                           (read-from-string v))))))))
     (let ((tree (vecs->cart fs ops vals)))

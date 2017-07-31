@@ -4,7 +4,8 @@
 (named-readtables:in-readtable rutilsx-readtable)
 
 
-(defstruct ex
+(defstruct (ex (:print-object (lambda (ex stream)
+                                (format stream ">>~A:~A" @ex.gold @ex.fs))))
   fs gold raw)
 
 (defclass categorical-model ()
@@ -106,7 +107,7 @@
                       (:+ matched)
                       (when verbose
                         (format *debug-io*
-                                "guess: ~A   gold: ~A~@[    raw: ~A~]    fs: ~A~%"
+                                "~%guess: ~A~%gold:  ~A~@[~%raw: ~A~]~%fs: ~A~%"
                                 guess @%.gold @%.raw @%.fs)))
                   (:+ total)
                   (unless verbose (princ-progress total len)))

@@ -291,26 +291,41 @@
 
 (defclass parag-splitter ()
   ((regex :initarg :regex :accessor tokenizer-regex
-          :initform (re:create-scanner (fmt "(?:~C{2}|~C{2}|~C{2}|[~C~C]{2})"
+          :initform (re:create-scanner (fmt "[~C~C~C]\\s*[~C~C~C]"
                                             #\Newline #\Return #\Linefeed
-                                            #\Return #\Linefeed))))
+                                            #\Newline #\Return #\Linefeed)
+                                       :multi-line-mode t)))
   (:documentation
    "Paragraph tokenizer that splits text on double newlines
     and removes single newlines."))
 
 (defmethod tokenize ((tokenizer parag-splitter) string)
   (let ((off 0)
-        ps ss)
+        parags
+        spans)
     (re:do-matches (beg end @tokenizer.regex string)
+      (loop :while (and (< off beg)
+                        (white-char-p (char string off))) :do
+        (:+ off))
+      (loop :while (and (< off beg)
+                        (white-char-p (char string beg))) :do
+        (:- beg))
+      (loop :while (and (< end (1- (length string)))
+                        (white-char-p (char string end))) :do
+        (:+ end))
       (unless (= off beg)
-        (push (slice string off beg) ps)
-        (push (pair off beg) ss))
+        (push (slice string off (1+ beg)) parags)
+        (push (pair off (1+ beg)) spans))
       (:= off end))
-    (unless (= off (1- (length string)))
-      (push (slice string off) ps)
-      (push (pair off (length string)) ss))
-    (values (reverse ps)
-            (reverse ss))))
+    (let ((end (length string)))
+      (loop :while (and (< off end)
+                        (white-char-p (char string (1- end)))) :do
+        (:- end))
+      (unless (= off end)
+        (push (slice string off end) parags)
+        (push (pair off end) spans)))
+    (values (reverse parags)
+            (reverse spans))))
 
 (defvar *parag-splitter* (make 'parag-splitter)
   "Basic paragraph splitter.")
@@ -325,18 +340,40 @@
     into a paragraph-sentence-token structure."))
 
 (defmethod tokenize ((tokenizer full-text-tokenizer) string)
-  (mapcar (lambda (parag)
-            (mapcar ^(with ((words spans (tokenize <word-tokenizer> %))
-                            (id -1))
-                       (make 'sent
-                             :toks (loop :for word :in words
-                                         :for (beg end) :in spans
-                                         :collect (make-tok
-                                                   :id (:+ id) :word word
-                                                   :beg beg :end end))))
-                    (tokenize <sent-splitter> parag)))
-          (split #\Newline string)))
-
+  (with ((spans1 nil)
+         (spans2 nil)
+         (spans3 nil)
+         (parags (apply 'mapcar
+                        (lambda (parag pspan)
+                          (push pspan spans1)
+                          (apply 'mapcar
+                                 (lambda (sent sspan)
+                                   (with ((words wspans (tokenize
+                                                         <word-tokenizer> sent))
+                                          (off (+ (lt pspan) (lt sspan)))
+                                          (id -1))
+                                     (push (pair off (+ (lt pspan) (rt sspan)))
+                                           spans2)
+                                     (make 'sent :toks
+                                           (loop :for word :in words
+                                                 :for (beg end) :in wspans
+                                                 :do (push (pair (+ off beg)
+                                                                 (+ off end))
+                                                           spans3)
+                                                 :collect (make-tok
+                                                           :id (:+ id)
+                                                           :word word
+                                                           :beg beg
+                                                           :end end)))))
+                                 (multiple-value-list
+                                  (tokenize <sent-splitter> parag))))
+                        (multiple-value-list
+                         (tokenize *parag-splitter* string)))))
+    (values parags
+            (reverse spans1)
+            (reverse spans2)
+            (reverse spans3))))
+          
 (defvar *full-text-tokenizer* (make 'full-text-tokenizer)
   "Full text tokenizer.")
 

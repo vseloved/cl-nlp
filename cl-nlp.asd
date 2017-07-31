@@ -67,6 +67,8 @@
                       ((:file "general")
                        (:file "features" :depends-on ("general"))
                        (:file "perceptron" :depends-on ("features"))
+                       (:file "gd" :depends-on ("general"))
+                       (:file "softmax" :depends-on ("gd"))
                        (:file "decision-tree" :depends-on ("features"))
                        (:file "random-forest" :depends-on ("decision-tree"))))
              (:module #:generation

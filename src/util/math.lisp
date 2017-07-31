@@ -1,4 +1,4 @@
-;;; (c) 2013-2016 Vsevolod Dyomkin
+;;; (c) 2013-2017 Vsevolod Dyomkin
 
 (in-package #:nlp.util)
 (named-readtables:in-readtable rutilsx-readtable)
@@ -59,14 +59,6 @@
             (setf low (1+ mid))
             (setf high mid))))))
 
-(defun dot (v &rest vs)
-  "Dot product of vector V and other vectors in VS."
-  (assert (reduce '= (mapcar 'length (cons v vs))))
-  (let ((rez (make-array (length v))))
-    (dotimes (i (length v))
-      (:= (? rez i) (reduce '+ (mapcar #`(? % i)
-                                       (cons v vs)))))))
-
 (defun sum (fn xs &optional ys)
   "Sum result of application of FN to each of XS (and optionally YS)."
   (reduce '+ (if ys
@@ -85,16 +77,6 @@
   "Approximately equality between X & Y to the margin EPSILON."
   (< (abs (- x y)) epsilon))
 
-;; (defun entropy (samples &optional total)
-;;   "Compute Shannon's entropy of SAMPLES list.
-;;    To save on calculation a pre-calculated TOTAL can be provided."
-;;   (unless total
-;;     (:= total (sum 'just samples)))
-;;   (sum ^(if (zerop %) 0
-;;             (let ((r (/ % total)))
-;;               (* r (log r 2))))
-;;        samples))
-
 (defun log-likelihood-ratio (ab a~b ~ab ~a~b)
   "Calculate log-likelihood ratio between event A and B given
    probabilites of A and B occurring together and separately."
@@ -109,6 +91,19 @@
       (with ((data (coerce data 'vector))
              (len (length data)))
         (if (>= n len)
-            data
+            (progn
+              (warn "Sample size exceeds data length: ~A > ~A" n (length data))
+              (coerce data 'list))
             (loop :repeat n :collect (? data (random len)))))
       (take n (nshuffle (copy-list data)))))
+
+(defun normal-random (&optional (mean 0.0) (std-dev 1.0))
+  "generate a normal random number with the given MEAN and STD-DEV."
+  (do* ((rand-u (* 2 (- 0.5 (random 1.0))) (* 2 (- 0.5 (random 1.0))))
+        (rand-v (* 2 (- 0.5 (random 1.0))) (* 2 (- 0.5 (random 1.0))))
+        (rand-s (+ (* rand-u rand-u) (* rand-v rand-v))
+                (+ (* rand-u rand-u) (* rand-v rand-v))))
+       ((not (or (= 0 rand-s) (>= rand-s 1)))
+        (+ mean
+           (* std-dev
+              (* rand-u (sqrt (/ (* -2.0 (log rand-s)) rand-s))))))))
