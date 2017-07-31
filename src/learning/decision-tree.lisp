@@ -522,7 +522,8 @@
     (entropy (mapcar ^(/ (length %) size)
                      (if idx
                          (vals (partition-by idx exs))
-                         exs)))))
+                         exs))
+             :key nil)))
 
 
 ;;; utils
