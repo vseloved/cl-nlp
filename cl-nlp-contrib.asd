@@ -39,7 +39,11 @@
                        (:file "ptb")
                        (:file "nps-chat")
                        (:file "semcor")
-                       (:file "reuters")))))
+                       (:file "reuters")))
+             (:module #:embeddings
+                      :depends-on ("packages")
+                      :components
+                      ((:file "wvlib")))))
    #+dev
    (:module #:test
             :components
