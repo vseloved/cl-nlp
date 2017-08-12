@@ -22,7 +22,9 @@
 
 (defgeneric score (model fs class)
   (:documentation
-   "Score a selected CLASS with a MODEL given current FS."))
+   "Score a selected CLASS with a MODEL given current FS.")
+  (:method (model fs class)
+    (? (rank model fs) class)))
 
 (defgeneric rank (model fs &key classes)
   (:documentation

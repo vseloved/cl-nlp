@@ -43,7 +43,7 @@
           (when verbose
             (format *debug-io*
                     "Step ~A cost = ~5F (delta = ~5F) (accuracy: ~5F%)~%"
-                    i new-cost delta (float (* 100 (/ cc tt)))))
+                    (1+ i) new-cost delta (float (* 100 (/ cc tt)))))
           (when (< delta de)
             (return))))))
   model)
