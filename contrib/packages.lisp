@@ -2,7 +2,7 @@
 
 (cl:defpackage #:nlp.contrib.wordnet
   (:nicknames #:wordnet)
-  (:use #:common-lisp #:rutil #:nlp.util #:nlp.core)
+  (:use #:common-lisp #:rutilsx #:nlp.util #:nlp.core)
   (:export #:wordnet
            #:wordnet-uri
            #:sql-wordnet3
@@ -57,7 +57,7 @@
 
 (cl:defpackage #:nlp.contrib.wn
   (:nicknames #:wn)
-  (:use #:common-lisp #:rutil)
+  (:use #:common-lisp #:rutilsx)
   (:export #:lemma
            #:lemmas
            #:synset
@@ -79,7 +79,7 @@
            #:lin-similarity))
 
 (cl:defpackage #:nlp.contrib.ms-ngrams
-  (:use #:common-lisp #:rutil #:nlp
+  (:use #:common-lisp #:rutilsx #:nlp
         #+dev #:should-test)
   (:export #:ms-ngrams
            #:ms-ngrams-url
@@ -87,14 +87,17 @@
            #:ms-ngrams-catalog))
 
 (cl:defpackage #:nlp.contrib.corpora
-  (:use #:common-lisp #:rutil #:rutilsx #:nlp #:ncore #:ncorp #:nutil
+  (:use #:common-lisp #:rutilsx #:nlp #:ncore #:ncorp #:nutil
         #+dev #:should-test)
   (:export #:ptb-tagged-text
            #:reuters-text
            #:semcor-token))
 
+(cl:defpackage #:nlp.contrib.embeddings
+  (:use #:common-lisp #:rutilsx #:nlp))
+
 (cl:defpackage #:nlp.lexics
-  (:use #:common-lisp #:rutil #:nlp.util #:nlp.core #:nlp.lexics #:ncorp #:nutil
+  (:use #:common-lisp #:rutilsx #:nlp.util #:nlp.core #:nlp.lexics #:ncorp #:nutil
         #+dev #:should-test)
   (:export #:wordnet-lemmatizer
            #:<wordnet-lemmatizer>))
