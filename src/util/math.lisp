@@ -98,7 +98,7 @@
       (take n (nshuffle (copy-list data)))))
 
 (defun normal-random (&optional (mean 0.0) (std-dev 1.0))
-  "generate a normal random number with the given MEAN and STD-DEV."
+  "Generate a normal random number with the given MEAN and STD-DEV."
   (do* ((rand-u (* 2 (- 0.5 (random 1.0))) (* 2 (- 0.5 (random 1.0))))
         (rand-v (* 2 (- 0.5 (random 1.0))) (* 2 (- 0.5 (random 1.0))))
         (rand-s (+ (* rand-u rand-u) (* rand-v rand-v))

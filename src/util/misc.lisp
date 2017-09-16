@@ -38,9 +38,9 @@
   (let ((uniqs (make-hash-table :test test)))
     (etypecase seq
       (list (dolist (elt seq)
-              (:= (? uniqs elt) t)))
+              (:+ (get# elt uniqs 0))))
       (vector (dovec (elt seq)
-                (:= (? uniqs elt) t))))
+                (:+ (get# elt uniqs 0)))))
     (if raw uniqs (ht-keys uniqs))))
 
 (defun bound-equal (obj specimen)
