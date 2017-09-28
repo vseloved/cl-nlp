@@ -31,9 +31,6 @@
          (has-alts (listp (second rez))))
     (unless has-alts
       (:= rez (list rez)))
-    (when classes
-      (:= rez (keep-if ^(member (first %) classes)
-                       rez)))
     (pairs->ht rez)))
 
 (defmethod train ((model c4.5-tree) data

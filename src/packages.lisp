@@ -25,6 +25,7 @@
            #:+close-quote-chars+
            #:close-quote-char-p
            #:ending-word-p
+           #:strip-white
 
            ;; files
            #:corpus-file
@@ -210,7 +211,7 @@
 
 (cl:defpackage #:nlp.lexics
   (:nicknames #:nlex)
-  (:use #:common-lisp #:rutilsx #:nlp.util #:nlp.core
+  (:use #:common-lisp #:rutilsx #:nlp.util #:nlp.core #:nlp.corpora
         #+dev #:should-test)
   (:export #:dict
            #:dict-words
@@ -273,12 +274,13 @@
            #:train
            #:train1
            #:update1
+           #:cost
 
            #:accuracy
            #:f1
            #:f_
            #:conf-mat
-           #:cost
+           #:split-dev-test
 
            #:make-fs
            #:extract-fs

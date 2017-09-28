@@ -5,7 +5,8 @@
 
 
 (declaim (inline white-char-p newline-char-p period-char-p punct-char-p
-                 quote-char-p open-quote-char-p close-quote-char-p))
+                 quote-char-p open-quote-char-p close-quote-char-p
+                 strip-white))
 
 (defparameter +newline+
   (fmt "~%")
@@ -19,6 +20,9 @@
 (defun white-char-p (char)
   "Test if CHAR is in +WHITE-CHARS+."
   (member char +white-chars+))
+
+(defun strip-white (str)
+  (string-trim +white-chars+ str))
 
 (defparameter +newline-chars+
   '(#\Newline #\Return #\Linefeed)

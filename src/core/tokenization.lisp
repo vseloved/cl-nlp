@@ -112,7 +112,8 @@
                       (= (lt cur-span) (rt (first spans)))
                       (or (and (string= "." cur)
                                next
-                               (not (open-quote-char-p (char next 0)))
+                               (not (quote-char-p (char next 0)))
+                               (not (char= #\) (char next 0)))
                                (alphanumericp (char prev (1- (length prev)))))
                           (and (ends-with "." prev)
                                (alphanumericp (char cur 0)))
@@ -246,7 +247,7 @@
    (sent-end-chars :initarg :sent-end-chars
                    :initform '(#\. #\? #\! #\… #\¶))
    (sent-post-end-chars :initarg :sent-post-end-chars
-                        :initform '(#\) #\" #\' #\»)))
+                        :initform '(#\) #\" #\' #\» #\”)))
   (:documentation
    "Basic tokenizer for sentence splitting."))
 

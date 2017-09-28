@@ -29,7 +29,13 @@
 (defgeneric rank (model fs &key classes)
   (:documentation
    "Score all or selected CLASSES of a MODEL in a table
-    for a given feature set FS."))
+    for a given feature set FS.")
+  (:method :around (model fs &key classes)
+    (let ((rez (call-next-method)))
+      (when classes
+        (:= rez (keep-if ^(member (first %) classes)
+                         rez)))
+      rez)))
 
 (defgeneric classify (model fs &key classes)
   (:documentation
@@ -79,14 +85,15 @@
    "Load MODEL data from PATH (overwriting existing model).
     Keyword arg CLASSES-PACKAGE determines the package where class names
     will be interned (default: keyword).")
-  (:method :around ((model categorical-model) path &key class-package)
+  (:method :around (model path &key class-package)
     (format *debug-io* "~&Loading model from file: ~A - " path)
+    (prog1 (call-next-method)
+      (format *debug-io* "done.~%")))
+  (:method :around ((model categorical-model) path &key class-package)
     (with-open-file (in path :element-type 'flex:octet)
       (:= in (flex:make-flexi-stream (gzip-stream:make-gzip-input-stream in)
                                      :external-format :utf8))
-      (call-next-method model in :class-package (find-package class-package)))
-    (format *debug-io* "done.~%")
-    model)
+      (call-next-method model in :class-package (find-package class-package))))
   (:method ((model categorical-model) in &key class-package)
     (let ((total (read in))
           (i 0))
@@ -128,6 +135,8 @@
    "Calculate MODEL's feature importance."))
 
 (defun conf-mat (model gold-fs &key (verbose t))
+  "Calculate (and print when VERBOSE) the confusion matrix
+   for the MODEL on GOLD-FS."
   (let ((rez #h())
         (len (length gold-fs))
         (cc 0))
@@ -151,3 +160,10 @@
                       (lt entry))))
           (terpri))))
     rez))
+
+(defun split-dev-test (data &optional (ratio 0.7))
+  "Split DATA into dev & test sets with a given RATIO."
+  (let ((split-pt (floor (* (length data) ratio)))
+        (data (shuffle data)))
+    (list (subseq data 0 split-pt)
+          (subseq data split-pt))))
