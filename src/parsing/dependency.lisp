@@ -9,19 +9,19 @@
 (defstruct (dep (:print-object print-stanford-dep))
   (rel nil :type (or symbol null))
   (head nil :type (or tok null))
-  (child nil :type (or tok null)))
+  (tail nil :type (or tok null)))
 
 (defgeneric print-dep (format dep &optional stream)
   (:documentation
    "FORMAT may be :stanford, :conll, and, maybe some other.")
   (:method ((format (eql :stanford)) dep &optional (stream *standard-output*))
-    (let ((head (if (eql dep:+root+ @dep.head) @dep.child @dep.head)))
+    (let ((head (if (eql dep:+root+ @dep.head) @dep.tail @dep.head)))
       (format stream "~(~A~)(~A-~A, ~A-~A)"
-              @dep.rel @head.word @head.id @dep.child.word @dep.child.id)))
+              @dep.rel @head.word @head.id @dep.tail.word @dep.tail.id)))
   (:method ((format (eql :conll)) dep &optional (stream *standard-output*))
-    (let ((head (if (eql dep:+root+ @dep.head) @dep.child @dep.head)))
+    (let ((head (if (eql dep:+root+ @dep.head) @dep.tail @dep.head)))
       (format stream "~A	~A	~:[_~;~:*~A~]	_	~A	~A~%"
-              @dep.child.id @dep.child.word @dep.child.lemma @dep.child.pos
+              @dep.tail.id @dep.tail.word @dep.tail.lemma @dep.tail.pos
               @head.id @dep.rel))))
 
 (defun print-stanford-dep (dep stream)
@@ -38,14 +38,12 @@
                              :start (position #\Space str :start (1+ split1)
                                                           :test-not 'eql)))
            (split3 (position #\) str :from-end t))
-           ((head head-id) (split #\- (string-trim +white-chars+
-                                                   (slice str (1+ split1)
-                                                          split2))))
+           ((head head-id) (split #\- (trim-white (slice str (1+ split1)
+                                                         split2))))
            (head-id (parse-integer head-id :junk-allowed t))
-           ((child child-id) (split #\- (string-trim +white-chars+
-                                                     (slice str (1+ split2)
-                                                            split3))))
-           (child-id (parse-integer child-id))
+           ((tail tail-id) (split #\- (trim-white (slice str (1+ split2)
+                                                         split3))))
+           (tail-id (parse-integer tail-id))
            (rel (mksym (slice str 0 (1+ (position-if 'alpha-char-p str
                                                      :from-end t :end split1)))
                        :package :dep)))
@@ -55,25 +53,25 @@
                  (? toks -1)
                  (getset# head-id toks
                           (make-tok :id head-id :word head)))
-       :child (getset# child-id toks
-                       (make-tok :id child-id :word child)))))
+       :tail (getset# tail-id toks
+                      (make-tok :id tail-id :word tail)))))
   (:method ((format (eql :conll)) str &optional (toks #h(-1 dep:+root+)))
     (with (((id word lemma pos pos2 feats head-id rel &rest rest)
             (split #\Tab str :remove-empty-subseqs t)))
       (declare (ignore pos2 feats rest))
-      (let ((child-id (parse-integer id))
+      (let ((tail-id (parse-integer id))
             (head-id (parse-integer head-id))
             (rel (mksym rel :package :dep)))
         (make-dep
          :rel rel
          :head (or (? toks (if (eql 'dep:root rel) -1 head-id))
                    (make-tok :id head-id))
-         :child (getset# child-id toks
-                         (make-tok :id child-id
-                                   :word word
-                                   :lemma (unless (string= "_" lemma)
-                                            lemma)
-                                   :pos (mksym pos :package :tag))))))))
+         :tail (getset# tail-id toks
+                        (make-tok :id tail-id
+                                  :word word
+                                  :lemma (unless (string= "_" lemma)
+                                           lemma)
+                                  :pos (mksym pos :package :tag))))))))
 
 (defgeneric read-deps (format str)
   (:documentation
@@ -100,13 +98,13 @@
   (when deps
     (unless dep (:= dep (find 'dep:+root+ deps :key 'dep-rel)))
     (cons dep
-          (sort (cons @dep.child
+          (sort (cons @dep.tail
                       (mapcar ^(deps->tree deps %)
-                              (keep-if ^(eql @dep.child %) deps
+                              (keep-if ^(eql @dep.tail %) deps
                                        :key 'dep-head)))
                 '< :key ^(tok-id (etypecase %
                                    (tok %)
-                                   (list @%.child#0)))))))
+                                   (list @%.tail#0)))))))
 
 #+nil
 (defun pprint-deps-tree (deps)

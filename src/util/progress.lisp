@@ -20,10 +20,9 @@
   (once-only (total count)
     (let ((cc (gensym)))
       `(if (boundp ',cc)
-           (when (zerop (rem (handler-bind ((warning 'muffle-warning))
-                               (:+ ,cc))
+           (when (zerop (rem (:+ ,cc)
                              (if ,total
-                                 (:= ,count (ceiling ,total 100))
+                                 (:= ,count (ceiling ,total ,count))
                                  ,count)))
              (format *debug-io* "."))
            (progn

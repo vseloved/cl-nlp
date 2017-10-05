@@ -32,21 +32,24 @@
            ,@body
            diff)))))
 
-(defgeneric select-transition (parser iterm)
+(defgeneric select-transition (parser interm)
   (:documentation
    "Select the best transition according to the current PARSER state
-    and intermediate result ITERM.
+    and intermediate result INTERM.
     Return all transitions as a second value."))
 
-(defgeneric judge-transitions (oracle parser transitions iterm gold
+(defgeneric judge-transitions (oracle parser transitions interm gold
                                &key &allow-other-keys)
   (:documentation
    "Sort TRANSITIONS that are allowed for the current intermediate
-    result ITERM and GOLD parse according to the ORACLE and PARSER state."))
+    result INTERM and GOLD parse according to the ORACLE and PARSER state."))
 
-(defgeneric list-transitions (parser iterm &optional gold &key &allow-other-keys)
+(defgeneric list-transitions (parser interm &optional gold
+                              &key &allow-other-keys)
   (:documentation
-   ""))
+   "List possible transitions allowed for the current intermediate result INTERM
+    of the PARSER operation.
+    GOLD parse may be also provided."))
 
 (defun transition= (t1 t2 &optional (with-node t))
   "Compare if transitions T1 and T2 are the same

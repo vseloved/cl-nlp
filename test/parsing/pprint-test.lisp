@@ -22,7 +22,7 @@
   (mapcar ^(make-dep
             :rel (mksym (first %) :package 'dep)
             :head (if (= -1 (second %)) dep:+root+ (? sent (second %)))
-            :child (? sent (third %)))
+            :tail (? sent (third %)))
           deps))
 
 (defparameter *test-sent0*

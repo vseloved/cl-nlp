@@ -86,7 +86,7 @@
   (format *debug-io* "~&Reading list from file ~A:" file)
   (let (rez)
     (dolines (line file)
-      (push (string-trim +white-chars+ line) rez))
+      (push (trim-white line) rez))
     (format *debug-io* " done.~%")
     (reverse rez)))
 

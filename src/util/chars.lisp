@@ -6,7 +6,7 @@
 
 (declaim (inline white-char-p newline-char-p period-char-p punct-char-p
                  quote-char-p open-quote-char-p close-quote-char-p
-                 strip-white))
+                 trim-white))
 
 (defparameter +newline+
   (fmt "~%")
@@ -21,7 +21,8 @@
   "Test if CHAR is in +WHITE-CHARS+."
   (member char +white-chars+))
 
-(defun strip-white (str)
+(defun trim-white (str)
+  "Remove white chars on both sides of STR."
   (string-trim +white-chars+ str))
 
 (defparameter +newline-chars+

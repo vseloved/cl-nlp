@@ -45,7 +45,7 @@
   
 (defmethod sax:characters ((sax wikt-sax) data)
   (case @sax.cur-tag
-    (:title (let ((title (string-trim +white-chars+ data)))
+    (:title (let ((title (trim-white data)))
               (unless (blankp title)
                 (:= @sax.word title))))
     (:text

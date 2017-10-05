@@ -15,7 +15,7 @@
     (let (rez sent amr in-amr)
       (dolines (line file)
         (cond
-          ((blankp (string-trim +white-chars+ line))
+          ((blankp (trim-white line))
            (void in-amr)
            (when sent
              (push (post-process sent amr)

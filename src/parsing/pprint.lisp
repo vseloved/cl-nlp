@@ -133,7 +133,7 @@
 
 (defun format-rel (out dep toks space extra-spaces lt mid rt
                    line-char conch level)
-  (with (((left right) (sort (list @dep.child @dep.head) '< :key 'tok-id))
+  (with (((left right) (sort (list @dep.tail @dep.head) '< :key 'tok-id))
          (d (- (tok-dist toks left right space extra-spaces t)
                (length (ss @dep.rel))
                2)))
@@ -141,13 +141,13 @@
     (format out "~@[~A~]`~A ~(~A~) ~A´~@[~A~]~A"
             (strcat (when-it (? lt @left.id)
                       (fmt "~C" (if (> it (1- level)) conch #\Space)))
-                    (unless (eql left @dep.child)
+                    (unless (eql left @dep.tail)
                       (fmt "~C" (if (> (? mid @left.id) (1- level))
                                      conch #\Space))))
             (filler (floor d 2) line-char)
             @dep.rel
             (filler (ceiling d 2) line-char)
-            (strcat (unless (eql right @dep.child)
+            (strcat (unless (eql right @dep.tail)
                       (fmt "~C" (if (> (? mid @right.id) (1- level))
                                      conch #\Space)))
                     (when-it (? rt @right.id)
@@ -181,7 +181,7 @@
                 :collect (? toks id))))
 
 (defun deps->levels (deps &key (space 1) (extra-spaces #h()) utf-connectors)
-  (with ((toks (sort (mapcar 'nlp:dep-child deps) '< :key 'nlp:tok-id))
+  (with ((toks (sort (mapcar 'nlp:dep-tail deps) '< :key 'nlp:tok-id))
          (lt (make-array (length toks) :initial-element nil))
          (mid (make-array (length toks) :initial-element nil))
          (rt (make-array (length toks) :initial-element nil))
@@ -204,13 +204,13 @@
     ;; fill in levels array: for each token - the dependencies passing over it
     ;; in the process also record EXTRA-SPACES
     (labels ((rec (dep deps)
-               (let ((id @dep.child.id))
-                 (dolist (d (sort (keep-if ^(eql @dep.child @%.head)
+               (let ((id @dep.tail.id))
+                 (dolist (d (sort (keep-if ^(eql @dep.tail @%.head)
                                            deps)
-                                  '< :key ^(abs (- id @%.child.id))))
+                                  '< :key ^(abs (- id @%.tail.id))))
                    (rec d (remove d deps))
                    (with ((hid @d.head.id)
-                          (chid @d.child.id)
+                          (chid @d.tail.id)
                           (ltid (min hid chid))
                           (rtid (max hid chid))
                           (left (? toks ltid))
@@ -247,9 +247,9 @@
     ;; add root dep and arrange levels properly
     (:= depth (reduce 'max (loop :for i :from 0 :below (1- (length toks))
                                  :collect (length (? levels i)))))
-    (:= (? mid @root.child.id) depth)
-    (loop :repeat (- depth (length (? levels @root.child.id))) :do
-      (push root (? levels @root.child.id)))
+    (:= (? mid @root.tail.id) depth)
+    (loop :repeat (- depth (length (? levels @root.tail.id))) :do
+      (push root (? levels @root.tail.id)))
     (dotimes (i (length levels))
       (:= (? levels i) (reverse (? levels i))))
     ;; output resuting level strings
@@ -285,7 +285,7 @@
                                                     space extra-spaces lt mid rt
                                                     (if utf-connectors #\─ #\.)
                                                     conch level)
-                                        (:= i (max @it.child.id
+                                        (:= i (max @it.tail.id
                                                    @it.head.id)))
                                       (format-connectors
                                        out (? toks i) toks space extra-spaces
@@ -296,8 +296,8 @@
                                (filler
                                 (+ (1- (floor (length (ss (? toks 0)))
                                               2))
-                                   (if (plusp @root.child.id)
-                                       (tok-dist toks (? toks 0) @root.child
+                                   (if (plusp @root.tail.id)
+                                       (tok-dist toks (? toks 0) @root.tail
                                                  space extra-spaces)
                                        0))))))
             extra-spaces)))

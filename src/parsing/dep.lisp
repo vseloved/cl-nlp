@@ -4,6 +4,13 @@
 (named-readtables:in-readtable rutils-readtable)
 
 
+(defvar *cn-numbatch*
+  (nemb:init-vecs (make 'nemb:lazy-mem-vecs :order 300)
+                  :text "~/ext4/numberbatch-en-17_04.txt" :prolog t)
+  "English ConceptNet Numberbatch vectors.")
+
+
+
 ;;; parser
 
 (defclass depparser ()
@@ -16,13 +23,13 @@
   (:documentation
    "Ar-eager dynamic oracle for dependency parsing."))
 
-(defclass greedy-sb-depparser (avg-perceptron depparser stack-buffer-parser)
+(defclass greedy-sb-depparser (mgl:fnn depparser stack-buffer-parser)
   ((transitions :initarg :transitions :acessor parser-transitions
                 :initform '(dep:left
                             dep:right
                             dep:shift))
-   (labeller :initarg :labeller :accessor parser-labeller)
-   ;; :initform (make 'greedy-sb-depparser-labeller))
+   (trans-model :initarg :trans-model :accessor parser-trans-model)
+   (label-model :initarg :label-model :accessor parser-label-model)
    (oracle :initarg :oracle :accessor parser-oracle
            :initform (make 'arc-eager-deporacle)))
   (:documentation
@@ -36,18 +43,54 @@
         buffer (range 0 (1+ (length sent)))
         (? ctx :toks) @sent.toks)
     (loop :while (or stack buffer) :do
-      (funcall (trans-fn (select-transition parser heads)) parser heads))
+      (call (trans-fn (select-transition parser heads)) parser heads))
     (doindex (i tok @sent.toks)
-      (push (make-dep :rel (if (zerop i) 'deps:root nil)
-                      :head (if (zerop i) deps:+root+
-                                (? @sent.toks (? heads (1- i))))
-                      :child tok)
-            rez))
-    (reverse rez)))
-    
-(defmethod train ((model greedy-sb-depparser) sents &key (epochs 5) verbose)
+      (let ((head (if (zerop i) dep:+root+
+                      (? @sent.toks (? heads (1- i))))))
+        (push (make-dep :rel (if (zerop i) 'dep:root
+                                 ;;'dep:dep)
+                                 (classify parser (list head tok rez)))
+                        :head head 
+                        :tail tok)
+              rez)))
+    rez))
+
+(defmethod select-transition ((parser greedy-sb-depparser) interm)
   )
 
+(defmethod train ((model greedy-sb-depparser) sents &key verbose)
+  (let ((trans-fnn (mgl:build-fnn (:class 'greedy-sb-depparser)
+                                  (in (mgl:->input :size (* *vecs-size* 3)))
+                                  (hid-act (mgl:->activation in :size 10000))
+                                  (hid (mgl:->relu hid-act))
+                                  (out-act (mgl:->activation hid :size 3)
+                                           (out (mgl:->softmax-xe-loss out-act)))))
+        (opt (make 'mgl:segmented-gd-optimizer
+                   :segmenter (constantly (make 'mgl:sgd-optimizer
+                                                :learning-rate 1
+                                                :momentum 0.9
+                                                :batch-size 100))))
+        (prev-size 0))
+    (:= (mgl:max-n-stripes trans-fnn) 50)
+    (mgl:map-segments (lambda (clump)
+                        (mgl:gaussian-random! (mgl:nodes clump) :stddev
+                                              ;; Xavier initializer
+                                              (sqrt (/ 6 (+ prev-size
+                                                            (length (mgl:nodes %))))))
+                        (:= prev-size (length (mgl:nodes %))))
+                      trans-fnn)
+    (mgl:monitor-optimization-periodically
+     opt '((:fn report-optimization-progress :period 10000)
+           (:fn mgl:reset-optimization-monitors :period 1000)))
+    (mgl:minimize opt
+                  (make 'mgl:bp-learner
+                        :bpn trans-fnn
+                        :monitors (mgl:make-cost-monitors
+                                   trans-fnn :attributes `(:event "train")))
+                  :dataset (make-sampler 10000))
+    (:= @model.trans-model trans-fnn
+        @model.label-model label-fnn)))
+  
 
 ;;; fs
 
@@ -80,9 +123,9 @@
                             (list n0t n0b1t n0b2t)
                             (list n0t n0f1t n0f2t)))
 
-            (mapindex #`(make-fs "word" @%%.word
-                                 "tag" @%%.tag
-                                 "tok" % @%%.word @%%.tag)
+            (mapindex ^(make-fs "word" @%%.word
+                                "tag" @%%.tag
+                                "tok" % @%%.word @%%.tag)
                       (list wn0 wn1 wn2 ws0 ws1 ws2
                             wn0b1 wn0b2 ws0b1 ws0b2 ws0f1 ws0f2)))
 
@@ -95,32 +138,31 @@
 (deftransition dep:shift ()
   (push (pop buffer) stack))
 
-(macrolet ((add-arc (head child label)
-             (once-only (head child)
-               `(:= (? interm ,child) (pair ,head ,label)
-                    (? diff (pair ,head ,child)) t))))
+(macrolet ((add-arc (head tail label)
+             (once-only (head tail)
+               `(:= (? interm ,tail) (pair ,head ,label)
+                    (? diff (pair ,head ,tail)) t))))
                
 (deftransition dep:left (label)
   (add-arc (first buffer) (pop stack) label))
   
 (deftransition dep:right (label)
-  (add-arc (second stack) (pop stack) label))
+  (add-arc (pop stack) (first stack) label))
 
 ) ; end of macrolet
 
 (defmethod select-transition ((parser greedy-sb-depparser) interm)
-  (values (argmax #`(score parser %.fn %.fs) trs
-                  :test '>= :min (- 1e10))
-          (list-transitions parser interm)))
+  (let ((trs (list-transitions parser interm)))
+    (values (argmax ^(score parser %.fn %.fs) trs
+                    :test '>= :min (- 1e10))
+            trs)))
 
 (defmethod judge-transitions ((oracle arc-eager-deporacle)
                               (parser greedy-sb-depparser)
                               interm gold &key &allow-other-keys)
   (with (((stack buffer ctx) @ parser))
     (cond
-      ((null stack) 
-
-                     )))))
+      ((null stack)))))
 
 (defmethod list-transitions ((parser greedy-sb-depparser) interm)
   (with (((stack buffer ctx) @ parser)

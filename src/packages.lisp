@@ -25,7 +25,7 @@
            #:+close-quote-chars+
            #:close-quote-char-p
            #:ending-word-p
-           #:strip-white
+           #:trim-white
 
            ;; files
            #:corpus-file
@@ -355,7 +355,7 @@
            #:dep
            #:dep-rel
            #:dep-head
-           #:dep-child
+           #:dep-tail
            #:make-dep
            #:print-dep
            #:print-stanford-dep

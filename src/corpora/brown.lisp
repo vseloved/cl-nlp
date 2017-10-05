@@ -6,7 +6,7 @@
 
 (defmethod read-corpus-file ((type (eql :brown)) file &key)
   "Read individual file from the Brown corpus."
-  (let ((text (string-trim +white-chars+ (read-file file)))
+  (let ((text (trim-white (read-file file)))
         (offset 0)
         (nl-nl-nl (fmt "~%~%~%"))
         parag-sent-toks)

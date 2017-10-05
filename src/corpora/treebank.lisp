@@ -12,7 +12,7 @@
 (defmethod read-corpus-file ((type (eql :treebank)) file &key)
   (let ((*package* (find-package :tag)))
     (with-input-from-string (in (prepare-tree-for-reading
-                                 (string-trim +white-chars+ (read-file file))))
+                                 (trim-white (read-file file))))
       (loop
          :for tree := (read in nil) :while tree
          ;; in some treebanks every tree is enclosed in an additional list
