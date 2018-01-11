@@ -65,7 +65,7 @@ the following things should be finished (work-in-progress):
 
 - [RUTILS][RUTILS]
 - [Closure XML](http://common-lisp.net/project/cxml/)
-- [DRAKMA](http://weitz.de/drakma/)
+- [DRAKMA](https://github.com/edicl/drakma)
 - [ZIP](http://common-lisp.net/project/zip/)
 - [USERIAL](http://nklein.com/software/unet/userial/)
 
