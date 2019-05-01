@@ -8,7 +8,7 @@
 
 (defmacro with-wordnet ((wordnet) &body body)
   "A macro to wrap all Wordnet DB interaction."
-  `(%call-with-wordnet wordnet (lambda () ,@body)))
+  `(%call-with-wordnet ,wordnet (lambda () ,@body)))
 
 (defun %call-with-wordnet (wordnet fn)
   "Helper function for WITH-WORDNET macro"

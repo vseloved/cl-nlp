@@ -15,7 +15,7 @@
 
 (defgeneric ensure-fs-init (model f &rest cs)
   (:documentation
-   "Ensure that all the necessary tables are stup for feature F and classes CS
+   "Ensure that all the necessary tables are set up for feature F and classes CS
     in the MODEL."))
 
 
@@ -34,3 +34,26 @@
                               (string tmpl))))
                    (getset# str *strpool* str)))
                fs-templates)))
+
+(defun f-by-id (model id)
+  "Get feature name by ID from *fmap*."
+  (dotable (k v @model.fs-dict)
+    (when (= v id) (return k))))
+
+(defun princ-fs (model fs)
+  "Princ on newlines names of features in the sequence FS."
+  (dolist (f fs)
+    (format nil "~A (~A)~%" (f-by-id model f) f)))
+
+(defun f-weight (model f class)
+  "Get weight of feature F for CLASS in the classifier MODEL."
+  (? (? model 'weights class)
+     (? model 'fs-dict f)))
+
+(defun fs-vec (model fs)
+  "Convert a list of raw features FS to the vector
+   of global feature ids (numbers) that are also reflected
+   in the MODEL's fs-dict."
+  (let ((dict @model.fs-dict))
+    (uniq (map 'vector ^(getset# % dict (ht-count dict))
+               fs))))

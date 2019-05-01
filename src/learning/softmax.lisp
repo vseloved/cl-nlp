@@ -5,7 +5,9 @@
 
 
 (defclass softmax (categorical-model)
-  ((fs-dict :initarg :fs-dict :initform #h(equal) :accessor model-fs-dict)))
+  ((classes :initarg :classes :initform (error "Should provide Softmax CLASSES!")
+            :accessor model-classes)
+   (fs-dict :initarg :fs-dict :initform #h(equal) :accessor model-fs-dict)))
 
 (defmethod rank ((model softmax) fs &key classes)
   (let ((scores #h())
@@ -13,33 +15,42 @@
     (dotable (class ws @model.weights)
       (when (or (null classes)
                 (member class classes))
-        (:+ total (:= (? scores class) (exp (sum ^(* (? ws (lt %))
-                                                     (rt %))
-                                                 (pairs fs)))))))
+        (:+ total (:= (? scores class) (exp (min (sum ^(* (? ws (lt %))
+                                                          (rt %))
+                                                      (ht->pairs fs))
+                                                 10))))))
     (dotable (class _ scores)
       (:/ (? scores class) total))
     scores))
 
 (defmethod train ((model softmax) data &key verbose (max-steps 1000) batch-size
                                          (al 0.1) (l1 0) (l2 0.1) (de 1e-6))
+  (let ((ws-size (tally @model.fs-dict)))
+    (dolist (class @model.classes)
+      (:= (? @model.weights class)
+          (make-array ws-size :initial-contents
+                      (maptimes ws-size ^(* 0.01 (nlp:normal-random)))))))
   (sgd model data
-       :verbose verbose :max-steps max-steps :batch-size batch-size
+       :verbose verbose :epochs max-steps :batch-size batch-size
        :al al :l1 l1 :l2 l2 :de de))
 
-(defmethod grad1 ((model softmax) grad guess ex)
-  (let ((fs-size (ht-count @model.fs-dict)))
-    (dotable (class _ @model.weights)
-      (let ((id (if (eql @ex.gold class) 1 0))
-            (gd (? grad class))
-            (p (? guess class)))
-        (dotimes (i fs-size)
-          (:+ (? gd i) (* (- p id) (get# i @ex.fs 0)))))))
+(defmethod grad1 ((model softmax) grad guess gold)
+;  (let ((fs-size (tally @model.fs-dict)))
+  (dotable (class _ @model.weights)
+    (let ((id (if (eql @gold.gold class) 1 0))
+          (gd (? grad class))
+          (p (? guess class)))
+      (dotable (k v @gold.fs)
+        (:+ (svref gd k) (* (- p id) v)))))
+        ;; (dotimes (i fs-size)
+        ;;   (:+ (? gd i) (* (- p id) (get# i @gold.fs 0)))))))
   grad)
 
 (defmethod cost ((model softmax) data &key (l1 0) (l2 0.1))
   (let ((n (length data))
         (ws (apply 'concatenate 'vector (vals @model.weights))))
-    (+ (- (/ (sum ^(log (score model @%.fs @%.gold))
+    (+ (- (/ (sum ^(log (max (score model @%.fs @%.gold)
+                             1e-3))
                   data)
              n))
        (* l1 (sum 'abs ws))

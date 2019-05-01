@@ -92,3 +92,18 @@
                             (strjoin "," (mapcar #`(fmt row-format (+ 3 %))
                                                  (range 0 keys-count))))))
     (delete-file file)))
+
+
+;;;
+
+(defun get-toks (text &key (kind :words))
+  (let ((parags (tokenize *full-text-tokenizer* text)))
+    (ecase kind
+      (:parags (mapcar ^(mapcar 'tok-word %)
+                       (mapcar ^(flat-map 'sent-toks %) parags)))
+      (:sents (mapcar ^(mapcar 'tok-word (sent-toks %))
+                      (flatten parags)))
+      (:words (mapcar 'tok-word (flat-map 'sent-toks (flatten parags)))))))
+
+(defun lemma-wikt (word)
+  (nlp:lemmatize nlp:<wikt-dict> word))

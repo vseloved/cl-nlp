@@ -5,7 +5,7 @@
 
 
 (defclass perceptron (categorical-model)
-  ())
+  ((classes :initarg :classes :accessor model-classes)))
 
 (defclass avg-perceptron (perceptron)
   ((step :initform 0 :accessor ap-step)
@@ -77,12 +77,13 @@
 
 (defmethod train1 ((model perceptron) gold guess gold-fs &optional guess-fs)
   (:+ (ap-step model))
-  (loop :for class :in (list gold guess)
-        :for val :in '(1 -1)
-        :for fs :in (list gold-fs (or gold-fs guess-fs)) :do
-    (dolist (f fs)
-      (ensure-fs-init model f class)
-      (update1 model f class val))))
+  (unless (eql gold guess)
+    (loop :for class :in (list gold guess)
+          :for val :in '(1 -1)
+          :for fs :in (list gold-fs (or gold-fs guess-fs)) :do
+      (dolist (f fs)
+        (ensure-fs-init model f class)
+        (update1 model f class val)))))
 
 (defmethod update1 ((model avg-perceptron) f class val)
   (with-slots (step timestamps weights totals) model

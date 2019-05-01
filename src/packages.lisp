@@ -67,6 +67,7 @@
            #:bin-search
            #:log-likelihood-ratio
            #:sample
+           #:resample
            #:normal-random
 
            ;; misc
@@ -221,6 +222,7 @@
 
            #:lookup
            #:pos-tags
+           #:pos-tag
            #:word/pos
            #:base-pos
 
@@ -234,7 +236,13 @@
            #:lem-dict
 
            #:mem-dict
-           #:load-mem-dict))
+           #:load-mem-dict
+
+           #:word-shape
+
+           #:stopwordp
+
+           #:*dict-lemmatizer*))
 
 (cl:defpackage #:nlp.embeddings
   (:nicknames #:nemb)
@@ -268,6 +276,7 @@
            #:save-model
            #:load-model
 
+           #:*training*
            #:score
            #:rank
            #:classify
@@ -280,13 +289,19 @@
            #:f1
            #:f_
            #:conf-mat
+           #:print-metrics
            #:split-dev-test
 
            #:make-fs
            #:extract-fs
            #:extract-gold
            #:ensure-fs-init
+           #:fs-vec
+           #:f-weight
+           #:f-by-id
+
            #:fs-importance
+           #:princ-fs
 
            #:categorical-model
            #:ensemble-model
@@ -362,6 +377,7 @@
            #:print-conll-dep
            #:read-dep
            #:read-deps
+           #:read-deps-file
            #:deps->tree
 
            #:parsed-sent
@@ -424,6 +440,9 @@
   (:export ;; util
            #:grep
            #:tabulate
+           ;; common operations
+           #:get-toks
+           #:lemma-wikt
            ))
 
 (rutils:re-export-symbols '#:nutil    '#:nlp-user)

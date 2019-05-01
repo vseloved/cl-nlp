@@ -74,7 +74,7 @@
     (when (eql :text cur-tag)
       (unless skip
         (let ((text (strjoin #\Space (reverse cur-text))))
-          (push (string-trim +white-chars+ (strjoin #\Space (reverse cur-title)))
+          (push (trim-white (strjoin #\Space (reverse cur-title)))
                 titles)
           (push text texts)
           (push (tokenize <full-text-tokenizer> text) toks)))
@@ -87,8 +87,7 @@
       (unless skip
         (let ((text (strjoin #\Space (reverse cur-text))))
           (call fn (make-text
-                    :name (string-trim +white-chars+
-                                       (strjoin #\Space (reverse cur-title)))
+                    :name (trim-white (strjoin #\Space (reverse cur-title)))
                     :clean text
                     :par-sent-toks (tokenize <full-text-tokenizer> text)))))
       (void cur-text)

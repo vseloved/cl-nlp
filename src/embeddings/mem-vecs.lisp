@@ -36,7 +36,7 @@
 (defgeneric init-vecs (vecs format file &key prolog)
   (:documentation
    "Initialize word VECS from FILE.")
-  (:method ((vecs lazy-mem-vecs) (format (eql :stream)) in &key prolog)
+  (:method ((vecs mem-vecs) (format (eql :stream)) in &key prolog)
     (let ((dict #h(equal))
           (cc 0))
       (when prolog (read-line in nil))

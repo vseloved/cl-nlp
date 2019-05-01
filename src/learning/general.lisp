@@ -35,7 +35,10 @@
       (when classes
         (:= rez (keep-if ^(member (first %) classes)
                          rez)))
-      rez)))
+      rez))
+  (:method :around (model (fs ex) &key classes)
+    (call-next-method model @fs.fs :classes classes)))
+
 
 (defgeneric classify (model fs &key classes)
   (:documentation
@@ -44,9 +47,14 @@
   (:method (model fs &key classes)
     (keymax (rank model fs :classes classes))))
 
+(defvar *training* nil)
+
 (defgeneric train (model data &key)
   (:documentation
    "Train some MODEL with the provided DATA.")
+  (:method :around (model data &key)
+    (let ((*training* t))
+      (call-next-method)))
   (:method :after ((model categorical-model) data &key)
     (rem# nil (m-weights model))))
 
@@ -86,7 +94,14 @@
     Keyword arg CLASSES-PACKAGE determines the package where class names
     will be interned (default: keyword).")
   (:method :around (model path &key class-package)
-    (format *debug-io* "~&Loading model from file: ~A - " path)
+    (format *debug-io* "~&Loading model from file: ~A - "
+            (typecase path
+              (flex:flexi-stream (or (ignore-errors
+                                      (? (flex:flexi-stream-stream path) 'file))
+                                     path))
+              (stream (or (ignore-errors (? path 'file))
+                          path))
+              (t path)))
     (prog1 (call-next-method)
       (format *debug-io* "done.~%")))
   (:method :around ((model categorical-model) path &key class-package)
@@ -130,6 +145,51 @@
            gold-fs)
       (* 100.0 (/ matched total)))))
 
+(defgeneric f_ (model gold-fs class &key n verbose)
+  (:documentation
+   "Measure MODEL's f1 (or fN) on GOLD-FS gold result features.")
+  (:method (model gold-fs class &key (n 1) verbose)
+    (let ((tp 0)
+          (fp 0)
+          (fn 0)
+          (total 0)
+          (len (length gold-fs))
+          (n2 (expt n 2)))
+      (when (zerop len)
+        (warn "No data given to f1.")
+        (return-from f_ (values 0.0
+                                0.0
+                                0.0)))
+      (map nil ^(let ((guess (classify model @%.fs)))
+                  (if (and (equal guess class)
+                           (equal guess @%.gold))
+                      (:+ tp)
+                      (progn
+                        (cond ((eql class guess)
+                               (:+ fp))
+                              ((eql class @%.gold)
+                               (:+ fn)))
+                        (when verbose
+                          (format *debug-io*
+                                  "~%guess: ~A~%gold:  ~A~@[~%raw: ~A~]~%fs: ~A~%"
+                                  guess @%.gold @%.raw @%.fs))))
+                  (:+ total)
+                  (unless verbose (princ-progress total len)))
+           gold-fs)
+      (when (zerop tp)
+        (return-from f_ (values 0.0
+                                0.0
+                                0.0)))
+      (let ((rec (/ tp (+ tp fn)))
+            (prec (/ tp (+ tp fp))))
+        (values (/ (* (+ 1.0 n2) prec rec)
+                   (+ (* n2 prec) rec))
+                (float prec)
+                (float rec))))))
+
+(defun f1 (model gold-fs class &key verbose)
+  (f_ model gold-fs class :verbose verbose))
+
 (defgeneric fs-importance (model &key)
   (:documentation
    "Calculate MODEL's feature importance."))
@@ -160,6 +220,47 @@
                       (lt entry))))
           (terpri))))
     rez))
+
+(defun print-metrics (model gold-fs &key (out *standard-output*) classes)
+  (with ((classes (or classes @model.classes))
+         (len (length classes))
+         (n (length gold-fs))
+         (f1_ 0.0)
+         (f1* 0.0)
+         (prec_ 0.0)
+         (prec* 0.0)
+         (rec_ 0.0)
+         (rec* 0.0)
+         (span (- (reduce 'max (mapcar (=> length princ-to-string)
+                                       classes))
+                  (length " class")))
+         (*debug-io* (make-broadcast-stream)))
+    (format out (strcat "~{~C~}  class |  f1  | prec |  rec | count (% of total) ~%")
+            (loop :repeat span :collect #\Space))
+    (format out (strcat "~{~C~}--------|------|------|------|--------------------~%")
+            (loop :repeat span :collect #\-))
+    (dolist (class classes)
+      (with ((f1 prec rec (f1 model gold-fs class))
+             (count (count class gold-fs :key 'nlp:ex-gold)))
+        (:+ f1_ f1)
+        (:+ f1* (* f1 count))
+        (:+ prec_ prec)
+        (:+ prec* (* prec count))
+        (:+ rec_ rec)
+        (:+ rec* (* rec count))
+        (format out "  ~5A | ~4F | ~4F | ~4F | ~D (~D%) ~%"
+                (princ-to-string class)
+                f1 prec rec count
+                (floor (* (/ count n) 100)))))
+    (terpri out)
+    (format out "  avg   | ~4F | ~4F | ~4F | ~D ~%"
+            (/ f1* n) (/ prec* n) (/ rec* n)
+            (length gold-fs))
+    (format out "  wavg  | ~4F | ~4F | ~4F | ~D ~%"
+            (/ f1_ len) (/ prec_ len) (/ rec_ len)
+            len)
+    (format out "accuracy: ~4F~%" (/ (nlp:accuracy model gold-fs)
+                                     100.0))))
 
 (defun split-dev-test (data &optional (ratio 0.7))
   "Split DATA into dev & test sets with a given RATIO."

@@ -1,4 +1,4 @@
-;;; (c) 2015-2017 Vsevolod Dyomkin
+;;; (c) 2015-2019 Vsevolod Dyomkin
 
 (in-package #:nlp.lexics)
 (named-readtables:in-readtable rutilsx-readtable)
@@ -67,3 +67,33 @@
     (let ((postr (symbol-name pos)))
       (mksym (slice postr 0 (min 2 (length postr)))
              :package (symbol-package pos)))))
+
+(defun pos-tag (word)
+  "Return the first pos tag of the WORD."
+  (atomize (first (nlex:pos-tags nlex:*dict-lemmatizer* word))))
+
+(defun word-shape (word)
+  "Return the shape of the word as a string of characters:
+   - u for all upper-case groups
+   - l for all lower-case groups
+   - d for all digit groups
+   - - for all other character groups
+
+   Example: foo -> l, Foo -> ul, FOO -> u, foo:bar123 -> l-ld"
+  (coerce (loop :with prev
+                :for char :across word
+                :for cur := (cond ((upper-case-p char) #\u)
+                                  ((lower-case-p char) #\l)
+                                  ((digit-char-p char) #\d)
+                                  (t #\-))
+                :unless (eql cur prev)
+                  :collect cur :and :do (:= prev cur))
+          'string))
+
+
+;;; stopwords
+
+(def-lang-var stopwords #h() "Stopwords")
+
+(defun stopwordp (word)
+  (in# word <stopwords>))

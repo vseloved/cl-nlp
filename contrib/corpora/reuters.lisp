@@ -97,9 +97,6 @@
               (tokenize <full-text-tokenizer> text)
               id
               date
-              (when headline
-                (string-trim +white-chars+ (fmt "~{~A~}" headline)))
-              (when byline
-                (string-trim +white-chars+ (fmt "~{~A~}" byline)))
-              (when dateline
-                (string-trim +white-chars+ (fmt "~{~A~}" dateline)))))))
+              (when headline (trim-white (fmt "~{~A~}" headline)))
+              (when byline (trim-white (fmt "~{~A~}" byline)))
+              (when dateline (trim-white (fmt "~{~A~}" dateline)))))))

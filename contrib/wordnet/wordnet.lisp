@@ -1,4 +1,4 @@
-;;; (c) 2013 Vsevolod Dyomkin
+;;; (c) 2013-2017 Vsevolod Dyomkin
 
 (in-package #:nlp.contrib.wordnet)
 (named-readtables:in-readtable rutils-readtable)
@@ -11,7 +11,7 @@
 
 (defclass sql-wordnet3 (wordnet)
   ((uri :initarg :uri :reader wordnet-uri
-        :initform (merge-pathnames "data/wordnet30.sqlite" (asdf:system-definition-pathname 'cl-nlp))))
+        :initform (data-file "wordnet30.sqlite")))
   (:documentation
    "Interface to Wordnet database version 3."))
 

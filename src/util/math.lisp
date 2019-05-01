@@ -87,15 +87,45 @@
 
 (defun sample (data n &key (with-replacement? t))
   "Sample N elements from DATA (by default, WITH-REPLACEMENT?)."
-  (if with-replacement?
-      (with ((data (coerce data 'vector))
-             (len (length data)))
-        (if (>= n len)
+  (if (zerop n)
+      #()
+      (with ((vec (coerce data 'vector))
+             (len (length vec))
+             (int rem (floor n len)))
+        (if (plusp int)
             (progn
-              (warn "Sample size exceeds data length: ~A > ~A" n (length data))
-              (coerce data 'list))
-            (loop :repeat n :collect (? data (random len)))))
-      (take n (nshuffle (copy-list data)))))
+              (warn "Sample size exceeds data length: ~A > ~A" n len)
+              (nshuffle (apply 'concatenate 'vector
+                               (sample data rem
+                                       :with-replacement? with-replacement?)
+                               (loop :repeat int :collect vec))))
+            (coerce (if with-replacement?
+                        (let ((rez (make-array n)))
+                          (dotimes (i n)
+                            (:= (? rez i) (? vec (random len))))
+                          rez)
+                        (subseq (nshuffle vec) 0 n))
+                    (type-of data))))))
+
+(defun resample (data label new &key key)
+  "Resample DATA so that the number of items with LABEL (determined by KEY)
+   equals to NEW (a number or a reference to another label,
+   in which case the number of items by it is used)."
+  (with ((sample (keep label data :key key))
+         (len (length sample)))
+    (coerce (nshuffle
+             (concatenate 'vector
+                          (coerce (remove label data :key key) 'vector)
+                          (coerce (loop :repeat
+                                        (if (numberp new) new
+                                            (let ((cc (count new data :key key)))
+                                              (when (zerop cc)
+                                                (warn "Label '~A' not found in data by ~A."
+                                                      new key))
+                                              cc))
+                                        :collect (? sample (random len)))
+                                  'vector)))
+            'vector)))
 
 (defun normal-random (&optional (mean 0.0) (std-dev 1.0))
   "Generate a normal random number with the given MEAN and STD-DEV."

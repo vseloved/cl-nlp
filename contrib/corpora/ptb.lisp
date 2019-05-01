@@ -20,10 +20,9 @@
                            (mapcar ^(split-if 'blankp
                                               (split #\Newline %))
                                    (remove-if 'blankp
-                                              (mapcar
-                                               ^(string-trim +white-chars+ %)
-                                               (re:split "={38}"
-                                                         (read-file file))))))))
+                                              (mapcar 'trim-white
+                                                      (re:split "={38}"
+                                                                (read-file file))))))))
       (let (cur-parag cur-parag-nps)
         (dolist (sent par)
           ;; account for tokens that have square brackets in them 1/2

@@ -41,8 +41,8 @@
 (defmethod train ((model random-forest) data
                   &key (n 10) verbose threads fast)
   (when threads (eager-future2:advise-thread-pool-size threads))
-  (let ((train-len (* 2/3 (length data)))
-        (train-rank (sqrt (length @data#0.fs))) ; also possible 1/2x & 2x
+  (let ((train-len (ceiling (* 2/3 (length data))))
+        (train-rank (ceiling (sqrt (length @data#0.fs)))) ; also possible 1/2x & 2x
         (*random-state* @model.random-state)
         oobs
         futures)

@@ -11,7 +11,7 @@
   (make 'regex-word-tokenizer
         :regex (regex-from-file (lang-file :uk "word-tok-rules.txt")))
   :sent-splitter
-  (make 'baseline-sent-tokenizer
+  (make 'punct-sent-tokenizer
         :abbrevs-with-dot (list-from-file
                            (lang-file :uk "abbrevs-with-dot.txt")))
   :dict-lemmatizer

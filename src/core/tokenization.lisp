@@ -272,7 +272,11 @@
                                    (member (char word (- (length word) 2))
                                            sent-end-chars))))
                        (or ;; normal case
-                           (not (lower-case-p (? ws 0 0)))
+                           (and (not (lower-case-p (? ws 0 0)))
+                                ;; not name shortening
+                                (not (and (= 2 (length word))
+                                          (char= #\. last-char)
+                                          (upper-case-p (char word 0)))))
                            ;; all lower case
                            (every ^(notany 'upper-case-p %) words)
                            ;; all caps
@@ -337,7 +341,7 @@
 (defclass full-text-tokenizer ()
   ()
   (:documentation
-   "Text tokenizer that tokenizees raw text STR
+   "Text tokenizer that tokenizes raw text STR
     into a paragraph-sentence-token structure."))
 
 (defmethod tokenize ((tokenizer full-text-tokenizer) string)
@@ -379,7 +383,7 @@
   "Full text tokenizer.")
 
 (defun parags->text (parags)
-  "Get a text string corresponding to a list of lists of tokens PARAGRAPHS."
+  "Get a text string corresponding to a list of lists of tokens PARAGS."
   (strjoin #\Newline
            (mapcar (lambda (parag)
                      (strjoin #\Space
