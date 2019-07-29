@@ -81,7 +81,7 @@
                          (let (,cache-key)
                            (loop :for ,k :in ,slots
                                  :for ,v :in ,row :do
-                              (when-it (find (mksym ,k) ,keys)
+                              (when-it (find (mksym ,k :package :nlp.contrib.wordnet) ,keys)
                                 (push (cons it ,v) ,cache-key)))
                            (getset# ,cache-key *cache*
                                     (apply #'make-instance ,class
