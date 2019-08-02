@@ -7,19 +7,19 @@
 ;;; download methods
 
 (defmethod download ((what (eql :wordnet))
-                     &key (url "http://sourceforge.net/projects/wnsql/files/wnsql-1.0.1/wordnet30-sqlite-1.0.1.zip/download")
+                     &key (url "https://sourceforge.net/projects/wnsql/files/wnsql-1.0.1/wordnet30-sqlite-1.0.1.zip/download")
                           (dir "data/"))
-  (let* ((dir (merge-pathnames dir (asdf:system-definition-pathname 'cl-nlp)))
-         (archive (download-file url dir)))
+  (let ((dir (merge-pathnames dir (asdf:system-definition-pathname 'cl-nlp))))
     (format t "Downloading Wordnet from:~A to:~A~%It may take some time...~%"
             url dir)
-    (unwind-protect
-        (zip:with-zipfile (zip archive)
-          (zip:do-zipfile-entries (name entry zip)
-            (when (string= "wordnet30.sqlite" name)
-              (write-bin-file (merge-pathnames name dir)
-                              (zip:zipfile-entry-contents entry)))))
-      (delete-file archive))))
+    (let ((archive (download-file url dir)))
+      (unwind-protect
+           (zip:with-zipfile (zip archive)
+             (zip:do-zipfile-entries (name entry zip)
+               (when (string= "wordnet30.sqlite" name)
+                 (write-bin-file (merge-pathnames name dir)
+                                 (zip:zipfile-entry-contents entry)))))
+        (delete-file archive)))))
 
 (defmethod download ((what (eql :wordnet-ic))
                      &key (url "http://nltk.org/nltk_data/packages/corpora/wordnet_ic.zip")
@@ -81,7 +81,7 @@
                          (let (,cache-key)
                            (loop :for ,k :in ,slots
                                  :for ,v :in ,row :do
-                              (when-it (find (mksym ,k) ,keys)
+                              (when-it (find (mksym ,k :package :nlp.contrib.wordnet) ,keys)
                                 (push (cons it ,v) ,cache-key)))
                            (getset# ,cache-key *cache*
                                     (apply #'make-instance ,class
